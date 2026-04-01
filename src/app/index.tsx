@@ -2,11 +2,13 @@ import { Box } from "@/components/Box";
 import { Input } from "@/components/Input";
 import { style } from "@/styles/style";
 import { Image, View, Text, TouchableOpacity } from "react-native";
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import {ButtonY} from "@/components/ButtonY";
 import {ButtonB} from "@/components/ButtonB";
 
 export default function Index(){
+    const router = useRouter();
+
     return(
         <View style={style.background}>
             <Image source={require('@/screenAssets/logo/full-logo.png')} style={style.logo}/>
@@ -25,7 +27,7 @@ export default function Index(){
                             <Text style={style.esqueceuSenha}>Esqueceu a Senha?</Text>
                         </TouchableOpacity>
                     </Link>
-                    <ButtonY title="Entrar"/>
+                    <ButtonY title="Entrar" onPress={() => router.push('/home')} />
                     <Text style={style.message}>Ainda não possui uma conta?</Text>
                     <ButtonB title="Cadastre-se"/>
                 </View>
