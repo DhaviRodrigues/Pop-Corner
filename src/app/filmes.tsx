@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import BottomNavbar from '@/components/BottomNavbar';
+import BottomNavbar from '@/components/Navbar';
 
 export default function FilmesScreen() {
   return (
