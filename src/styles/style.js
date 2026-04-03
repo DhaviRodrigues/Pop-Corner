@@ -1,17 +1,20 @@
 import { StyleSheet } from 'react-native';
+import { Dimensions } from 'react-native';
+const { height } = Dimensions.get('window');
 
 export const style = StyleSheet.create({
     background: {
         flex: 1,
         width: '100%',
+        height: '100%',
         backgroundColor: '#B22300',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        paddingTop: '20%',
+        paddingTop: height * 0.05,
     },
     center: {
         alignItems: 'center',
-        marginTop: '10%',
+        marginTop: height * 0.01,
     },
     box: {
         backgroundColor: '#B22300',
@@ -23,17 +26,19 @@ export const style = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 15.8,
         elevation: 16, 
+        overflow: 'visible',
     },
     logo: {
-        width: '55%',
-        height: '30%',
+        marginTop: height * 0.05,
+        marginBottom: height * 0.05,
+        height: height * 0.23,
         resizeMode: 'contain',
     },
     popcorn: {
         position: 'absolute',
-        width: '15%',
-        height: '10%',
-        top: '-6%',
+        width: height * 0.07,
+        height: height * 0.07,
+        top: -height * 0.04,
         zIndex: 10,
         alignSelf: 'center',
     },
@@ -43,21 +48,21 @@ export const style = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 50,
         paddingHorizontal: 15,
-        height: '13%',
+        height: height * 0.06,
         width: '90%',
-        marginVertical: 40,
-        borderWidth: 12,
+        marginVertical: height * 0.015,
+        borderWidth: height * 0.005,
         borderColor: '#FE481B',
     },
     inputIcon: {
         width: '6%',
-        height: '100%',
+        height: '50%',
         marginRight: 10,
         tintColor: '#A9A9A9',
     },
     inputText: {
         flex: 1,
-        fontSize: 35,
+        fontSize: height * 0.018,
         color: '#A9A9A9',
         fontFamily: 'Poppins-SemiBold',
     },
@@ -74,20 +79,21 @@ export const style = StyleSheet.create({
         marginTop: 10,
     },
     esqueceuSenha: {
-        fontSize: 30,
+        fontSize: height * 0.016,
         color: '#FFFEB2',
+        marginBottom: height * 0.01,
         fontFamily: 'Poppins-SemiBold',
         textDecorationLine: 'underline',
     },
     button: {
         borderRadius: 50,
-        height: '10%',
+        height: height * 0.06,
         width: '50%',
         justifyContent: 'center',
         alignItems: 'center',
         alignSelf: 'center',
-        marginTop: 40,
-        marginBottom: 40,
+        marginTop: height * 0.01,
+        marginBottom: height * 0.03,
         elevation: 5,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -96,7 +102,7 @@ export const style = StyleSheet.create({
     },
     buttonText: {
         fontFamily: 'Poppins-SemiBold',
-        fontSize: 50,
+        fontSize: height * 0.027,
     },
     buttonY: {
         backgroundColor: '#FFFEB2',
@@ -107,7 +113,7 @@ export const style = StyleSheet.create({
         color: '#FFFEB2',
     },
     message: {
-        fontSize: 30,
+        fontSize: height * 0.016,
         color: '#FFFEB2',
         fontFamily: 'Poppins-SemiBold',
     },

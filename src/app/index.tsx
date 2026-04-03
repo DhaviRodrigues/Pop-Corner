@@ -14,14 +14,14 @@ export default function Index(){
             <Image source={require('@/screenAssets/logo/full-logo.png')} style={style.logo}/>
             
             <View style={style.center}> 
-                <Box vw={0.80} vh={0.45} padTop={0} /> 
+                <Box vw={0.80} vh={0.5} padTop={0} /> 
                 <Image 
                     source={require('@/screenAssets/popcorn-collor.png')} 
                     style={style.popcorn}
                 />
                 <View style={style.formContainer}>
                     <Input icon={require('@/screenAssets/icons/email-icon.png')} text="Email:" />
-                    <Input icon={require('@/screenAssets/icons/password-icon.png')} text="Password" secureTextEntry={true} />
+                    <Input icon={require('@/screenAssets/icons/password-icon.png')} text="Password:" secureTextEntry={true} />
                     <Link href="./forgot-password" asChild>
                         <TouchableOpacity style={style.esqueceuSenhaContainer}>
                             <Text style={style.esqueceuSenha}>Esqueceu a Senha?</Text>
