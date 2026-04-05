@@ -11,8 +11,7 @@ export default function Index(){
 
     return(
         <View style={style.background}>
-            <Image source={require('@/screenAssets/logo/full-logo.png')} style={style.logo}/>
-            
+            <Image source={require('@/screenAssets/logo/full-logo.png')} style={style.logoB}/>
             <View style={style.center}> 
                 <Box vw={0.80} vh={0.5} padTop={0} /> 
                 <Image 
@@ -21,7 +20,7 @@ export default function Index(){
                 />
                 <View style={style.formContainer}>
                     <Input icon={require('@/screenAssets/icons/email-icon.png')} text="Email:" />
-                    <Input icon={require('@/screenAssets/icons/password-icon.png')} text="Password:" secureTextEntry={true} />
+                    <Input icon={require('@/screenAssets/icons/password-icon.png')} text="Senha:" secureTextEntry={true} />
                     <Link href="./forgot-password" asChild>
                         <TouchableOpacity style={style.esqueceuSenhaContainer}>
                             <Text style={style.esqueceuSenha}>Esqueceu a Senha?</Text>
@@ -29,7 +28,7 @@ export default function Index(){
                     </Link>
                     <ButtonY title="Entrar" onPress={() => router.push('/home')} />
                     <Text style={style.message}>Ainda não possui uma conta?</Text>
-                    <ButtonB title="Cadastre-se"/>
+                    <ButtonB title="Cadastre-se" onPress={() => router.push('/register')} />
                 </View>
             </View>
         </View>
