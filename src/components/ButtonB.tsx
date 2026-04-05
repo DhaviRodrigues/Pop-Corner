@@ -13,7 +13,7 @@ export function ButtonB({ title, onPress }: ButtonProps) {
       activeOpacity={0.7} 
       onPress={onPress}
     >
-      <Text style={[style.buttonText, style.buttonB]}>{title}</Text>
+      <Text style={[style.buttonText, style.buttonBText]}>{title}</Text>
     </TouchableOpacity>
   );
 }
