@@ -9,7 +9,7 @@ type ButtonProps = {
 export function ButtonVoltar({ title, onPress }: ButtonProps) {
   return (
     <TouchableOpacity 
-      style={[style.buttonVoltar]} 
+      style={[style.buttonVoltar, style.button]} 
       activeOpacity={0.7} 
       onPress={onPress}
     >
