@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, Image, ImageBackground, Platform } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, Image, ImageBackground, Platform, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
+
+const { width, height } = Dimensions.get('window');
 
 const BottomNavbar = () => {
   const router = useRouter();
@@ -74,11 +76,12 @@ const BottomNavbar = () => {
   );
 };
 
+export default BottomNavbar;
+
 const styles = StyleSheet.create({
   navbarWrapper: {
     width: '100%',
-    minHeight: 350, 
-    height: Platform.OS === 'web' ? 360 : 350,
+    height: height * 0.15, 
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -89,7 +92,7 @@ const styles = StyleSheet.create({
   },
   navbarContainer: {
     width: '90%',
-    height: 230, 
+    height: height * 0.1, 
     backgroundColor: '#B22300',
     borderRadius: 32, 
     shadowColor: '#000',
@@ -105,8 +108,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '115%',
-    height: 450, 
-    top: -60, 
+    height: height * 0.2, 
+    top: -height * 0.05, 
     left: '50%',
     transform: [{ translateX: '-50%' }],
     zIndex: 1,
@@ -116,7 +119,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     zIndex: 2,
     paddingTop: 15,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+    paddingBottom: Platform.OS === 'ios' ? 25 : 15,
   },
   tabContainer: {
     flex: 1,
@@ -139,9 +142,9 @@ const styles = StyleSheet.create({
   },
   activeTabContent: {
     backgroundColor: '#FFFEB2',
-    width: 185,
-    height: 185,
-    borderRadius: 90,
+    width: height * 0.08,
+    height: height * 0.08,
+    borderRadius: height * 0.04,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -151,22 +154,22 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   iconWrapper: {
-    width: 120, 
-    height: 120, 
-    borderRadius: 60,
+    width: height * 0.06, 
+    height: height * 0.06, 
+    borderRadius: height * 0.03,
     alignItems: 'center',
     justifyContent: 'center',
   },
   imageIcon: {
-    width: 70, 
-    height: 70, 
+    width: height * 0.035, 
+    height: height * 0.035, 
     tintColor: '#FFFEB2',
   },
   activeImageIcon: {
     tintColor: '#D42A23',
   },
   label: {
-    fontSize: 24, 
+    fontSize: height * 0.01, 
     fontFamily: 'Poppins-SemiBold',
     color: '#FFFEB2',
     marginTop: 2,
@@ -176,5 +179,3 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
   },
 });
-
-export default BottomNavbar;

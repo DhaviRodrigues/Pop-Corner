@@ -1,10 +1,14 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ScrollView } from 'react-native';
 import BottomNavbar from '@/components/Navbar';
+
+const { height } = Dimensions.get('window');
 
 export default function FilmesScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Filmes</Text>
+      <ScrollView style={styles.scrollView}>
+        <Text style={styles.text}>Conteúdo da página Filmes</Text>
+      </ScrollView>
       <BottomNavbar />
     </View>
   );
@@ -13,13 +17,17 @@ export default function FilmesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#fff',
+  },
+  scrollView: {
+    flex: 1,
+    paddingBottom: height * 0.15,
   },
   text: {
     fontSize: 32,
     fontWeight: 'bold',
     color: '#B22300',
+    marginVertical: 20,
+    textAlign: 'center',
   },
 });
