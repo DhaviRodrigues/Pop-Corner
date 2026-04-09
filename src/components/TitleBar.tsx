@@ -12,8 +12,8 @@ export function TitleBar({ title, backgroundSource }: TitleBarProps) {
     <View style={style.titleBarContainer}>
       <Image 
         source={backgroundSource} 
-        style={style.titleBackground} 
-        resizeMode="cover" 
+        style={[style.titleBackground, { width: '100%', height: 100 }]} 
+        resizeMode="stretch" 
         />
       <Text style={style.welcomeTitle}>
         {title}

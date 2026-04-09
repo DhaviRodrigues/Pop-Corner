@@ -6,7 +6,7 @@ import { Pencil } from "@/components/Pencil";
 import { ProfileIcon } from "@/components/ProfileIcon";
 import { style } from "@/styles/style";
 import { useRouter } from 'expo-router';
-import { Dimensions, Image, Text, View } from "react-native";
+import { Dimensions, Image, ScrollView, Text, View } from "react-native";
 
 const { height } = Dimensions.get('window');
 
@@ -15,6 +15,7 @@ export default function Register(){
 
     return(
         <View style={style.background}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ width: '100%' }}>
             <Image source={require('@/screenAssets/logo/full-logo.png')} style={style.logoS} height={height * 1} />
             <View style={style.center}> 
                 <Box vw={0.80} padTop={0}> 
@@ -34,6 +35,7 @@ export default function Register(){
                     </View>
                 </Box>    
             </View>
+        </ScrollView>       
         </View>
     )
 }

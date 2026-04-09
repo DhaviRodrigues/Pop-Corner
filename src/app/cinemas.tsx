@@ -1,33 +1,26 @@
-import { View, Text, StyleSheet, Dimensions, ScrollView } from 'react-native';
+import { View, Text, Dimensions, ScrollView } from 'react-native';
 import BottomNavbar from '@/components/Navbar';
+import { style } from '@/styles/style';
 
 const { height } = Dimensions.get('window');
 
-export default function CinemasScreen() {
+export default function PerfilScreen() {
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <Text style={styles.text}>Conteúdo da página Cinemas</Text>
-      </ScrollView>
+    <View style={style.background}>
+        <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        style={{ width: '100%' }}
+        >
+          <Text style={{
+            fontSize : 16, 
+            color: '#FFFEB2',
+            textAlign: 'center', 
+            fontFamily: 'Poppins-Semibold',
+            marginTop: height * 0.4}}>
+            Conteúdo da página de Cinemas
+            </Text>
+        </ScrollView>
       <BottomNavbar />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  scrollView: {
-    flex: 1,
-    paddingBottom: height * 0.15,
-  },
-  text: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#B22300',
-    marginVertical: 20,
-    textAlign: 'center',
-  },
-});
