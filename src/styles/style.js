@@ -133,6 +133,20 @@ export const style = StyleSheet.create({
     width: "50%",
     boxShadow: "0px 10px 20px 20px rgba(0, 0, 0, 0.20)",
   },
+  buttonRText: {
+    color: "#FFFEB2",
+    fontFamily: "Poppins-SemiBold",
+    fontSize: height * 0.015,
+    textAlign: "center",
+  },
+  buttonR: {
+    backgroundColor: "#B22300",
+    width: "30%",
+    boxShadow: "0px 10px 20px 20px rgba(0, 0, 0, 0.20)",
+    borderRadius: height * 0.01,
+    height: height * 0.03,
+    justifyContent: "center",
+  },
   buttonVoltar: {
     width: "30%",
     boxShadow: "0px 9px 20px 15px rgba(0, 0, 0, 0.20)",
@@ -334,11 +348,6 @@ export const style = StyleSheet.create({
       borderRadius: 10,
       marginBottom: 16,
       marginLeft: 13,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.35,
-      shadowRadius: 4.65,
-      elevation: 8
   },
   sectionBadgeText: {
       color: '#B22300',
@@ -389,5 +398,19 @@ export const style = StyleSheet.create({
       zIndex: 1,
       paddingBottom: 10,
   },
-
+  yellowBar: {
+  width: '90%', // ou a largura que você desejar
+  height: 60,
+  backgroundColor: '#FFFEB2',
+  borderRadius: 30,
+  flexDirection: 'row', // Alinha os itens internamente em linha
+  alignItems: 'center', // Centraliza o botão verticalmente dentro da barra
+  alignSelf: 'center', // Centraliza a barra amarela na tela
+  marginVertical: 20,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.35,
+  shadowRadius: 4.65,
+  elevation: 8
+},
 });

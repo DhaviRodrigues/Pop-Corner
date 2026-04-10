@@ -4,7 +4,7 @@ import { style } from '@/styles/style';
 
 const { height } = Dimensions.get('window');
 
-export default function PerfilScreen() {
+export default function Coupons() {
   return (
     <View style={style.background}>
         <ScrollView 
@@ -17,7 +17,7 @@ export default function PerfilScreen() {
             textAlign: 'center', 
             fontFamily: 'Poppins-Semibold',
             marginTop: height * 0.4}}>
-            Conteúdo da página de Filmes
+            Conteúdo da página de Cupons
             </Text>
         </ScrollView>
       <BottomNavbar />

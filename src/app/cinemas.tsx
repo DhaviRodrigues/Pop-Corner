@@ -4,7 +4,7 @@ import { style } from '@/styles/style';
 
 const { height } = Dimensions.get('window');
 
-export default function PerfilScreen() {
+export default function Cinemas() {
   return (
     <View style={style.background}>
         <ScrollView 
@@ -14,7 +14,7 @@ export default function PerfilScreen() {
           <Text style={{
             fontSize : 16, 
             color: '#FFFEB2',
-            textAlign: 'center', 
+            textAlign: 'center',
             fontFamily: 'Poppins-Semibold',
             marginTop: height * 0.4}}>
             Conteúdo da página de Cinemas
