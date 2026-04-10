@@ -1,11 +1,10 @@
 import { Box } from "@/components/Box";
-import { style } from "@/styles/style";
-import { Image, View, Text, TouchableOpacity } from "react-native";
-import { Link, useRouter } from 'expo-router';
-import {ButtonY} from "@/components/ButtonY";
-import { ButtonVoltar } from "@/components/ButtonVoltar";
-import { Dimensions } from "react-native";
 import { ButtonGenre } from "@/components/ButtonGenre";
+import { ButtonVoltar } from "@/components/ButtonVoltar";
+import { ButtonY } from "@/components/ButtonY";
+import { style } from "@/styles/style";
+import { useRouter } from 'expo-router';
+import { Dimensions, Image, Text, View } from "react-native";
 
 const { height } = Dimensions.get('window');
 

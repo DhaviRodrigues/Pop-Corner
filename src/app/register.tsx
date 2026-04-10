@@ -30,7 +30,7 @@ export default function Register(){
                         <Input icon={require('@/screenAssets/icons/password-icon.png')} text="Senha:" secureTextEntry={true} />
                         <Input icon={require('@/screenAssets/icons/password-icon.png')} text="Confirmar Senha:" secureTextEntry={true} />
                         <Text style={style.message}>*A senha deve conter mais de 8 caracteres, letras maiúsculas e números</Text>
-                        <ButtonY title="Continuar" onPress={() => router.push('/genre')} />
+                        <ButtonY title="Continuar" onPress={() => router.push('/verificacaoEmail')} />
                         <ButtonVoltar title="Voltar" onPress={() => router.push('/')} />
                     </View>
                 </Box>    
