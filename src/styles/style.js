@@ -111,6 +111,7 @@ export const style = StyleSheet.create({
     shadowOffset: { width: 0, height: 15 },
     shadowOpacity: 0.25,
     shadowRadius: height * 0.0158,
+    width: "50%",
   },
   buttonText: {
     fontFamily: "Poppins-SemiBold",
@@ -118,9 +119,7 @@ export const style = StyleSheet.create({
     textAlign: "center",
   },
   buttonY: {
-    width: "50%",
     backgroundColor: "#FFFEB2",
-    boxShadow: "0px 10px 20px 20px rgba(0, 0, 0, 0.20)",
   },
   buttonYText: {
     color: "#000000",
@@ -130,8 +129,6 @@ export const style = StyleSheet.create({
   },
   buttonB: {
     backgroundColor: "#000000",
-    width: "50%",
-    boxShadow: "0px 10px 20px 20px rgba(0, 0, 0, 0.20)",
   },
   buttonVoltar: {
     width: "30%",
