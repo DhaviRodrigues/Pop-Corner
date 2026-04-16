@@ -4,8 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { style } from '@/styles/style';
 
-const { width, height } = Dimensions.get('window');
-
 const BottomNavbar = () => {
   const router = useRouter();
   const pathname = usePathname();
@@ -23,17 +21,17 @@ const BottomNavbar = () => {
     },
     {
       name: 'Filmes',
-      route: '/filmes',
+      route: '/movies',
       icon: require('@/screenAssets/Navbar/filme-icon.svg'),
     },
     {
       name: 'Cupons',
-      route: '/cupons',
+      route: '/coupons',
       icon: require('@/screenAssets/Navbar/ticktet-icon.svg'),
     },
     {
       name: 'Perfil',
-      route: '/perfil',
+      route: '/profile',
       icon: require('../screenAssets/Navbar/perfil-icon.svg'),
     },
   ];

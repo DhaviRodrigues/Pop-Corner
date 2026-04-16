@@ -4,7 +4,7 @@ import { style } from '@/styles/style';
 
 const { height } = Dimensions.get('window');
 
-export default function PerfilScreen() {
+export default function Coupons() {
   return (
     <View style={style.background}>
         <ScrollView 

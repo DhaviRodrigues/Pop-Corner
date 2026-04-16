@@ -22,7 +22,7 @@ export default function Index(){
                     <View style={style.formContainer}>
                         <Input icon={require('@/screenAssets/icons/email-icon.png')} text="Email:" />
                         <Input icon={require('@/screenAssets/icons/password-icon.png')} text="Senha:" secureTextEntry={true} />
-                        <Link href="/recuperarSenha" asChild>
+                        <Link href="/passwordRecovery" asChild>
                             <TouchableOpacity style={style.esqueceuSenhaContainer}>
                                 <Text style={style.esqueceuSenha}>Esqueceu a Senha?</Text>
                             </TouchableOpacity>

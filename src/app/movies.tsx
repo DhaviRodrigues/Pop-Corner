@@ -61,7 +61,7 @@ function DynamicStars({ rating }: { rating: string }) {
   );
 }
 
-export default function FilmesScreen() {
+export default function MoviesScreen() {
   const router = useRouter();
 
   const renderMovie: ListRenderItem<Movie> = ({ item }) => (
