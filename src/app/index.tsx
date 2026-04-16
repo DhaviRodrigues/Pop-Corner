@@ -1,11 +1,10 @@
 import { Box } from "@/components/Box";
+import { ButtonB } from "@/components/ButtonB";
+import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { style } from "@/styles/style";
-import { Image, View, Text, TouchableOpacity } from "react-native";
 import { Link, useRouter } from 'expo-router';
-import {ButtonY} from "@/components/ButtonY";
-import {ButtonB} from "@/components/ButtonB";
-import { Dimensions } from "react-native";
+import { Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
 const { height } = Dimensions.get('window');
 
 export default function Index(){
@@ -23,7 +22,7 @@ export default function Index(){
                     <View style={style.formContainer}>
                         <Input icon={require('@/screenAssets/icons/email-icon.png')} text="Email:" />
                         <Input icon={require('@/screenAssets/icons/password-icon.png')} text="Senha:" secureTextEntry={true} />
-                        <Link href="./forgot-password" asChild>
+                        <Link href="/recuperarSenha" asChild>
                             <TouchableOpacity style={style.esqueceuSenhaContainer}>
                                 <Text style={style.esqueceuSenha}>Esqueceu a Senha?</Text>
                             </TouchableOpacity>

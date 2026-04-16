@@ -24,11 +24,8 @@ export default function Verify2FA() {
       <View style={style.center}>
         <Image source={require("../screenAssets/escudo-pipoca.png")} style={styles.escudo} />
 
-        <Text style={[style.welcomeTitle, styles.titleSmall]}>
-          Estamos quase lá!
-        </Text>
         <Text style={[style.welcomeTitle, styles.titleLarge]}>
-          Verifique sua Identidade
+          Recuperação de Senha
         </Text>
 
         <Box vw={0.88} padTop={height * 0.02}>
@@ -88,12 +85,9 @@ const getStyles = (width: number, height: number) => StyleSheet.create({
     marginTop: height * 0.05,
     resizeMode: "contain",
   },
-  titleSmall: {
-    fontSize: 20,
-    marginTop: 10,
-  },
+
   titleLarge: {
-    fontSize: 24,
+    fontSize: 20,
     marginBottom: height * 0.01,
   },
   boxContent: {
