@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, Image, ImageBackground, Platform, Dimensions } from 'react-native';
+import { View, TouchableOpacity, Text, Image, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { style } from '@/styles/style';
@@ -7,6 +7,10 @@ import { style } from '@/styles/style';
 const BottomNavbar = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const { width } = useWindowDimensions();
+  const navbarBackground = width >=510
+    ? require('../screenAssets/Navbar/Navbar-Expandida.svg')
+    : require('../screenAssets/Navbar/Navbar.svg');
 
   const tabs = [
     {
@@ -36,10 +40,12 @@ const BottomNavbar = () => {
     },
   ];
 
+
+
   return (
     <View style={style.navbarWrapper}>
       <Image
-        source={require('../screenAssets/Navbar/Navbar.svg')}
+        source={navbarBackground}
         style={style.navbarBackground}
         resizeMode="cover"
       />
