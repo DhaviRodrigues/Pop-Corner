@@ -2,7 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, Text, Image, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
-import { style } from '@/styles/style';
+import { navBarStyle} from '@/styles/navbar';
 
 const BottomNavbar = () => {
   const router = useRouter();
@@ -41,32 +41,32 @@ const BottomNavbar = () => {
   ];
 
   return (
-    <View style={style.navbarWrapper}>
+    <View style={navBarStyle.navbarWrapper}>
       <Image
         source={navbarBackground}
-        style={style.navbarBackground}
+        style={navBarStyle.navbarBackground}
         resizeMode="cover"
       />
-      <View style={style.navbarContainer}>
-        <SafeAreaView style={style.safeArea}>
-          <View style={style.tabContainer}>
+      <View style={navBarStyle.navbarContainer}>
+        <SafeAreaView style={navBarStyle.safeArea}>
+          <View style={navBarStyle.tabContainer}>
             {tabs.map((tab) => {
               const isActive = pathname === tab.route;
               return (
                 <TouchableOpacity
                   key={tab.route}
-                  style={style.tab}
+                  style={navBarStyle.tab}
                   onPress={() => router.push(tab.route as any)}
                   activeOpacity={0.7}
                 >
-                  <View style={[style.tabContent, isActive && style.activeTabContent]}>
-                    <View style={style.iconWrapper}>
+                  <View style={[navBarStyle.tabContent, isActive && navBarStyle .activeTabContent]}>
+                    <View style={navBarStyle.iconWrapper}>
                       <Image
                         source={tab.icon}
-                        style={[style.imageIcon, isActive && style.activeImageIcon]}
+                        style={[navBarStyle.imageIcon, isActive && navBarStyle.activeImageIcon]}
                         resizeMode="contain"
                       />
-                      <Text style={[style.label, isActive && style.activeLabel]}>{tab.name}</Text>
+                      <Text style={[navBarStyle.label, isActive && navBarStyle.activeLabel]}>{tab.name}</Text>
                     </View>
                   </View>
                 </TouchableOpacity>

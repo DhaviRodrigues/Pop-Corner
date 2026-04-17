@@ -1,6 +1,7 @@
-import React, { useState } from "react"; // 1. Importe o useState
+import React, { useState } from "react";
 import { Text, TouchableOpacity } from "react-native";
-import { style } from "@/styles/style";
+import { buttonStyle } from "@/styles/button";
+import { textStyle } from "@/styles/text";
 
 type ButtonProps = {
   title: string;
@@ -18,14 +19,14 @@ export function ButtonGenre({ title, onPress }: ButtonProps) {
   return (
     <TouchableOpacity 
       style={[
-        style.buttonGenre, 
+        buttonStyle.buttonGenre, 
         selected && { backgroundColor: '#FFFEB2' }
       ]} 
       activeOpacity={0.7} 
       onPress={handlePress}
     >
       <Text style={[
-        style.buttonGenreText,
+        buttonStyle.buttonGenreText,
         selected && { color: '#000000' }
       ]}>
         {title}

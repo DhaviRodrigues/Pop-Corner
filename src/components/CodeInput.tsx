@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { StyleSheet, TextInput, View } from "react-native";
+import { componentStyle } from "@/styles/component";
 
 export default function CodeInput() {
   const inputRefs = useRef<Array<TextInput | null>>([]);
@@ -23,14 +24,14 @@ export default function CodeInput() {
   };
 
   return (
-    <View style={localStyle.container}>
+    <View style={componentStyle.codeInputContainer}>
       {code.map((digit, index) => (
         <TextInput
           key={index}
           ref={(ref) => {
             inputRefs.current[index] = ref;
           }}
-          style={localStyle.box}
+          style={componentStyle.codeInputBox}
           maxLength={1}
           keyboardType="numeric"
           value={digit}
@@ -41,23 +42,3 @@ export default function CodeInput() {
     </View>
   );
 }
-
-const localStyle = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "center",
-    marginVertical: 20,
-    width: "100%",
-  },
-  box: {
-    width: 50,
-    height: 55,
-    backgroundColor: "#3A1200",
-    borderRadius: 10,
-    color: "#FFFEB2",
-    fontSize: 24,
-    textAlign: "center",
-    fontFamily: "Poppins-SemiBold",
-  },
-});

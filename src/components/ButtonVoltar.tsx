@@ -1,5 +1,5 @@
 import { Text, TouchableOpacity } from "react-native";
-import { style } from "@/styles/style";
+import { buttonStyle } from "@/styles/button";
 
 type ButtonProps = {
   title: string;
@@ -9,11 +9,11 @@ type ButtonProps = {
 export function ButtonVoltar({ title, onPress }: ButtonProps) {
   return (
     <TouchableOpacity 
-      style={[style.buttonVoltar, style.button]} 
+      style={[buttonStyle.button, buttonStyle.buttonVoltar]} 
       activeOpacity={0.7} 
       onPress={onPress}
     >
-      <Text style={[style.buttonVoltarText]}>{title}</Text>
+      <Text style={[buttonStyle.buttonVoltarText]}>{title}</Text>
     </TouchableOpacity>
   );
 }

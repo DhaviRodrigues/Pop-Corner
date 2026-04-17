@@ -1,12 +1,13 @@
 import { useRouter } from "expo-router";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
-import { style } from "../styles/style";
-
 import { Box } from "../components/Box";
 import { ButtonVoltar } from "../components/ButtonVoltar";
 import { ButtonY } from "../components/ButtonY";
 import CodeInput from "../components/CodeInput";
+import { miscStyle } from "@/styles/misc";
+import { textStyle} from "@/styles/text";
+import { logoStyle } from "@/styles/logo";
 
 export default function Verify2FA() {
   const router = useRouter();
@@ -16,44 +17,39 @@ export default function Verify2FA() {
   const styles = getStyles(width, height);
 
   return (
-    <View style={style.background}>
+    <View style={miscStyle.background}>
       <Image source={require("../screenAssets/popcorn-collor.png")} style={styles.popcorn1} />
       <Image source={require("../screenAssets/popcorn-collor.png")} style={styles.popcorn2} />
       <Image source={require("../screenAssets/popcorn-collor.png")} style={styles.popcorn3} />
 
-      <View style={style.center}>
-        <Image source={require("../screenAssets/escudo-pipoca.png")} style={styles.escudo} />
+      <View style={miscStyle.center}>
+        <Image source={require("../screenAssets/escudo-pipoca.png")} style={logoStyle.escudo} />
 
-        <Text style={[style.welcomeTitle, styles.titleSmall]}>
+        <Text style={[textStyle.outBoxMessage]}>
           Estamos quase lá!
         </Text>
-        <Text style={[style.welcomeTitle, styles.titleLarge]}>
+        <Text style={[textStyle.outBoxMessage, { marginBottom: height * 0.03}]}>
           Verifique sua Identidade
         </Text>
 
-        <Box vw={0.88} padTop={height * 0.02}>
-          <View style={styles.boxContent}>
-            <Text style={[style.text, styles.instructionText]}>
-              Insira o código de 5 dígitos que enviamos para o e-mail a******@email.com**.
+        <Box vw={0.75} padTop={height * 0.02}>
+          <View style={miscStyle.center}>
+            <Text style={[textStyle.text, { textAlign: "left" }]}>
+              Insira o código que enviamos para o e-mail a******@email.com**.
             </Text>
-
             <CodeInput />
 
-            <TouchableOpacity style={styles.resendButton}>
-              <Text style={[style.message, styles.resendText]}>
+            <TouchableOpacity style={miscStyle.resendButton}>
+              <Text style={[textStyle.underlineText]}>
                 Não recebeu o código? Reenviar código
               </Text>
             </TouchableOpacity>
-
-            <ButtonY title="Confirmar" onPress={() => router.push("/home")} />
+            <ButtonY title="Confirmar" onPress={() => router.push("/genre")} />
+            <ButtonVoltar title="Voltar" onPress={() => router.push("/register")} />
           </View>
         </Box>
-
-        <View style={styles.backButtonContainer}>
-          <ButtonVoltar title="Voltar" onPress={() => router.back()} />
         </View>
       </View>
-    </View>
   );
 }
 
@@ -62,60 +58,24 @@ const getStyles = (width: number, height: number) => StyleSheet.create({
     position: "absolute",
     width: width * 0.1, 
     height: width * 0.1,
-    top: height * 0.25, 
+    top: height * 0.22, 
     right: width * 0.12,
-    zIndex: 10,
+    zIndex: 0,
   },
   popcorn2: {
     position: "absolute",
     width: width * 0.07,
     height: width * 0.07,
-    top: height * 0.28,
-    left: width * 0.10,
-    zIndex: 10,
+    top: height * 0.23,
+    left: width * 0.14,
+    zIndex: 0,
   },
   popcorn3: {
     position: "absolute",
     width: width * 0.08,
     height: width * 0.08,
-    top: height * 0.32,
+    top: height * 0.27,
     left: width * 0.05,
-    zIndex: 10,
-  },
-  escudo: {
-    width: width * 0.45, 
-    height: width * 0.45,
-    marginTop: height * 0.05,
-    resizeMode: "contain",
-  },
-  titleSmall: {
-    fontSize: 20,
-    marginTop: 10,
-  },
-  titleLarge: {
-    fontSize: 24,
-    marginBottom: height * 0.01,
-  },
-  boxContent: {
-    padding: height * 0.02,
-    alignItems: "center",
-  },
-  instructionText: {
-    fontSize: 13,
-    marginBottom: height * 0.02,
-    textAlign: "center",
-  },
-  resendButton: {
-    alignSelf: "center",
-    marginBottom: height * 0.03,
-    marginTop: height * 0.01,
-  },
-  resendText: {
-    textDecorationLine: "underline",
-  },
-  backButtonContainer: {
-    marginTop: -30, 
-    width: "100%", 
-    alignItems: "center",
+    zIndex: 0,
   },
 });

@@ -1,5 +1,5 @@
-import { View, TextInput, Image, ImageSourcePropType } from "react-native";
-import { style } from "@/styles/style";
+import { componentStyle } from "@/styles/component";
+import { Image, ImageSourcePropType, TextInput, View } from "react-native";
 
 type InputProps = {
   icon: ImageSourcePropType;
@@ -9,13 +9,13 @@ type InputProps = {
 
 export function Input({ icon, text, secureTextEntry }: InputProps) {
   return (
-    <View style={style.inputContainer}>
-      <Image source={icon} style={style.inputIcon} resizeMode="contain" />
+    <View style={componentStyle.inputContainer}>
+      <Image source={icon} style={componentStyle.inputIcon} resizeMode="contain" />
       
       <TextInput
         placeholder={text}
         placeholderTextColor="#A9A9A9"
-        style={style.inputText}
+        style={[componentStyle.inputText, { outlineStyle: 'none' } as any]} 
         secureTextEntry={secureTextEntry}
       />
     </View>

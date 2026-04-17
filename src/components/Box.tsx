@@ -1,5 +1,5 @@
 import { View, useWindowDimensions } from "react-native";
-import { style } from "@/styles/style";
+import { componentStyle } from "@/styles/component";
 import { Children, ReactNode } from "react";
 
 type BoxProps = {
@@ -14,7 +14,7 @@ export function Box({ vw, padTop, children }: BoxProps) {
   const boxWidth = screenWidth * vw
 
   return (
-    <View style={[style.box,{ width: boxWidth, minHeight: screenHeight * 0.4, paddingTop: padTop}]}>
+    <View style={[componentStyle.box,{ width: boxWidth, minHeight: screenHeight * 0.4, paddingTop: padTop}]}>
       {children}
     </View>
   );

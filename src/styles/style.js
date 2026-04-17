@@ -402,7 +402,6 @@ export const style = StyleSheet.create({
     marginBottom: height * 0.02,
   },
 
- 
   filmesListContent: {
     paddingHorizontal: "4%",
     paddingBottom: height * 0.22,

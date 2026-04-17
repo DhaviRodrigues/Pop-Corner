@@ -1,4 +1,5 @@
-import { style } from "@/styles/style";
+import { textStyle } from "@/styles/text";
+import {buttonStyle} from "@/styles/button";
 import { Text, TouchableOpacity } from "react-native";
 
 type ButtonProps = {
@@ -14,11 +15,11 @@ type ButtonProps = {
 export function ButtonB({ title, h, w, textSize, align, borderRadius, onPress }: ButtonProps) {
   return (
     <TouchableOpacity 
-      style={[style.buttonB, style.button, { height: h, width: w, justifyContent: align, borderRadius: borderRadius }]} 
+      style={[buttonStyle.buttonB, buttonStyle.button, { height: h, width: w, justifyContent: align, borderRadius: borderRadius }]} 
       activeOpacity={0.7} 
       onPress={onPress}
     >
-      <Text style={[style.buttonText, style.buttonBText, { fontSize: textSize }]}>{title}</Text>
+      <Text style={[buttonStyle.buttonText, buttonStyle.buttonBText, { fontSize: textSize }]}>{title}</Text>
     </TouchableOpacity>
   );
 }

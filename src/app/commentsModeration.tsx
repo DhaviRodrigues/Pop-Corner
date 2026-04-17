@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import {
-  View,
+  Dimensions,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  Dimensions,
+  View,
 } from 'react-native';
-import { style as S } from '../styles/style';
 import { COLORS } from '../constants/colors';
+import { style as S } from '../styles/misc';
 const { height } = Dimensions.get('window');
 
 type FilterTab = 'Pendentes' | 'Aprovados' | 'Arquivados' | 'Feitos';
