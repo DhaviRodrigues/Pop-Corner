@@ -1,12 +1,13 @@
 import { View, Text, Dimensions, ScrollView } from 'react-native';
 import BottomNavbar from '@/components/Navbar';
-import { style } from '@/styles/style';
+import { miscStyle } from '@/styles/misc';
+import { textStyle } from '@/styles/text';
 
 const { height } = Dimensions.get('window');
 
 export default function ProfileScreen() {
   return (
-    <View style={style.background}>
+    <View style={miscStyle.background}>
         <ScrollView 
         showsVerticalScrollIndicator={false} 
         style={{ width: '100%' }}

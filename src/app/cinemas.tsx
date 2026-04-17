@@ -1,12 +1,12 @@
 import { View, Text, Dimensions, ScrollView } from 'react-native';
 import BottomNavbar from '@/components/Navbar';
-import { style } from '@/styles/style';
+import { miscStyle } from '@/styles/misc';
 
 const { height } = Dimensions.get('window');
 
 export default function Cinemas() {
   return (
-    <View style={style.background}>
+    <View style={miscStyle.background}>
         <ScrollView 
         showsVerticalScrollIndicator={false} 
         style={{ width: '100%' }}

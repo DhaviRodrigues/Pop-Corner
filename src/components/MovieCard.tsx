@@ -1,5 +1,5 @@
 import { TouchableOpacity, Image, ImageSourcePropType } from "react-native";
-import { style } from "@/styles/style";
+import { miscStyle } from "@/styles/misc";
 
 type MovieCardProps = {
   iconPath: ImageSourcePropType;
@@ -7,10 +7,10 @@ type MovieCardProps = {
 
 export function MovieCard({ iconPath }: MovieCardProps) {
   return (
-    <TouchableOpacity style={style.movieCard} activeOpacity={0.7}>
+    <TouchableOpacity style={miscStyle.movieCard} activeOpacity={0.7}>
       <Image 
         source={iconPath} 
-        style={style.movieCardIcon} 
+        style={miscStyle.movieCardIcon} 
         resizeMode="contain" 
       />
     </TouchableOpacity>

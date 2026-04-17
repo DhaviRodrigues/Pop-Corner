@@ -1,8 +1,10 @@
 import { useRouter } from "expo-router";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
-import { style } from "../styles/style";
-
+import { miscStyle } from "@/styles/misc";
+import { textStyle} from "@/styles/text";
+import { logoStyle } from "@/styles/logo";
+import {componentStyle} from "@/styles/component";
 import { Box } from "../components/Box";
 import { ButtonVoltar } from "../components/ButtonVoltar";
 import { ButtonY } from "../components/ButtonY";
@@ -16,28 +18,28 @@ export default function Verify2FA() {
   const styles = getStyles(width, height);
 
   return (
-    <View style={style.background}>
+    <View style={miscStyle.background}>
       <Image source={require("../screenAssets/popcorn-collor.png")} style={styles.popcorn1} />
       <Image source={require("../screenAssets/popcorn-collor.png")} style={styles.popcorn2} />
       <Image source={require("../screenAssets/popcorn-collor.png")} style={styles.popcorn3} />
 
-      <View style={style.center}>
+      <View style={miscStyle.center}>
         <Image source={require("../screenAssets/escudo-pipoca.png")} style={styles.escudo} />
 
-        <Text style={[style.welcomeTitle, styles.titleLarge]}>
+        <Text style={[textStyle.outBoxMessage, styles.titleLarge]}>
           Recuperação de Senha
         </Text>
 
         <Box vw={0.88} padTop={height * 0.02}>
           <View style={styles.boxContent}>
-            <Text style={[style.text, styles.instructionText]}>
+            <Text style={[textStyle.text, styles.instructionText]}>
               Insira o código de 5 dígitos que enviamos para o e-mail a******@email.com**.
             </Text>
 
             <CodeInput />
 
             <TouchableOpacity style={styles.resendButton}>
-              <Text style={[style.message, styles.resendText]}>
+              <Text style={[textStyle.text, styles.resendText]}>
                 Não recebeu o código? Reenviar código
               </Text>
             </TouchableOpacity>

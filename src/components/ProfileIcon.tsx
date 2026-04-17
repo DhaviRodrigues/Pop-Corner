@@ -1,5 +1,5 @@
 import { Text, TouchableOpacity, View,Image } from "react-native";
-import { style } from "@/styles/style";
+import { componentStyle } from "@/styles/component";
 import { ReactNode } from "react";
 
 type ProfileIconProps = {
@@ -8,10 +8,10 @@ type ProfileIconProps = {
 
 export function ProfileIcon({ children }: ProfileIconProps) {
     return (
-        <View style={style.iconPerfilContainer}>
+        <View style={componentStyle.iconPerfilContainer}>
             <Image 
                 source={require('@/screenAssets/icon-perfil.png')} 
-                style={style.iconPerfilImage} 
+                style={componentStyle.iconPerfilImage} 
             />
             {children}
         </View>

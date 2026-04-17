@@ -2,7 +2,9 @@ import { Box } from "@/components/Box";
 import { ButtonGenre } from "@/components/ButtonGenre";
 import { ButtonVoltar } from "@/components/ButtonVoltar";
 import { ButtonY } from "@/components/ButtonY";
-import { style } from "@/styles/style";
+import { miscStyle } from "@/styles/misc";
+import {logoStyle} from "@/styles/logo";
+import { textStyle } from "@/styles/text"
 import { useRouter } from 'expo-router';
 import { Dimensions, Image, Text, View } from "react-native";
 
@@ -12,13 +14,13 @@ export default function Genre(){
     const router = useRouter();
 
     return(
-        <View style={style.background}>
-            <Image source={require('@/screenAssets/logo/full-logo.png')} style={style.logoM} height={height * 1} />
-            <View style={style.center}> 
+        <View style={miscStyle.background}>
+            <Image source={require('@/screenAssets/logo/full-logo.png')} style={logoStyle.logoM} height={height * 1} />
+            <View style={miscStyle.center}> 
                 <Box vw={0.80} padTop={0}>
-                    <View style={style.formContainer}>
-                        <Text style={style.text}>Selecione os seus gêneros favoritos</Text>
-                        <View style={style.genresContainer}>
+                    <View style={miscStyle.formContainer}>
+                        <Text style={textStyle.text}>Selecione os seus gêneros favoritos</Text>
+                        <View style={miscStyle.genresContainer}>
                             <ButtonGenre title='AÇÃO'></ButtonGenre>
                             <ButtonGenre title='DRAMA'></ButtonGenre>
                             <ButtonGenre title='COMÉDIA'></ButtonGenre>
@@ -30,7 +32,7 @@ export default function Genre(){
                             <ButtonGenre title='MUSICAL'></ButtonGenre>
                         </View>
                         <View style={{ marginTop: height * 0.03, marginBottom: height * 0.01, width: '100%' }}>
-                            <Text style={style.message}>*Selecione no mínimo 2 gêneros</Text>
+                            <Text style={textStyle.message}>*Selecione no mínimo 2 gêneros</Text>
                         </View>
                         <ButtonY title="Continuar" onPress={() => router.push('/home')} />
                         <ButtonVoltar title="Voltar" onPress={() => router.push('/register')} />

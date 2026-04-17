@@ -1,4 +1,4 @@
-import { style } from "@/styles/style";
+import { buttonStyle } from "@/styles/button";
 import { Text, TouchableOpacity } from "react-native";
 
 type ButtonProps = {
@@ -14,11 +14,11 @@ type ButtonProps = {
 export function ButtonY({ title, h, w, textSize, align, borderRadius, onPress }: ButtonProps) {
   return (
     <TouchableOpacity 
-      style={[style.buttonY, style.button, { height: h, width: w, justifyContent: align, borderRadius: borderRadius }]} 
+      style={[buttonStyle.buttonY, buttonStyle.button, { height: h, width: w, justifyContent: align, borderRadius: borderRadius }]} 
       activeOpacity={0.7} 
       onPress={onPress}
     >
-      <Text style={[style.buttonText, style.buttonYText, { fontSize: textSize }]}>{title}</Text>
+      <Text style={[buttonStyle.buttonText, buttonStyle.buttonYText, { fontSize: textSize }]}>{title}</Text>
     </TouchableOpacity>
   );
 }

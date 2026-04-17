@@ -1,0 +1,102 @@
+import { Dimensions, Platform, StyleSheet } from "react-native";
+const { height, width } = Dimensions.get("window");
+import COLORS from "@/constants/colors";
+
+export const navBarStyle = StyleSheet.create({
+    navbarWrapper: {
+    width: '100%',
+    height: height * 0.15, 
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 999,
+    justifyContent: 'flex-end', 
+    alignItems: 'center',
+  },
+  navbarContainer: {
+    width: '90%',
+    height: height * 0.1, 
+    backgroundColor: COLORS.red,
+    borderRadius: 32, 
+    shadowColor: '#000',
+    shadowOpacity: 0.50,
+    shadowRadius: 50,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
+    overflow: 'hidden', 
+    zIndex: 2, 
+    marginBottom: Platform.OS === 'ios' ? 20 : 15, 
+  },
+  navbarBackground: {
+    position: 'absolute',
+    bottom: 0,
+    width: '115%',
+    height: height * 0.2, 
+    top: -height * 0.05, 
+    left: '50%',
+    transform: [{ translateX: '-50%' }],
+    zIndex: 1,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    zIndex: 2,
+  },
+  tabContainer: {
+    flex: 1,
+    flexDirection: 'row', 
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    marginHorizontal: 20,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 8,
+  },
+  tabContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 5,
+  },
+  activeTabContent: {
+    backgroundColor: COLORS.gold,
+    width: height * 0.08,
+    height: height * 0.08,
+    borderRadius: height * 0.04,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  iconWrapper: {
+    width: height * 0.06, 
+    height: height * 0.06, 
+    borderRadius: height * 0.03,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageIcon: {
+    width: height * 0.035, 
+    height: height * 0.035, 
+    tintColor: COLORS.gold,
+  },
+  activeImageIcon: {
+    tintColor: COLORS.primary,
+  },
+  label: {
+    fontSize: height * 0.01, 
+    fontFamily: 'Poppins-SemiBold',
+    color: COLORS.gold,
+    marginTop: 2,
+  },
+  activeLabel: {
+    color: COLORS.primary,
+    fontFamily: 'Poppins-SemiBold',
+},
+});
