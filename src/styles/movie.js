@@ -1,6 +1,6 @@
 import { Dimensions, Platform, StyleSheet } from "react-native";
 const { height, width } = Dimensions.get("window");
-import COLORS from "@/constants/colors";
+import { COLORS } from "@/constants/colors";
 
 export const movieStyle = StyleSheet.create({
   filmesContainer: { 
