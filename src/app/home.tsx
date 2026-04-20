@@ -3,7 +3,8 @@ import { MovieCard } from "@/components/MovieCard";
 import { TitleBar } from "@/components/TitleBar";
 import BottomNavbar from "@/components/Navbar";
 import {miscStyle} from "@/styles/misc";
-import {textStyle} from "@/styles/text";
+import { Dimensions } from "react-native";
+const { height } = Dimensions.get("window");
 
 export default function Home() {
   const mockRecommended = [1, 2, 3, 4, 5];
@@ -15,10 +16,7 @@ export default function Home() {
         showsVerticalScrollIndicator={false} 
         style={{ width: '100%' }}
 >
-        <TitleBar 
-          title="Seja bem-vindo, (Nome)" 
-          backgroundSource={require('@/screenAssets/title-rectangle.png')} 
-        />
+      <TitleBar title="Seja Bem-Vindo" />
         <View style={miscStyle.carouselSection}>
           <View style={miscStyle.sectionBadge}>
             <Text style={miscStyle.sectionBadgeText}>Recomendações</Text>
@@ -45,7 +43,7 @@ export default function Home() {
             contentContainerStyle={miscStyle.carouselContainer} 
           />
         </View>
-        <View style={{ height: 150 }} />
+        <View style={{ height: height * 0.3 }} />
       </ScrollView>
       <BottomNavbar />
     </View>
