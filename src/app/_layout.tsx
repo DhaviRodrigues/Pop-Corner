@@ -1,7 +1,8 @@
 import { Stack } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useFonts, Poppins_400Regular, Poppins_600SemiBold,Poppins_700Bold 
+import Head from 'expo-router/head'; 
+import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold 
 } from '@expo-google-fonts/poppins';
 
 SplashScreen.preventAutoHideAsync();
@@ -24,8 +25,20 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-      <Stack.Screen name="index" />
-    </Stack>
+    <>
+      <Head>
+        <title>PopCorner</title>
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossOrigin=""
+        />
+      </Head>
+
+      <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+        <Stack.Screen name="index" />
+      </Stack>
+    </>
   );
 }
