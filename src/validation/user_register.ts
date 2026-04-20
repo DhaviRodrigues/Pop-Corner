@@ -53,3 +53,16 @@ export function validateRegister(
     error: "",
   };
 }
+
+export function getRegisterErrorMessage(errorCode: string): string {
+  switch (errorCode) {
+    case "auth/email-already-in-use":
+      return "Este email já está registrado";
+    case "auth/weak-password":
+      return "Senha muito fraca";
+    case "auth/invalid-email":
+      return "Email inválido";
+    default:
+      return "Erro ao registrar usuário. Tente novamente";
+  }
+}

@@ -1,21 +1,15 @@
-import React, { useState } from "react";
+import React from "react";
 import { Text, TouchableOpacity } from "react-native";
 import { buttonStyle } from "@/styles/button";
 import { textStyle } from "@/styles/text";
 
 type ButtonProps = {
   title: string;
-  onPress?: () => void;
+  selected: boolean;
+  onToggle: () => void;
 };
 
-export function ButtonGenre({ title, onPress }: ButtonProps) {
-  const [selected, setSelected] = useState(false);
-
-  const handlePress = () => {
-    setSelected(!selected);
-    if (onPress) onPress();
-  };
-
+export function ButtonGenre({ title, selected, onToggle }: ButtonProps) {
   return (
     <TouchableOpacity 
       style={[
@@ -23,7 +17,7 @@ export function ButtonGenre({ title, onPress }: ButtonProps) {
         selected && { backgroundColor: '#FFFEB2' }
       ]} 
       activeOpacity={0.7} 
-      onPress={handlePress}
+      onPress={onToggle}
     >
       <Text style={[
         buttonStyle.buttonGenreText,
