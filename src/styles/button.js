@@ -1,5 +1,5 @@
-import { Dimensions, Platform, StyleSheet } from "react-native";
 import { COLORS } from "@/constants/colors";
+import { Dimensions, StyleSheet } from "react-native";
 const { height, width } = Dimensions.get("window");
 
 export const buttonStyle = StyleSheet.create({
@@ -62,5 +62,24 @@ export const buttonStyle = StyleSheet.create({
     fontSize: height * 0.02,
     textAlign: "center",
     borderRadius: 50,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.gold,
+    borderRadius: height * 0.02,
+    paddingVertical: height * 0.012,
+    alignSelf: 'center',
+    width: '40%',
+    height: height * 0.06,
+    marginTop: height * 0.03,
+    marginHorizontal: height * 0.02,
+  },
+  logoutText: {
+    fontSize: height * 0.018,
+    color: COLORS.black,
+    marginLeft: height * 0.01,
+    fontFamily: 'Poppins-Semibold',
   },
 });

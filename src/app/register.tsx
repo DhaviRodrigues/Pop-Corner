@@ -12,11 +12,13 @@ import { validateRegister } from "@/validation/user_register";
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, Image, ScrollView, Text, View } from "react-native";
+import { useUserRegistration } from '@/contexts/UserRegistrationContext';
 
 const { height } = Dimensions.get('window');
 
 export default function Register(){
     const router = useRouter();
+    const { setData } = useUserRegistration();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -32,6 +34,14 @@ export default function Register(){
             setShowValidationPopup(true);
             return;
         }
+
+        // Salvar dados no contexto
+        setData({
+            name: name.trim(),
+            email: email.trim(),
+            password,
+            favoriteGenres: [], // será definido depois
+        });
 
         router.push('/verificacaoEmail');
     };

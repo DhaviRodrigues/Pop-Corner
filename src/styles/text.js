@@ -50,4 +50,12 @@ export const textStyle = StyleSheet.create({
     fontWeight: 'bold', 
     color: '#000' 
   },
+  profileText: {
+    fontSize: height * 0.025,
+    maxWidth: "80%",
+    paddingTop: height * 0.05,
+    color: COLORS.gold,
+    fontFamily: "Poppins-SemiBold",
+    textAlign: "center",
+  },
 });

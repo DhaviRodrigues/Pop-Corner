@@ -6,31 +6,50 @@ import { ValidationPopup } from "@/components/ValidationPopup";
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
+import { loginUser, fetchUserData } from "@/services/auth";
 import { validateLogin } from "@/validation/login";
+import { useUser } from "@/contexts/UserContext";
 import { Link, useRouter } from 'expo-router';
 import { useState } from "react";
-import { Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
 const { height } = Dimensions.get('window');
 
 export default function Index(){
     const router = useRouter();
+    const { setUser } = useUser();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [validationMessage, setValidationMessage] = useState("");
     const [showValidationPopup, setShowValidationPopup] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    function handleLogin() {
-        const result = validateLogin(email, password);
+    async function handleLogin() {
+        const validation = validateLogin(email, password);
+        if (!validation.valid) {
+            setValidationMessage(validation.error);
+            setShowValidationPopup(true);
+            return;
+        }
+
+        setIsLoading(true);
+        const result = await loginUser(email, password);
 
         if (result.valid) {
+            const userData = await fetchUserData();
+            if (userData) {
+                setUser(userData);
+            }
+
             setShowValidationPopup(false);
             setValidationMessage("");
+            setIsLoading(false);
             router.push('/home');
             return;
         }
 
         setValidationMessage(result.error);
         setShowValidationPopup(true);
+        setIsLoading(false);
     }
 
     function closeValidationPopup() {
@@ -65,7 +84,11 @@ export default function Index(){
                                 <Text style={textStyle.underlineText}>Esqueceu a Senha?</Text>
                             </TouchableOpacity>
                         </Link>
-                        <ButtonY title="Entrar" onPress={handleLogin} />
+                        {isLoading ? (
+                            <ActivityIndicator size="large" color="#FFD60A" style={{ marginVertical: height * 0.02 }} />
+                        ) : (
+                            <ButtonY title="Entrar" onPress={handleLogin} />
+                        )}
                         <View style={{ marginTop: height * 0.005, marginBottom: height * 0.000, width: '100%' }}>
                             <Text style={textStyle.message}>Ainda não possui uma conta?</Text>
                         </View>

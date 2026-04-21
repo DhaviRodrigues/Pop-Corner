@@ -8,9 +8,8 @@ export const miscStyle = StyleSheet.create({
     width: "100%",
     height: "100%",
     backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "flex-start",
     overflow: "hidden",
+    alignItems: "center",
   },
   center: {
     alignItems: "center",
