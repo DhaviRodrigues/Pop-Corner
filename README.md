@@ -57,12 +57,20 @@ npx expo start
 
 ```text
 📦 popcorner
- ┣ 📂 app/             # Rotas e telas (Home, Filmes, Cinemas)
- ┣ 📂 assets/          # Ícones, imagens e a identidade visual (Pipokas)
- ┣ 📂 components/      # Componentes de UI (Cards, Botões de Resgate, Modais)
- ┣ 📂 constants/       # Configurações de cores e estilos
- ┣ 📜 app.json         # Configurações do Expo
- ┗ 📜 package.json     # Scripts e dependências
+ ┣ 📂 assets/              # Ícones globais e imagens de configuração
+ ┣ 📂 scripts/             # Scripts utilitários de automação
+ ┣ 📂 src/                 # Código-fonte principal da aplicação
+ ┃ ┣ 📂 app/               # Rotas e telas principais (Expo Router)
+ ┃ ┣ 📂 components/        # Componentes reutilizáveis de UI
+ ┃ ┣ 📂 constants/         # Variáveis globais, cores e métricas
+ ┃ ┣ 📂 data/              # Dados mockados, chamadas de API ou contextos
+ ┃ ┣ 📂 screenAssets/      # Imagens e recursos visuais específicos por tela
+ ┃ ┣ 📂 styles/            # Estilização global e temas
+ ┃ ┗ 📂 types/             # Tipagens do TypeScript
+ ┣ 📜 app.json             # Configurações do projeto Expo
+ ┣ 📜 index.js             # Ponto de entrada da aplicação
+ ┣ 📜 package.json         # Scripts e dependências
+ ┗ 📜 tsconfig.json        # Configurações do compilador TypeScript
 ```
 
 ---
