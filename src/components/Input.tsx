@@ -3,7 +3,7 @@ import { Image, ImageSourcePropType, TextInput, View } from "react-native";
 
 // Definição da interface para garantir a tipagem estática das propriedades do componente.
 type InputProps = {
-  icon: ImageSourcePropType;
+  icon?: ImageSourcePropType;
   text: string;
   secureTextEntry?: boolean;
   value?: string;
@@ -13,7 +13,9 @@ type InputProps = {
 export function Input({ icon, text, secureTextEntry, value, onChangeText }: InputProps) {
   return (
     <View style={componentStyle.inputContainer}>
-      <Image source={icon} style={componentStyle.inputIcon} resizeMode="contain" />
+      {icon && (
+        <Image source={icon} style={componentStyle.inputIcon} resizeMode="contain" />
+      )}
       
       <TextInput
         placeholder={text}
