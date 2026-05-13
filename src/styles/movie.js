@@ -137,4 +137,21 @@ export const movieStyle = StyleSheet.create({
     color: "#FFFEB2",
     fontSize: height * 0.014,
   },
+  detailsHeaderPill: {
+    backgroundColor: "#2A0800",
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.1,
+    borderRadius: height * 0.03,
+    alignSelf: 'center',
+    marginTop: height * 0.02,
+    marginBottom: height * 0.03,
+    borderWidth: 2,
+    borderColor: "#FE481B",
+  },
+  detailsTitleText: {
+    color: "#FFFEB2",
+    fontSize: height * 0.022,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
 });
