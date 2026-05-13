@@ -189,4 +189,33 @@ export const movieStyle = StyleSheet.create({
     fontWeight: "bold",
     fontSize: height * 0.016,
   },
+  detailsSynopsisCard: {
+    backgroundColor: "#FFF",
+    marginHorizontal: width * 0.05,
+    padding: width * 0.05,
+    borderRadius: height * 0.02,
+    marginVertical: height * 0.02,
+  },
+  detailsSectionGrey: {
+    backgroundColor: "#D9D9D9", 
+    marginHorizontal: width * 0.05,
+    padding: width * 0.05,
+    borderRadius: height * 0.02,
+    marginVertical: height * 0.015,
+  },
+  detailsReviewInput: {
+    backgroundColor: "#FFF",
+    borderRadius: height * 0.015,
+    padding: width * 0.04,
+    height: height * 0.12,
+    textAlignVertical: 'top',
+    marginBottom: height * 0.015,
+  },
+  detailsReviewItem: {
+    backgroundColor: "#FFF",
+    padding: width * 0.03,
+    borderRadius: height * 0.015,
+    marginBottom: height * 0.01,
+    flexDirection: 'row',
+  },
 });
