@@ -10,9 +10,10 @@ type ButtonProps = {
   align?: "flex-start" | "center" | "flex-end";
   borderRadius?: number;
   onPress?: () => void;
+  disabled?: boolean;
 };
 
-export function ButtonY({ title, h, w, textSize, align, borderRadius, onPress }: ButtonProps) {
+export function ButtonY({ title, h, w, textSize, align, borderRadius, onPress, disabled }: ButtonProps) {
   const { height, width: screenWidth } = useWindowDimensions();
 
   const dynamicHeight = h || height * 0.07;
@@ -36,11 +37,13 @@ export function ButtonY({ title, h, w, textSize, align, borderRadius, onPress }:
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 15 },
         shadowOpacity: 0.25,
-        shadowRadius: dynamicShadowRadius
+        shadowRadius: dynamicShadowRadius,
+        opacity: disabled ? 0.7 : 1
       }]} 
       // Mantendo o activeOpacity em 0.7 pra dar um feedback de clique mais natural, padronizando com o comportamento do ButtonB.
       activeOpacity={0.7} 
       onPress={onPress}
+      disabled={disabled}
     >
       {/* Mesma lógica de array no Text pra permitir que a prop textSize mude o tamanho da fonte caso a tela precise de um texto de botão maior ou menor que o padrão */}
       <Text style={[buttonStyle.buttonText, buttonStyle.buttonYText, { fontSize: dynamicTextSize }]}>{title}</Text>

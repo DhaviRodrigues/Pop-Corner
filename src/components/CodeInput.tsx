@@ -2,7 +2,11 @@ import React, { useRef, useState } from "react";
 import { StyleSheet, TextInput, View } from "react-native";
 import { componentStyle } from "@/styles/component";
 
-export default function CodeInput() {
+type CodeInputProps = {
+  onCodeChange: (code: string) => void;
+};
+
+export default function CodeInput({ onCodeChange }: CodeInputProps) {
   // A gente precisa do useRef aqui em formato de array para guardar a referência (o controle direto) de cada um dos 5 quadradinhos de texto. 
   // Sem isso, o React Native não deixa a gente forçar o teclado a pular pro próximo input via código.
   const inputRefs = useRef<Array<TextInput | null>>([]);
@@ -15,6 +19,8 @@ export default function CodeInput() {
     const newCode = [...code];
     newCode[index] = text;
     setCode(newCode);
+
+    onCodeChange(newCode.join(""));
 
     // A mágica do auto-focus: se o cara digitou um número (text tem valor) e a gente não está no último quadradinho (index < 4), 
     // a gente acessa a referência do próximo input (index + 1) e chama o .focus() pra jogar o cursor pra lá.
