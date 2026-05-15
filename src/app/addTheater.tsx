@@ -35,7 +35,6 @@ function LocalInput({ text, value, onChangeText }: { text: string, value: string
   );
 }
 
-// --- TELA PRINCIPAL ---
 export default function CreateCinema() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
@@ -47,9 +46,18 @@ export default function CreateCinema() {
   const [latitude, setLatitude] = useState<string>("");
   const [longitude, setLongitude] = useState<string>("");
   const [urlImagem, setUrlImagem] = useState<string>("");
-  
+
   const [idFilme, setIdFilme] = useState<string>("");
-  const [horario, setHorario] = useState<string>("");
+  const [dataSessao, setDataSessao] = useState<string>("");
+  const [horarioSessao, setHorarioSessao] = useState<string>("");
+
+  const handleAdicionarFilme = () => {
+    console.log("Filme adicionado:", { idFilme });
+  };
+
+  const handleAdicionarSessao = () => {
+    console.log("Sessão adicionada:", { dataSessao, horarioSessao });
+  };
 
   const handleConfirmar = () => {
     console.log("A enviar para o Control:", { nome, cidade, endereco, latitude, longitude, urlImagem });
@@ -108,22 +116,41 @@ export default function CreateCinema() {
           </View>
 
           <View style={styles.grayBoxContainer}>
-            <Text style={styles.grayBoxTitle}>
-              Adicionar Filmes em Cartaz
-            </Text>
+            <Text style={styles.grayBoxTitle}>Adicionar Filmes em Cartaz</Text>
             
-            <View style={styles.row}>
-              <View style={styles.halfInput}>
-                <LocalInput text="ID" value={idFilme} onChangeText={setIdFilme} />
+            <View style={styles.fullInput}>
+              <LocalInput text="ID do Filme" value={idFilme} onChangeText={setIdFilme} />
+            </View>
+
+            <View style={styles.buttonWrapper}>
+              <ButtonY title="Adicionar" onPress={handleAdicionarFilme} />
+            </View>
+          </View>
+
+          <View style={styles.grayBoxContainer}>
+            <Text style={styles.grayBoxTitle}>Adicionar Sessões</Text>
+            
+            <View style={styles.sessionRow}>
+              <TouchableOpacity style={[componentStyle.inputContainer, styles.mockDropdown]}>
+                <Text style={styles.dropdownText}>Filmez em Cartaz</Text>
+                <Text style={styles.dropdownIcon}>▼</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.sessionSmallInput}>
+                <LocalInput text="Data" value={dataSessao} onChangeText={setDataSessao} />
               </View>
-              <View style={styles.halfInput}>
-                <LocalInput text="Horário(Ex: 11:30)" value={horario} onChangeText={setHorario} />
+              <View style={styles.sessionSmallInput}>
+                <LocalInput text="Hora" value={horarioSessao} onChangeText={setHorarioSessao} />
               </View>
             </View>
 
-            <Text style={styles.grayBoxSubtitle}>
-              Filmes em Cartaz
-            </Text>
+            <View style={styles.buttonWrapper}>
+              <ButtonY title="Adicionar" onPress={handleAdicionarSessao} />
+            </View>
+          </View>
+
+          <View style={styles.grayBoxContainer}>
+            <Text style={styles.grayBoxTitle}>Sessões Atuais:</Text>
 
             <ScrollView 
               style={styles.mockListContainer}
@@ -150,7 +177,6 @@ export default function CreateCinema() {
   );
 }
 
-// --- ESTILOS ---
 const getStyles = (width: number, height: number) => StyleSheet.create({
   backButtonContainer: {
     position: "absolute",
@@ -163,7 +189,7 @@ const getStyles = (width: number, height: number) => StyleSheet.create({
     height: width * 0.12,
   },
   scrollContent: {
-    paddingBottom: height * 0.3, 
+    paddingBottom: height * 0.2, 
     paddingTop: height * 0.02, 
   },
   formContainer: {
@@ -188,26 +214,54 @@ const getStyles = (width: number, height: number) => StyleSheet.create({
     width: "100%",
     marginVertical: height * 0.015, 
   },
+
   grayBoxContainer: {
     width: "100%",
-    backgroundColor: "#D9D9D9", 
+    backgroundColor: COLORS.textMuted, 
     borderRadius: 20, 
     padding: width * 0.04, 
-    marginTop: height * 0.01,
+    marginTop: height * 0.02,
   },
   grayBoxTitle: {
     fontWeight: "bold",
     color: COLORS.black,
     marginBottom: height * 0.015,
-    fontSize: width * 0.045,
+    fontSize: width * 0.042,
   },
-  grayBoxSubtitle: {
-    fontWeight: "bold",
-    color: COLORS.black,
+  buttonWrapper: {
+    width: "60%", 
+    alignSelf: "center",
     marginTop: height * 0.01,
-    marginBottom: height * 0.01,
-    fontSize: width * 0.045,
   },
+
+  sessionRow: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: height * 0.015,
+  },
+  mockDropdown: {
+    flex: 2, 
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    height: 50, 
+  },
+  dropdownText: {
+    color: COLORS.textMuted,
+    fontSize: width * 0.035,
+  },
+  dropdownIcon: {
+    color: COLORS.textMuted,
+    fontSize: width * 0.035,
+  },
+  sessionSmallInput: {
+    flex: 1.2, 
+  },
+
   mockListContainer: {
     maxHeight: height * 0.15, 
     backgroundColor: COLORS.white, 
@@ -215,7 +269,7 @@ const getStyles = (width: number, height: number) => StyleSheet.create({
     padding: 15,
   },
   mockListText: {
-    color: COLORS.textMuted,
+    color: COLORS.textMuted, 
     fontSize: width * 0.035,
     marginBottom: 8, 
   }
