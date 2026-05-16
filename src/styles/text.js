@@ -3,7 +3,7 @@ const { height, width } = Dimensions.get("window");
 import { COLORS } from "@/constants/colors";
 
 export const textStyle = StyleSheet.create({
-    message: {
+  message: {
     fontSize: height * 0.014,
     color: COLORS.gold,
     maxHeight:"90%",
@@ -24,7 +24,7 @@ export const textStyle = StyleSheet.create({
     fontFamily: "Poppins-SemiBold",
     textDecorationLine: "underline",
   },
-    outBoxMessage: {
+  outBoxMessage: {
     fontSize: height * 0.030,
     color: COLORS.gold,
     textShadowColor: COLORS.primary,
@@ -57,5 +57,59 @@ export const textStyle = StyleSheet.create({
     color: COLORS.gold,
     fontFamily: "Poppins-SemiBold",
     textAlign: "center",
+  },
+  detailsRatingScore: {
+    color: '#FFFEB2', 
+    fontSize: 20, 
+    fontWeight: 'bold',
+  },
+  detailsRatingCount: {
+    color: '#FFFEB2', 
+    fontSize: 12,
+  },
+  detailsSectionTitle: {
+    textAlign: 'center', 
+    fontWeight: 'bold', 
+    fontSize: 16, 
+    marginBottom: 10, 
+    color: '#000',
+  },
+  detailsUserStars: {
+    fontSize: 28, 
+    color: '#B22300',
+  },
+  detailsReviewUser: {
+    fontWeight: 'bold', 
+    fontSize: 13, 
+    color: '#000',
+  },
+  detailsReviewStars: {
+    color: '#B22300', 
+    fontSize: 12,
+  },
+  detailsReviewText: {
+    fontSize: 11, 
+    color: '#555', 
+    marginTop: 2,
+  },
+  detailsInfoLabel: {
+    color: '#FFFEB2',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  detailsInfoValue: {
+    fontWeight: 'normal',
+  },
+  detailsTitleText: {
+    color: "#FFFEB2",
+    fontSize: height * 0.022,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  detailsSynopsisText: {
+    lineHeight: 22, 
+    color: "#000",
+    textAlign: 'left', 
+    fontSize: height * 0.018,
   },
 });
