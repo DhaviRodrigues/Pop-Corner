@@ -1,5 +1,7 @@
 import { COLORS } from "@/constants/colors";
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
+
+const { height } = Dimensions.get("window");
 
 export const buttonStyle = StyleSheet.create({
   button: {
@@ -50,6 +52,9 @@ export const buttonStyle = StyleSheet.create({
     backgroundColor: COLORS.gold,
     alignSelf: "center",
     width: "40%",
+    paddingVertical: height * 0.02,
+    marginTop: height * 0.02,
+    borderRadius: 12,
   },
   logoutText: {
     color: COLORS.black,
