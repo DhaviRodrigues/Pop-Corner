@@ -14,8 +14,9 @@ export const profileStyle = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: height * 0.01,
+    paddingVertical: height * 0.008,
     paddingHorizontal: width * 0.02,
+    marginBottom: height * 0.02,
   },
   configLeftContent: {
     flexDirection: 'row',
@@ -24,13 +25,15 @@ export const profileStyle = StyleSheet.create({
   },
   configIcon: {
     marginRight: 15,
-    height: height * 0.04,
+    height: height * 0.05,
+    width: height * 0.05,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconImage: {
-    width: height * 0.02,
-    height: height * 0.02,
+    width: height * 0.03,
+    height: height * 0.03,
+    resizeMode: 'contain',
   },
   configTextContent: {
     flex: 1,
@@ -42,7 +45,7 @@ export const profileStyle = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
   },
   configDescription: {
-    fontSize: height * 0.010,
+    fontSize: height * 0.013,
     color: COLORS.white,
     fontFamily: 'Poppins-Light',
   },

@@ -112,4 +112,11 @@ export const textStyle = StyleSheet.create({
     textAlign: 'left', 
     fontSize: height * 0.018,
   },
+  profileName: {
+    fontSize: height * 0.022,
+    marginTop: height * 0.015,
+    color: COLORS.gold,
+    fontFamily: "Poppins-SemiBold",
+    textAlign: "center",
+  },
 });

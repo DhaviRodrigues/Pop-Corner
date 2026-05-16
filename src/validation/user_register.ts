@@ -44,7 +44,7 @@ export function validateRegister(
   if (password !== confirmPassword) {
     return {
       valid: false,
-      error: "Senha e confirmar senha devem ser idênticas",
+      error: "As senhas devem ser idênticas",
     };
   }
 

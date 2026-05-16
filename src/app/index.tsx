@@ -4,7 +4,7 @@ import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
 import { useUser } from "@/contexts/UserContext";
-import { fetchUserData, loginUser } from "@/services/auth";
+import { fetchUserData, loginUser } from "@/services/authentication";
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
