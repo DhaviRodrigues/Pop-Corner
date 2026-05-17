@@ -37,13 +37,15 @@ export default function UpdateProfile() {
             iconSource={require('@/screenAssets/icons/profile-icon.svg')}
             title="Alterar Nome de Usuário"
             description="Renomeia o nome do usuário"
-            onPress={() => null}
+            color = {COLORS.white}
+            onPress={() => router.push('/nameUpdate')}
           />
 
           <BoxDarkSelection
             iconSource={require('@/screenAssets/trashbin.svg')}
             title="Remover Foto de Perfil"
             description="Restaura a foto de perfil para a imagem padrão"
+            color = {COLORS.white}
             onPress={() => null}
           />
 
@@ -66,7 +68,6 @@ export default function UpdateProfile() {
             title="Deletar Perfil"
             description="Remova sua conta permanentemente"
             onPress={() => null}
-            color={COLORS.gold}
             style={{ marginTop: height * 0.015}}
           />
         </BoxDark>
