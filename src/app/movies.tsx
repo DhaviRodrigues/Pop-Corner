@@ -111,7 +111,7 @@ export default function MoviesScreen() {
       <TouchableOpacity 
         style={movieStyle.filmesDetailsButton}
         onPress={() => router.push({
-          pathname: '/filme-details' as any,
+          pathname: '/movieDetails' as any,
           params: { id: item.id } 
         })}
       >

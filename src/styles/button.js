@@ -60,4 +60,23 @@ export const buttonStyle = StyleSheet.create({
     color: COLORS.black,
     fontFamily: "Poppins-Semibold",
   },
+  buttonAddWatchlist: {
+    backgroundColor: COLORS.gold,
+    paddingVertical: 12, 
+    width: '65%', 
+    borderRadius: 50, 
+    alignSelf: "center",
+    marginTop: 15,
+    elevation: 5,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  buttonAddWatchlistText: {
+    color: COLORS.black,
+    fontSize: 16, 
+    fontFamily: "Poppins-SemiBold", 
+    textAlign: "center",
+  },
 });
