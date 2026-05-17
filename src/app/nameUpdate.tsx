@@ -51,9 +51,9 @@ export default function NameUpdate() {
   return (
     <View style={miscStyle.background}>
       <View style={miscStyle.center}>
-        <Image source={require("../screenAssets/escudo-pipoca.png")} style={logoStyle.escudo} />
+        <Image source={require("@/screenAssets/logo/full-logo.png")} style={logoStyle.escudo} />
 
-        <Text style={[textStyle.outBoxMessage, { marginBottom: height * 0.03 }]}>Verificação de Segurança</Text>
+        <Text style={[textStyle.outBoxMessage, { marginBottom: height * 0.03, marginTop: height * 0.03 }]}>Altere seu Nome</Text>
 
         <View style={{ marginTop: height * 0.03 }}>
           <Box vw={0.8} padTop={height * 0.02}>
@@ -62,7 +62,7 @@ export default function NameUpdate() {
               <Text style={[textStyle.text, { textAlign: "center", width: "100%" }]}>Insira seu Novo Nome:</Text>
 
               <Input
-                icon={require("@/screenAssets/icons/password-icon.png")}
+                icon={require("@/screenAssets/icons/profile-icon.svg")}
                 text="Nome:"
                 value={newName}
                 onChangeText={setNewName}

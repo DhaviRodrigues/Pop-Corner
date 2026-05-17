@@ -16,7 +16,7 @@ export const profileStyle = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: height * 0.008,
     paddingHorizontal: width * 0.02,
-    marginBottom: height * 0.02,
+    marginBottom: height * 0.015,
   },
   configLeftContent: {
     flexDirection: 'row',
