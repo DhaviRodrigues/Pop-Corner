@@ -30,6 +30,6 @@ export function getLoginErrorMessage(errorCode: string): string {
         case "auth/invalid-credential":
             return "Email ou senha incorretos";
         default:
-            return "Erro ao fazer login. Tente novamente";
+            return "Erro ao realizar login. Tente novamente";
     }
 }

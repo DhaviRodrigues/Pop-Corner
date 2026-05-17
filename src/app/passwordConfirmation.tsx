@@ -9,7 +9,7 @@ import { auth } from "@/config/firebase";
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
@@ -21,8 +21,9 @@ export default function PasswordConfirmation() {
   const [validationMessage, setValidationMessage] = useState("");
   const [showValidationPopup, setShowValidationPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { from } = useLocalSearchParams<{ from: string }>();
 
-  const handleConfirm = async () => {
+  const handleConfirm = async (targetPath: string) => {
     const email = auth.currentUser?.email ?? "";
     const validation = validateLogin(email, password);
 
@@ -43,7 +44,11 @@ export default function PasswordConfirmation() {
       return;
     }
 
-    router.push('/passwordUpdate');
+    if (from === 'profile') {
+      router.push('/updatePassword');
+    } else if (from === 'updateProfile') {
+      router.push('/');
+    }
   };
 
   const closeValidationPopup = () => {
@@ -74,9 +79,9 @@ export default function PasswordConfirmation() {
               {isLoading ? (
                 <ActivityIndicator size="large" color="#FFD60A" style={{ marginVertical: height * 0.02 }} />
               ) : (
-                <ButtonY title="Confirmar" onPress={handleConfirm} />
+                <ButtonY title="Confirmar" onPress={() => handleConfirm(from)} />
               )}
-              <ButtonVoltar title="Voltar" onPress={() => router.push('/profile')} />
+              <ButtonVoltar title="Voltar" onPress={() => router.back()} />
             </View>
           </Box>
         </View>

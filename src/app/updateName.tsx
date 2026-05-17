@@ -73,7 +73,7 @@ export default function NameUpdate() {
               ) : (
                 <ButtonY title="Confirmar" onPress={handleConfirm} />
               )}
-              <ButtonVoltar title="Voltar" onPress={() => router.push('/profile')} />
+              <ButtonVoltar title="Voltar" onPress={() => router.back()} />
             </View>
           </Box>
         </View>

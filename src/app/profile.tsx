@@ -52,7 +52,10 @@ export default function Profile(){
     };
 
     const handleChangePassword = () => {
-        router.push('/passwordConfirmation');
+        router.push({
+            pathname: '/passwordConfirmation',
+            params: { from: 'profile' }
+        });
     };
 
     // Faz logout no Firebase, reseta contexts e redireciona para a tela inicial

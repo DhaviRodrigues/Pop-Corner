@@ -46,6 +46,14 @@ export const componentStyle = StyleSheet.create({
     borderRadius: (height * 0.15) / 2,
     resizeMode: "contain",
   },
+  popUpButtonContainer: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 70,
+  marginTop: 12,
+  width: "100%",
+},
   editButtonContainer: {
     position: "absolute",
     bottom: 0,

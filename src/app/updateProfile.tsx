@@ -6,12 +6,24 @@ import { COLORS } from "@/constants/colors";
 import { miscStyle } from "@/styles/misc";
 import { useRouter } from "expo-router";
 import { Dimensions, Image, ScrollView, View } from "react-native";
+import { ConfirmPopup } from "@/components/ConfirmPopup";
+import { useState } from "react";
 
 const { height } = Dimensions.get("window");
 
 export default function UpdateProfile() {
+  //const { user, setUser, logout } = useUser();
   const router = useRouter();
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
 
+  const handleConfirmDeactivateAccount = () => {
+        setShowDeletePopup(false);
+        router.push({
+          pathname: '/passwordConfirmation',
+          params: { from: 'updateProfile' }
+        });
+  };
+    
   return (
     <View style={miscStyle.background}>
       <TitleBar title="Configurações de Perfil" compact />
@@ -38,7 +50,7 @@ export default function UpdateProfile() {
             title="Alterar Nome de Usuário"
             description="Renomeia o nome do usuário"
             color = {COLORS.white}
-            onPress={() => router.push('/nameUpdate')}
+            onPress={() => router.push('/updateName')}
           />
 
           <BoxDarkSelection
@@ -67,13 +79,19 @@ export default function UpdateProfile() {
             iconSource={require('@/screenAssets/trashbin.svg')}
             title="Deletar Perfil"
             description="Remova sua conta permanentemente"
-            onPress={() => null}
+            onPress={() => setShowDeletePopup(true)}
             style={{ marginTop: height * 0.015}}
           />
         </BoxDark>
 
         <ButtonY title="Voltar" onPress={() => router.push('/profile')} />
       </ScrollView>
+      <ConfirmPopup 
+        visible={showDeletePopup}
+        message="Tem certeza que deseja remover seu perfil permanentemente?"
+        onClose={() => setShowDeletePopup(false)}
+        onConfirm={handleConfirmDeactivateAccount}
+      />
     </View>
   );
 }
