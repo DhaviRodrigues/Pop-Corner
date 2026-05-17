@@ -92,16 +92,14 @@ export const movieStyle = StyleSheet.create({
     justifyContent: "center",
     width: "100%",
     marginVertical: height * 0.015,
-    marginLeft: "10%", 
   },
   filmesInputWrapper: {
-    width: '120%',
+    flex: 1,
     elevation: 8,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 15,
     borderRadius: 8,
-    marginLeft: 12, 
   },
   filmesDetailsButtonText: {
     color: "#FFFEB2",

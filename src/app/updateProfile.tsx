@@ -4,7 +4,6 @@ import { ButtonY } from "@/components/ButtonY";
 import { TitleBar } from "@/components/TitleBar";
 import { COLORS } from "@/constants/colors";
 import { miscStyle } from "@/styles/misc";
-import { profileStyle } from "@/styles/profile";
 import { useRouter } from "expo-router";
 import { Dimensions, Image, ScrollView, View } from "react-native";
 

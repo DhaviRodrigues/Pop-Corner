@@ -51,7 +51,7 @@ export const buttonStyle = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: COLORS.gold,
     alignSelf: "center",
-    width: "40%",
+    width: "52%",
     paddingVertical: height * 0.02,
     marginTop: height * 0.02,
     borderRadius: 12,

@@ -5,7 +5,6 @@ import { MyCoupons } from "@/components/MyCoupons";
 import BottomNavbar from "@/components/Navbar";
 import { ProfileIcon } from "@/components/ProfileIcon";
 import { UserPipoka } from "@/components/UserPipoka";
-import { COLORS } from "@/constants/colors";
 import { useUser } from "@/contexts/UserContext";
 import { signOut } from 'firebase/auth';
 import { auth } from '@/config/firebase';
@@ -14,7 +13,7 @@ import { profileStyle } from "@/styles/profile";
 import { textStyle } from "@/styles/text";
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, ScrollView, Text, View } from "react-native";
 
 // Pega a altura da tela pra garantir que os espaçamentos (tipo o padTop da BoxDark lá embaixo) fiquem proporcionais em qualquer celular.
 const { height } = Dimensions.get('window');
@@ -31,7 +30,7 @@ export default function Profile(){
     };
 
     const handleChangePassword = () => {
-        router.push('/passwordRecovery');
+        router.push('/passwordConfirmation');
     };
 
     // Faz logout no Firebase, reseta contexts e redireciona para a tela inicial

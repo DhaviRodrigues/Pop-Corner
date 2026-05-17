@@ -10,9 +10,7 @@ import SortFilterBar from '@/components/SortFilterBar';
 import GenreFilter from '@/components/GenreFilter';
 
 import { movieStyle } from '@/styles/movie';
-import { miscStyle } from '@/styles/misc';
 import { textStyle } from '@/styles/text';
-import { logoStyle } from '@/styles/logo';
 
 function DynamicStars({ rating }: { rating: number }) {
   const fill1 = Math.max(0, Math.min(1, rating - 0));
