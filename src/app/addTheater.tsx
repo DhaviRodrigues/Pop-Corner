@@ -5,13 +5,15 @@ import { componentStyle } from "@/styles/component";
 import { COLORS } from "@/constants/colors"; 
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Image, StyleSheet, Text, useWindowDimensions, View, ScrollView, TouchableOpacity, TextInput } from "react-native";
+import { Alert, Image, StyleSheet, Text, useWindowDimensions, View, ScrollView, TouchableOpacity, TextInput } from "react-native";
+
+import { Cinema } from "@/types/cinema"; 
+import { Sessao } from "@/types/sessao"; 
+import { registerCinema } from "@/services/cinemaService";
 
 import { ButtonY } from "../components/ButtonY";
 import BottomNavbar from "../components/Navbar"; 
 
-// --- COMPONENTE LOCAL ---
-// Substitui o Input global apenas nesta tela para garantir o alinhamento e evitar vazamento de texto.
 function LocalInput({ text, value, onChangeText }: { text: string, value: string, onChangeText: (v: string) => void }) {
   return (
     <View style={[componentStyle.inputContainer, { width: '100%', overflow: 'hidden' }]}>
@@ -48,19 +50,101 @@ export default function CreateCinema() {
   const [urlImagem, setUrlImagem] = useState<string>("");
 
   const [idFilme, setIdFilme] = useState<string>("");
+  const [filmeSessao, setFilmeSessao] = useState<string>("");
   const [dataSessao, setDataSessao] = useState<string>("");
   const [horarioSessao, setHorarioSessao] = useState<string>("");
+  const [dropdownAberto, setDropdownAberto] = useState(false);
+
+  const [filmesEmCartaz, setFilmesEmCartaz] = useState<string[]>([]);
+  const [sessoes, setSessoes] = useState<{ idFilme: string; data: string; horario: string }[]>([]);
+
+  const [erroSessao, setErroSessao] = useState<string>("");
+  const [erroCinema, setErroCinema] = useState<string>("");
+
+  const isCinemaPronto = !!(
+    nome.trim() && 
+    cidade.trim() && 
+    endereco.trim() && 
+    latitude.trim() && 
+    longitude.trim() && 
+    urlImagem.trim()
+  );
+
 
   const handleAdicionarFilme = () => {
-    console.log("Filme adicionado:", { idFilme });
+    if (!idFilme.trim()) {
+      Alert.alert("Aviso", "Digite o ID do filme antes de adicionar.");
+      return;
+    }
+    
+    setFilmesEmCartaz(prev => {
+      const novaLista = [...prev, idFilme.trim()];
+      if (novaLista.length === 1) {
+        setFilmeSessao(novaLista[0]);
+      }
+      return novaLista;
+    });
+    
+    setIdFilme("");
   };
 
   const handleAdicionarSessao = () => {
-    console.log("Sessão adicionada:", { dataSessao, horarioSessao });
+    setErroSessao(""); // Limpa o erro anterior logo que clica
+
+    if (!filmeSessao || filmesEmCartaz.length === 0) {
+      setErroSessao("Por favor, selecione um filme no dropdown.");
+      return;
+    }
+
+    try {
+      Sessao.createSessao({ idFilme: filmeSessao, data: dataSessao, horario: horarioSessao });
+
+      const novaSessao = {
+        idFilme: filmeSessao, 
+        data: dataSessao.trim(),
+        horario: horarioSessao.trim()
+      };
+
+      setSessoes(prev => [...prev, novaSessao]);
+      setDataSessao("");
+      setHorarioSessao("");
+
+    } catch (error: any) {
+      setErroSessao(error.message);
+    }
   };
 
-  const handleConfirmar = () => {
-    console.log("A enviar para o Control:", { nome, cidade, endereco, latitude, longitude, urlImagem });
+  const handleConfirmar = async () => {
+    setErroCinema(""); 
+
+    if (!isCinemaPronto) {
+      setErroCinema("Por favor, preencha todos os dados básicos do cinema primeiro.");
+      return; 
+    }
+
+    try {
+      const sessoesInstanciadas = sessoes.map((sessaoCrua) => {
+        return Sessao.createSessao({
+          idFilme: sessaoCrua.idFilme, data: sessaoCrua.data, horario: sessaoCrua.horario
+        });
+      });
+
+      const novoCinema = Cinema.createCinema({
+        nome, cidade, endereco, latitude, longitude, urlImagem, filmesEmCartaz, sessoes: sessoesInstanciadas
+      });
+
+      const resultado = await registerCinema(novoCinema);
+
+      if (resultado.valid) {
+        Alert.alert("Sucesso!", "O cinema foi cadastrado.");
+        router.back(); 
+      } else {
+        setErroCinema(resultado.error);
+      }
+
+    } catch (error: any) {
+      setErroCinema(error.message);
+    }
   };
 
   return (
@@ -115,7 +199,10 @@ export default function CreateCinema() {
             <LocalInput text="URL da Imagem ou Arquivo" value={urlImagem} onChangeText={setUrlImagem} />
           </View>
 
-          <View style={styles.grayBoxContainer}>
+          <View 
+            style={[styles.grayBoxContainer, !isCinemaPronto && { opacity: 0.4 }]}
+            pointerEvents={isCinemaPronto ? "auto" : "none"}
+          >
             <Text style={styles.grayBoxTitle}>Adicionar Filmes em Cartaz</Text>
             
             <View style={styles.fullInput}>
@@ -127,14 +214,42 @@ export default function CreateCinema() {
             </View>
           </View>
 
-          <View style={styles.grayBoxContainer}>
+          <View 
+            style={[styles.grayBoxContainer, { zIndex: 50, elevation: 5 }, !isCinemaPronto && { opacity: 0.4 }]}
+            pointerEvents={isCinemaPronto ? "auto" : "none"}
+          >
             <Text style={styles.grayBoxTitle}>Adicionar Sessões</Text>
             
-            <View style={styles.sessionRow}>
-              <TouchableOpacity style={[componentStyle.inputContainer, styles.mockDropdown]}>
-                <Text style={styles.dropdownText}>Filmez em Cartaz</Text>
-                <Text style={styles.dropdownIcon}>▼</Text>
-              </TouchableOpacity>
+            <View style={[styles.sessionRow, { zIndex: 100, elevation: 10 }]}>
+
+              <View style={{ flex: 2, zIndex: 999, elevation: 15 }}> 
+                <TouchableOpacity 
+                  style={[componentStyle.inputContainer, styles.mockDropdown]}
+                  onPress={() => setDropdownAberto(!dropdownAberto)}
+                >
+                  <Text style={styles.dropdownText} numberOfLines={1}>
+                    {filmeSessao || "Selecione..."}
+                  </Text>
+                  <Text style={styles.dropdownIcon}>{dropdownAberto ? "▲" : "▼"}</Text>
+                </TouchableOpacity>
+
+                {dropdownAberto && filmesEmCartaz.length > 0 && (
+                  <ScrollView style={styles.dropdownListaBox} nestedScrollEnabled={true}>
+                    {filmesEmCartaz.map((filme, index) => (
+                      <TouchableOpacity 
+                        key={index} 
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setFilmeSessao(filme);
+                          setDropdownAberto(false); 
+                        }}
+                      >
+                        <Text style={styles.dropdownItemText}>{filme}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
               
               <View style={styles.sessionSmallInput}>
                 <LocalInput text="Data" value={dataSessao} onChangeText={setDataSessao} />
@@ -143,8 +258,8 @@ export default function CreateCinema() {
                 <LocalInput text="Hora" value={horarioSessao} onChangeText={setHorarioSessao} />
               </View>
             </View>
-
-            <View style={styles.buttonWrapper}>
+            {erroSessao ? <Text style={styles.errorText}>{erroSessao}</Text> : null}
+            <View style={[styles.buttonWrapper, { zIndex: -1, elevation: 0 }]}>
               <ButtonY title="Adicionar" onPress={handleAdicionarSessao} />
             </View>
           </View>
@@ -157,16 +272,18 @@ export default function CreateCinema() {
               nestedScrollEnabled={true} 
               showsVerticalScrollIndicator={true}
             >
-              <Text style={styles.mockListText}>ex: Batman Cavaleiro das Trevas #2032- 11:30- 17:30</Text>
-              <Text style={styles.mockListText}>Barbie #6632- 11:30- 17:30</Text>
-              <Text style={styles.mockListText}>Batman:Begin #2032- 11:30- 17:30</Text>
-              <Text style={styles.mockListText}>Pokemon #0992- 11:30- 17:30</Text>
-              <Text style={styles.mockListText}>Oppenheimer #1245- 14:00- 20:00</Text>
-              <Text style={styles.mockListText}>Duna: Parte 2 #9931- 15:30- 21:30</Text>
-              <Text style={styles.mockListText}>Homem-Aranha #3451- 10:00- 16:00</Text>
+              {sessoes.length === 0 ? (
+                <Text style={styles.mockListText}>Nenhuma sessão adicionada ainda.</Text>
+              ) : (
+                sessoes.map((sessao, index) => (
+                  <Text key={index} style={styles.mockListText}>
+                    {sessao.idFilme} - Data: {sessao.data} - Horário: {sessao.horario}
+                  </Text>
+                ))
+              )}
             </ScrollView>
           </View>
-
+          {erroCinema ? <Text style={styles.errorText}>{erroCinema}</Text> : null}
           <View style={{ marginTop: height * 0.03 }}>
              <ButtonY title="Confirmar" onPress={handleConfirmar} />
           </View>
@@ -262,6 +379,30 @@ const getStyles = (width: number, height: number) => StyleSheet.create({
     flex: 1.2, 
   },
 
+  dropdownListaBox: {
+    position: 'absolute',
+    top: 55, 
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.orange, 
+    borderWidth: 2,
+    borderRadius: 10,
+    maxHeight: 120, 
+    zIndex: 999, 
+    elevation: 5, 
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+  },
+  dropdownItemText: {
+    color: '#333333',
+    fontSize: width * 0.035,
+  },
+
   mockListContainer: {
     maxHeight: height * 0.15, 
     backgroundColor: COLORS.white, 
@@ -272,5 +413,13 @@ const getStyles = (width: number, height: number) => StyleSheet.create({
     color: COLORS.textMuted, 
     fontSize: width * 0.035,
     marginBottom: 8, 
+  },
+
+  errorText: {
+    color: COLORS.gold, 
+    fontSize: width * 0.035,
+    textAlign: 'center',
+    marginBottom: 10,
+    fontWeight: '500',
   }
 });
