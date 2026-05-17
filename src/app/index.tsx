@@ -107,7 +107,7 @@ export default function Index(){
                         <View style={{ marginTop: height * 0.005, marginBottom: height * 0.000, width: '100%' }}>
                             <Text style={textStyle.message}>Ainda não possui uma conta?</Text>
                         </View>
-                        <ButtonB title="Cadastre-se" onPress={() => router.push('/addTheater')} />
+                        <ButtonB title="Cadastre-se" onPress={() => router.push('/register')} />
                     </View>
                 </Box>
             </View>
