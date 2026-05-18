@@ -4,18 +4,20 @@ import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
 import { useUser } from "@/contexts/UserContext";
-import { fetchUserData, loginUser } from "@/services/auth";
+import { fetchUserData, loginUser } from "@/services/authentication";
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
 import { validateLogin } from "@/validation/login";
 import { Link, useRouter } from 'expo-router';
 import { useState } from "react";
-import { ActivityIndicator, Dimensions, Image, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, useWindowDimensions, Image, Text, TouchableOpacity, View } from "react-native";
 
-const { height } = Dimensions.get('window');
+
 
 export default function Index(){
+    const { height } = useWindowDimensions();
+
     // Hook do expo-router para gerenciar o redirecionamento programático após o login dar certo
     const router = useRouter();
     // Trazendo a função do contexto global para salvar as informações do usuário logado na memória do app

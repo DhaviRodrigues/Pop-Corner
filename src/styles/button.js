@@ -1,26 +1,16 @@
 import { COLORS } from "@/constants/colors";
-import { Dimensions, StyleSheet } from "react-native";
-const { height, width } = Dimensions.get("window");
+import { StyleSheet, Dimensions } from "react-native";
+
+const { height } = Dimensions.get("window");
 
 export const buttonStyle = StyleSheet.create({
   button: {
-    borderRadius: height * 0.022,
-    height: height * 0.07,
     justifyContent: "center",
     alignItems: "center",
     alignSelf: "center",
-    marginTop: height * 0.01,
-    marginBottom: height * 0.01,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.25,
-    shadowRadius: height * 0.0158,
-    width: width * 0.48,
   },
   buttonText: {
     fontFamily: "Poppins-SemiBold",
-    fontSize: height * 0.027,
     textAlign: "center",
   },
   buttonY: {
@@ -37,7 +27,6 @@ export const buttonStyle = StyleSheet.create({
   },
   buttonVoltar: {
     width: "30%",
-    height: height * 0.05,
     boxShadow: "0px 9px 20px 15px rgba(0, 0, 0, 0.20)",
     shadowColor: COLORS.black,
     backgroundColor: COLORS.black,
@@ -45,41 +34,49 @@ export const buttonStyle = StyleSheet.create({
   buttonVoltarText: {
     color: COLORS.gold,
     fontFamily: "Poppins-SemiBold",
-    fontSize: height * 0.020,
     textAlign: "center",
   },
   buttonGenre: {
-    borderRadius: height * 0.06,
-    paddingHorizontal: height * 0.02,
-    paddingVertical: height * 0.01,
-    marginVertical: height * 0.01,
-    marginHorizontal: height * 0.005,
     backgroundColor: COLORS.black,
   },
   buttonGenreText: {
     color: COLORS.gold,
     fontFamily: "Poppins-SemiBold",
-    fontSize: height * 0.02,
     textAlign: "center",
     borderRadius: 50,
   },
   logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: COLORS.gold,
-    borderRadius: height * 0.02,
-    paddingVertical: height * 0.012,
-    alignSelf: 'center',
-    width: '40%',
-    height: height * 0.06,
-    marginTop: height * 0.03,
-    marginHorizontal: height * 0.02,
+    alignSelf: "center",
+    width: "52%",
+    paddingVertical: height * 0.02,
+    marginTop: height * 0.02,
+    borderRadius: 12,
   },
   logoutText: {
-    fontSize: height * 0.018,
     color: COLORS.black,
-    marginLeft: height * 0.01,
-    fontFamily: 'Poppins-Semibold',
+    fontFamily: "Poppins-Semibold",
+  },
+  buttonAddWatchlist: {
+    backgroundColor: COLORS.gold,
+    paddingVertical: 12, 
+    width: '65%', 
+    borderRadius: 50, 
+    alignSelf: "center",
+    marginTop: 15,
+    elevation: 5,
+    shadowColor: COLORS.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  buttonAddWatchlistText: {
+    color: COLORS.black,
+    fontSize: 16, 
+    fontFamily: "Poppins-SemiBold", 
+    textAlign: "center",
   },
 });

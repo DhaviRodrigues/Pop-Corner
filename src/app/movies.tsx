@@ -1,16 +1,16 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, ListRenderItem } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MOVIES, Movie } from '@/data/mockFilmes';
 import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY';
-import { Input } from '@/components/Input';
-import { movieStyle} from '@/styles/movie';
-import { miscStyle } from '@/styles/misc';
-import { textStyle } from '@/styles/text';
-import { logoStyle } from '@/styles/logo';
+import SearchBar from '@/components/SearchBar';
+import SortFilterBar from '@/components/SortFilterBar';
+import GenreFilter from '@/components/GenreFilter';
 
+import { movieStyle } from '@/styles/movie';
+import { textStyle } from '@/styles/text';
 
 function DynamicStars({ rating }: { rating: number }) {
   const fill1 = Math.max(0, Math.min(1, rating - 0));
@@ -36,6 +36,59 @@ function DynamicStars({ rating }: { rating: number }) {
 export default function MoviesScreen() {
   const router = useRouter();
 
+  const [searchText, setSearchText] = useState('');
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [sortType, setSortType] = useState('alphabetical');
+  const [sortAscending, setSortAscending] = useState(true);
+  
+  const [showFilters, setShowFilters] = useState(false);
+
+  const availableGenres = useMemo(() => {
+    const allTags = MOVIES.flatMap(movie => movie.tags);
+    return Array.from(new Set(allTags));
+  }, []);
+
+  const movieSortOptions = [
+    { label: 'Alfabético', value: 'alphabetical' },
+    { label: 'Nota', value: 'rating' },
+  ];
+
+  const filteredAndSortedMovies = useMemo(() => {
+    let result = MOVIES;
+
+    if (searchText) {
+      result = result.filter(m => 
+        m.title.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+
+    if (selectedGenres.length > 0) {
+      result = result.filter(m => 
+        m.tags.some(tag => selectedGenres.includes(tag))
+      );
+    }
+
+    result = [...result].sort((a, b) => {
+      let comp = 0;
+      if (sortType === 'alphabetical') {
+        comp = a.title.localeCompare(b.title);
+      } else if (sortType === 'rating') {
+        comp = a.rating - b.rating;
+      }
+      return sortAscending ? comp : -comp;
+    });
+
+    return result;
+  }, [searchText, selectedGenres, sortType, sortAscending]);
+
+
+  const toggleGenre = (genre: string) => {
+    setSelectedGenres(prev => 
+      prev.includes(genre) ? prev.filter(g => g !== genre) : [...prev, genre]
+    );
+  };
+
   const renderMovie: ListRenderItem<Movie> = ({ item }) => (
     <View style={movieStyle.filmesCard}>
       <Image source={{ uri: item.image }} style={movieStyle.filmesPoster} resizeMode="cover" />
@@ -43,7 +96,6 @@ export default function MoviesScreen() {
       <Text style={textStyle.filmesMovieTitle} numberOfLines={1}>{item.title}</Text>
       
       <View style={movieStyle.filmesRatingContainer}>
-        {/* Ajuste: exibindo o número diretamente */}
         <Text style={movieStyle.filmesRatingLabel}>Avaliação: {item.rating.toFixed(1)}</Text>
         <DynamicStars rating={item.rating} />
       </View>
@@ -59,7 +111,7 @@ export default function MoviesScreen() {
       <TouchableOpacity 
         style={movieStyle.filmesDetailsButton}
         onPress={() => router.push({
-          pathname: '/filme-details' as any,
+          pathname: '/movieDetails' as any,
           params: { id: item.id } 
         })}
       >
@@ -77,17 +129,36 @@ export default function MoviesScreen() {
         />
         
         <View style={movieStyle.filmesSearchContainer}>
-          <View style={movieStyle.filmesInputWrapper}>
-             <Input 
-               icon={require('@/screenAssets/icons/search.png')} 
-               text="Buscar um filme" 
-             />
-          </View>
+           <SearchBar 
+             value={searchText} 
+             onChangeText={setSearchText} 
+             placeholder="Buscar um filme" 
+             onToggleFilters={() => setShowFilters(!showFilters)}
+             filtersVisible={showFilters}
+           />
         </View>
       </View>
 
+      {showFilters && (
+        <View style={{ paddingHorizontal: 16 }}>
+          <SortFilterBar 
+            options={movieSortOptions}
+            activeSort={sortType}
+            onSelectSort={setSortType}
+            sortAscending={sortAscending}
+            onToggleAscending={() => setSortAscending(!sortAscending)}
+          />
+          
+          <GenreFilter 
+            availableGenres={availableGenres}
+            selectedGenres={selectedGenres}
+            onToggleGenre={toggleGenre}
+          />
+        </View>
+      )}
+
       <FlatList
-        data={MOVIES}
+        data={filteredAndSortedMovies}
         renderItem={renderMovie}
         keyExtractor={item => item.id.toString()}
         numColumns={2}
