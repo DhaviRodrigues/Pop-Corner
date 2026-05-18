@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, ListRenderItem } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { MOVIES, Movie } from '@/data/mockFilmes';
 import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY';
@@ -10,9 +9,7 @@ import SortFilterBar from '@/components/SortFilterBar';
 import GenreFilter from '@/components/GenreFilter';
 
 import { movieStyle } from '@/styles/movie';
-import { miscStyle } from '@/styles/misc';
 import { textStyle } from '@/styles/text';
-import { logoStyle } from '@/styles/logo';
 
 function DynamicStars({ rating }: { rating: number }) {
   const fill1 = Math.max(0, Math.min(1, rating - 0));
@@ -63,7 +60,6 @@ export default function MoviesScreen() {
         m.title.toLowerCase().includes(searchText.toLowerCase())
       );
     }
-
 
     if (selectedGenres.length > 0) {
       result = result.filter(m => 
@@ -123,7 +119,7 @@ export default function MoviesScreen() {
   );
 
   return (
-    <SafeAreaView style={movieStyle.filmesContainer}>
+    <View style={movieStyle.filmesContainer}>
       <View style={movieStyle.filmesHeader}>
         <Image 
           source={require('@/screenAssets/logo/full-logo.png')}
@@ -166,6 +162,8 @@ export default function MoviesScreen() {
         numColumns={2}
         columnWrapperStyle={movieStyle.filmesRow}
         contentContainerStyle={movieStyle.filmesListContent}
+        bounces={false}
+        overScrollMode="never"
         ListFooterComponent={
           <View style={movieStyle.filmesFooterBtn}>
             <ButtonY title="Ver mais" />
@@ -173,6 +171,6 @@ export default function MoviesScreen() {
         }
       />
       <BottomNavbar />
-    </SafeAreaView>
+    </View>
   );
 }

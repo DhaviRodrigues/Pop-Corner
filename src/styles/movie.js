@@ -5,6 +5,9 @@ import { COLORS } from "@/constants/colors";
 export const movieStyle = StyleSheet.create({
   filmesContainer: {
     flex: 1,
+    width: "100%",      
+    height: "100%",     
+    overflow: "hidden",  
     backgroundColor: "#B22300",
   },
   filmesHeader: {
@@ -136,10 +139,12 @@ export const movieStyle = StyleSheet.create({
     color: "#FFFEB2",
     fontSize: height * 0.014,
   },
-
   detailsMainContainer: {
     flex: 1,
-    backgroundColor: '#8E1600',
+    width: "100%",
+    height: "100%",
+    overflow: "hidden", 
+    backgroundColor: '#B22300',
   },
   detailsHeaderPill: {
     backgroundColor: '#B22300', 
@@ -157,12 +162,6 @@ export const movieStyle = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 5,
     elevation: 8,
-  },
-  detailsTitleText: {
-    color: "#FFFEB2",
-    fontSize: height * 0.022,
-    fontWeight: "bold",
-    textAlign: "center",
   },
   detailsTopBar: {
     backgroundColor: '#B22300', 
@@ -252,12 +251,6 @@ export const movieStyle = StyleSheet.create({
     paddingVertical: width * 0.04, 
     borderRadius: height * 0.02,
     marginVertical: height * 0.02,
-  },
-  detailsSynopsisText: {
-    lineHeight: 22, 
-    color: "#000",
-    textAlign: 'left', 
-    fontSize: height * 0.018,
   },
   detailsSectionGrey: {
     backgroundColor: "#D9D9D9", 
