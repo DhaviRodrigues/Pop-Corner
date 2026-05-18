@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons'; 
 import { MOVIES } from '@/data/mockFilmes';
 import { REVIEWS } from '@/data/mockReviews';
@@ -22,14 +21,14 @@ export default function MovieDetailsScreen() {
 
   if (!movie) {
     return (
-      <SafeAreaView style={movieStyle.filmesContainer}>
+      <View style={movieStyle.filmesContainer}>
         <Text style={textStyle.detailsTitleText}>Filme não encontrado</Text>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={movieStyle.detailsMainContainer} edges={['top', 'left', 'right']}> 
+    <View style={movieStyle.detailsMainContainer}> 
       
       {/* 1. HEADER FIXO */}
       <View style={movieStyle.detailsTopBar}>
@@ -45,7 +44,12 @@ export default function MovieDetailsScreen() {
       />
 
       {/* 3. CONTEÚDO ROLÁVEL */}
-      <ScrollView contentContainerStyle={movieStyle.detailsScrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={movieStyle.detailsScrollContent} 
+        showsVerticalScrollIndicator={false}
+        bounces={false} 
+        overScrollMode="never"
+      >
         
         {/* PÔSTER CENTRALIZADO */}
         <View style={movieStyle.detailsPosterWrapper}>
@@ -143,7 +147,7 @@ export default function MovieDetailsScreen() {
       
       {/* NAVBAR */}
       <BottomNavbar />
-    </SafeAreaView>
+    </View>
   );
 }
 
