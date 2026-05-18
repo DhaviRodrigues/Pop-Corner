@@ -1,471 +1,254 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
-  Dimensions,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
   View,
+  Text,
+  Image,
+  TextInput,
+  FlatList,
+  StatusBar,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
 } from 'react-native';
-import { COLORS } from '../constants/colors';
-import { style as S } from '../styles/misc';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { miscStyle } from '@/styles/misc';
+import { commentModerationStyle as S } from '@/styles/commentmoderation';  
+import { CommentCard } from '@/components/CommentCard';
+import { SelectAllBar } from '@/components/SelectAllBar';
+import BottomNavbar from '@/components/Navbar';
+import { Comment } from '@/types/comment';
 
-// Pegando a altura da tela para deixar as fontes e espaçamentos responsivos depois no StyleSheet
 const { height } = Dimensions.get('window');
 
-// Tipagens literais para amarrar os valores possíveis e evitar erro de digitação no estado ou nas props
-type FilterTab = 'Pendentes' | 'Aprovados' | 'Arquivados' | 'Feitos';
-type CommentStatus = 'Pendente' | 'Aprovado' | 'Recusado';
+type FilterTab = 'Pendentes' | 'Aprovados' | 'Arquivados' | 'Todos';
 
-interface Comment {
-  id: string;
-  author: string;
-  rating: number;
-  movie: string;
-  cinema: string;
-  date: string;
-  text: string;
-  status: CommentStatus;
-}
+type MutableComment = Comment & { selected: boolean };
 
-// Dados mockados provisórios para montar a interface enquanto a API do BCB inteligencia não está pronta pra isso
+const TABS: FilterTab[] = ['Pendentes', 'Aprovados', 'Arquivados', 'Todos'];
+
 const MOCK_COMMENTS: Comment[] = [
   {
     id: '1',
-    author: 'John Silva',
+    author: 'John Wick',
     rating: 3,
-    movie: 'Filme A',
+    movie: 'Gladiador 2',
     cinema: 'Cinemark Shopping Norte',
-    date: '12/03/2024',
-    text: 'O filme foi bom, porém a qualidade do som ao vivo é uma preocupação. Não recomendo pela qualidade do projetor, fica muito bom.',
+    date: '25 de mar. de 2026, 16:32',
+    text: 'O filme foi uma decepção total. A qualidade do som na sala 3 estava péssima e a projeção borrada. Não recomendo a ninguém!',
     status: 'Pendente',
   },
   {
     id: '2',
-    author: 'John Silva',
-    rating: 3,
+    author: 'Maria Souza',
+    rating: 4,
     movie: 'Filme B',
     cinema: 'Cinemark Shopping Norte',
-    date: '12/03/2024',
-    text: 'O filme foi bom, porém a qualidade do som ao vivo é uma preocupação. Não recomendo pela qualidade do projetor, fica muito bom.',
+    date: '26 de mar. de 2026, 10:00',
+    text: 'Experiência incrível! A sala estava ótima e o filme superou as expectativas.',
     status: 'Aprovado',
   },
   {
     id: '3',
-    author: 'John Silva',
-    rating: 3,
+    author: 'Carlos Lima',
+    rating: 2,
     movie: 'Filme C',
     cinema: 'Cinemark Shopping Norte',
-    date: '12/03/2024',
-    text: 'O filme foi bom, porém a qualidade do som ao vivo é uma preocupação. Não recomendo pela qualidade do projetor, fica muito bom.',
+    date: '27 de mar. de 2026, 14:15',
+    text: 'Decepcionante. O ar-condicionado estava quebrado e o som falhava em vários momentos.',
     status: 'Recusado',
   },
 ];
 
-function StarRating({ rating, max = 5 }: { rating: number; max?: number }) {
-  return (
-    <View style={local.starsRow}>
-      {/* Crio um array do tamanho do max (5) e itero. Se a posição atual for menor que o rating, pinto a estrela */}
-      {Array.from({ length: max }).map((_, i) => (
-        <Text key={i} style={[local.star, i < rating ? local.starFilled : local.starEmpty]}>
-          ★
-        </Text>
-      ))}
-    </View>
-  );
-}
-
-function StatusBadge({ status }: { status: CommentStatus }) {
-  // Uso esse dicionário pra mapear o status direto pra cor, bem mais limpo que fazer um monte de if/else ou switch
-  const config = {
-    Pendente: { bg: COLORS.orange },
-    Aprovado: { bg: COLORS.green },
-    Recusado: { bg: COLORS.red },
-  };
-  return (
-    <View style={[local.statusBadge, { backgroundColor: config[status].bg }]}>
-  
-      <Text style={[S.message, local.statusBadgeText]}>{status}</Text>
-    </View>
-  );
-}
-
-function CommentCard({ comment }: { comment: Comment }) {
-  return (
-
-    <View style={[S.box, local.card]}>
-      <View style={local.cardHeader}>
-        <View style={local.avatarCircle}>
-      
-          <Text style={[S.message, local.avatarText]}>{comment.author.charAt(0)}</Text>
-        </View>
-        <View style={local.cardAuthorInfo}>
-          <Text style={[S.message, local.authorName]}>{comment.author}</Text>
-          <StarRating rating={comment.rating} />
-        </View>
-        <StatusBadge status={comment.status} />
-      </View>
-
-      <View style={local.cardMeta}>
-        <Text style={[S.message, local.metaText]}>📅 {comment.date}</Text>
-        <Text style={[S.message, local.metaText]}>🎬 {comment.movie}</Text>
-      </View>
-
-  
-      <Text style={[S.text, local.cardText]}>{comment.text}</Text>
-
-      <View style={local.cinemaRow}>
-        <Text style={local.cinemaIcon}>🍿</Text>
-        <Text style={[S.message, local.cinemaText]}>{comment.cinema}</Text>
-      </View>
-
-      <View style={local.cardActions}>
-    
-        <TouchableOpacity style={[S.button, S.buttonY, local.actionBtn]}>
-          <Text style={[S.buttonText, S.buttonYText]}>Aprovar</Text>
-        </TouchableOpacity>
-    
-        <TouchableOpacity style={[S.button, S.buttonB, local.actionBtn]}>
-          <Text style={[S.buttonText, S.buttonBText]}>Rejeitar</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
-
-function FilterTabs({ active, onChange }: { active: FilterTab; onChange: (t: FilterTab) => void }) {
-  const tabs: FilterTab[] = ['Pendentes', 'Aprovados', 'Arquivados', 'Feitos'];
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={local.tabsScroll}>
-      <View style={local.tabsRow}>
-        {/* Renderiza as abas de filtro. O estilo de ativo só aplica se a aba renderizada for igual ao state active que vem lá da Screen principal */}
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => onChange(tab)}
-        
-            style={[S.tab, local.filterTab, active === tab && local.filterTabActive]}
-          >
-            <Text style={[S.message, active === tab && local.filterTabTextActive]}>{tab}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
-  );
-}
-
-function SearchBar() {
-  // Estado isolado pra barra de pesquisa. Se precisar buscar na API, teria que jogar esse estado lá pro componente pai.
-  const [query, setQuery] = useState('');
-  return (
-
-    <View style={S.inputContainer}>
-      <Text style={local.searchEmoji}>🔍</Text>
-  
-      <TextInput
-        style={S.inputText}
-        placeholder="Busca por filme, ator, cinema, palavra chave"
-        placeholderTextColor={COLORS.textMuted}
-        value={query}
-        onChangeText={setQuery}
-      />
-    </View>
-  );
-}
-
-function Header({ onBack }: { onBack?: () => void }) {
-  return (
-    <View style={local.header}>
-      <TouchableOpacity style={local.backBtn} onPress={onBack}>
-        <Text style={local.backBtnText}>‹</Text>
-      </TouchableOpacity>
-      <Text style={local.logoIcon}>🍿</Text>
-  
-      <Text style={[S.text, local.logoText]}>POP CORNER</Text>
-    </View>
-  );
-}
-
-// Configuração estática dos itens do menu inferior
-const NAV_ITEMS = [
-  { icon: '🏠', label: 'Início' },
-  { icon: '🎬', label: 'Cinemas' },
-  { icon: '🎟️', label: 'Espaços' },
-  { icon: '🎞️', label: 'Filmes' },
-  { icon: '👤', label: 'Perfil' },
-];
-
-function BottomNav({ active = 0 }: { active?: number }) {
-  return (
-
-    <View style={S.navbarWrapper}>
-      <View style={S.navbarContainer}>
-        <View style={S.tabContainer}>
-          {NAV_ITEMS.map((item, i) => (
-            <TouchableOpacity key={item.label} style={S.tab}>
-          
-              {/* O estilo de ativo é passado verificando o índice. O padão é 0 (Início) */}
-              <View style={[S.tabContent, i === active && S.activeTabContent]}>
-                <Text style={local.navEmoji}>{item.icon}</Text>
-              </View>
-          
-              <Text style={[S.label, i === active && S.activeLabel]}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function SelectAllBar() {
-  return (
-    <View style={local.selectAllBar}>
-      <View style={local.selectAllLeft}>
-        <View style={local.checkbox} />
-        <Text style={S.message}>Selecionar todos</Text>
-      </View>
-      <TouchableOpacity>
-        <Text style={[S.message, local.orderText]}>↕ Ordenar Por</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-// Tela principal que junta tudo
-export default function CommentModerationScreen() {
-  // Centraliza o estado da aba aqui porque, na real, a gente vai precisar usar isso pra filtrar o MOCK_COMMENTS antes do map. Mas por enquanto só tá mudando o visual.
+export default function CommentsModerationScreen() {
   const [activeTab, setActiveTab] = useState<FilterTab>('Pendentes');
+  const [search, setSearch] = useState('');
+  const [isOrderReversed, setIsOrderReversed] = useState(false);
+  const [comments, setComments] = useState<MutableComment[]>(
+    MOCK_COMMENTS.map(comment => ({ ...comment, selected: false }))
+  );
+
+  const tabCounts = useMemo(() => {
+    const counts = {
+      Pendentes: 0,
+      Aprovados: 0,
+      Arquivados: 0,
+      Todos: comments.length,
+    } as Record<FilterTab, number>;
+
+    comments.forEach(comment => {
+      if (comment.status === 'Pendente') counts.Pendentes += 1;
+      if (comment.status === 'Aprovado') counts.Aprovados += 1;
+      if (comment.status === 'Arquivado') counts.Arquivados += 1;
+    });
+
+    return counts;
+  }, [comments]);
+
+  // Função para atualizar status do comentário
+  const handleApprove = useCallback((id: string) => {
+    setComments(prevComments =>
+      prevComments.map(comment =>
+        comment.id === id ? { ...comment, status: 'Aprovado' } : comment
+      )
+    );
+  }, []);
+
+  const handleReject = useCallback((id: string) => {
+    setComments(prevComments =>
+      prevComments.map(comment =>
+        comment.id === id ? { ...comment, status: 'Recusado' } : comment
+      )
+    );
+  }, []);
+
+  const handleArchive = useCallback((id: string) => {
+    setComments(prevComments =>
+      prevComments.map(comment =>
+        comment.id === id ? { ...comment, status: 'Arquivado' } : comment
+      )
+    );
+  }, []);
+
+  const handleToggleSelect = useCallback((id: string) => {
+    setComments(prevComments =>
+      prevComments.map(comment =>
+        comment.id === id ? { ...comment, selected: !comment.selected } : comment
+      )
+    );
+  }, []);
+
+  const handleOrderBy = useCallback(() => {
+    setIsOrderReversed(prev => !prev);
+  }, []);
+
+  // Mapear filtros para status
+  const getStatusForFilter = (tab: FilterTab): Comment['status'][] => {
+    switch (tab) {
+      case 'Pendentes':
+        return ['Pendente'];
+      case 'Aprovados':
+        return ['Aprovado'];
+      case 'Arquivados':
+        return ['Arquivado'];
+      case 'Todos':
+        return ['Pendente', 'Aprovado', 'Recusado', 'Arquivado'];
+      default:
+        return ['Pendente'];
+    }
+  };
+
+  const filteredComments = useMemo(
+    () => {
+      const allowedStatuses = getStatusForFilter(activeTab);
+      const filtered = comments.filter(({ movie, cinema, author, status }) => {
+        const q = search.toLowerCase();
+        const matchesSearch =
+          movie.toLowerCase().includes(q) ||
+          cinema.toLowerCase().includes(q) ||
+          author.toLowerCase().includes(q);
+        const matchesStatus = allowedStatuses.includes(status);
+        return matchesSearch && matchesStatus;
+      });
+      return isOrderReversed ? [...filtered].reverse() : filtered;
+    },
+    [search, activeTab, comments, isOrderReversed]
+  );
+
+  const handleSelectAll = useCallback(() => {
+    const allSelected = filteredComments.length > 0 && filteredComments.every(comment => comment.selected);
+    setComments(prevComments =>
+      prevComments.map(comment =>
+        filteredComments.some(filtered => filtered.id === comment.id)
+          ? { ...comment, selected: !allSelected }
+          : comment
+      )
+    );
+  }, [filteredComments]);
 
   return (
-    <SafeAreaView style={S.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primaryDark} />
-  
-      <View style={S.background}>
-        <Header />
-        <ScrollView
-          style={local.scrollContent}
-          contentContainerStyle={local.scrollContentInner}
-          showsVerticalScrollIndicator={false}
-        >
-      
-          <Text style={[S.text, local.pageTitle]}>Gerenciamento de Comentários</Text>
-          <SearchBar />
-          {/* Passa o state e o setState pra aba de filtros conseguir se atualizar */}
-          <FilterTabs active={activeTab} onChange={setActiveTab} />
-          <SelectAllBar />
-          {/* Aqui estamos renderizando a lista inteira do mock. Num cenário real tem que ser MOCK_COMMENTS.filter(...) baseado no activeTab */}
-          {MOCK_COMMENTS.map((comment) => (
-            <CommentCard key={comment.id} comment={comment} />
-          ))}
-        </ScrollView>
-        <BottomNav active={0} />
+    <SafeAreaView style={miscStyle.background} edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor="#922B21" />
+
+      {/* Header: botão voltar */}
+      <View style={S.headerContainer}>
+        <TouchableOpacity style={S.backButton}>
+          <Text style={S.backEmoji}>←</Text>
+        </TouchableOpacity>
       </View>
+
+      <Image
+        source={require('../../assets/images/Logo.png')}
+        style={S.titleLogo}
+      />
+
+      <Text style={S.pageTitle}>Gerenciamento de Comentários</Text>
+
+      {/* Layout fixo acima da lista. Abaixo, somente o FlatList deve rolar. */}
+      <View style={S.contentWrapper}>
+        <View style={S.topControls}>
+          <View style={S.inputContainer}>
+            <Text style={S.searchEmoji}>🔍</Text>
+            <TextInput
+              style={S.inputText}
+              placeholder="Busca por filme, ator, cinema, palavra chave"
+              placeholderTextColor="rgba(255,255,255,0.6)"
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={S.tabsScroll}>
+            <View style={S.tabsRow}>
+              {TABS.map(label => {
+                const isActive = activeTab === label;
+                return (
+                  <TouchableOpacity
+                    key={label}
+                    onPress={() => setActiveTab(label)}
+                    style={[S.filterTab, isActive && S.filterTabActive]}
+                  >
+                    <Text style={[S.filterTabText, isActive && S.filterTabTextActive]}>{label}</Text>
+                    <View style={[S.filterTabBadge, isActive && S.filterTabBadgeActive]}>
+                      <Text style={[S.filterTabBadgeText, isActive && S.filterTabBadgeTextActive]}>
+                        {tabCounts[label]}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          <SelectAllBar
+            onSelectAll={handleSelectAll}
+            onOrderBy={handleOrderBy}
+            isSelected={filteredComments.length > 0 && filteredComments.every(comment => comment.selected)}
+          />
+        </View>
+
+        <View style={S.listWrapper}>
+          <FlatList
+            style={S.flatList}
+            data={filteredComments}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <CommentCard
+                comment={item}
+                selected={item.selected}
+                onToggleSelect={handleToggleSelect}
+                onApprove={handleApprove}
+                onReject={handleReject}
+                onArchive={handleArchive}
+              />
+            )}
+            contentContainerStyle={S.scrollContentInner}
+            showsVerticalScrollIndicator={false}
+            ListFooterComponent={<View style={{ height: height * 0.05 }} />}
+          />
+        </View>
+      </View>
+
+      <BottomNavbar />
     </SafeAreaView>
   );
 }
-
-const local = StyleSheet.create({
-  header: {
-    width: '100%',
-    backgroundColor: '#8B0000',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backBtnText: {
-    color: COLORS.white,
-    fontSize: 24,
-    lineHeight: 28,
-    fontWeight: '700',
-  },
-  logoIcon: {
-    fontSize: 24,
-  },
-  logoText: {
-    fontSize: height * 0.02,
-    letterSpacing: 1,
-  },
-  scrollContent: {
-    flex: 1,
-    width: '100%',
-  },
-  scrollContentInner: {
-    paddingHorizontal: 16,
-    paddingBottom: height * 0.18,
-  },
-  pageTitle: {
-    fontSize: height * 0.025,
-    marginTop: height * 0.02,
-    marginBottom: height * 0.018,
-    textAlign: 'center',
-  },
-  searchEmoji: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  tabsScroll: {
-    marginBottom: 12,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 2,
-  },
-  filterTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-    flex: undefined,
-    marginHorizontal: 0,
-  },
-  filterTabActive: {
-    backgroundColor: COLORS.gold,
-    borderColor: COLORS.gold,
-  },
-  filterTabTextActive: {
-    color: '#8B0000',
-    fontWeight: '700',
-  },
-  selectAllBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  selectAllLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: COLORS.white,
-  },
-  orderText: {
-    color: COLORS.gold,
-    fontWeight: '700',
-  },
-  card: {
-    marginBottom: 14,
-    padding: 14,
-    backgroundColor: '#A93226',
-    borderRadius: 16,
-    width: '100%',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    gap: 10,
-  },
-  avatarCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: COLORS.gold,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarText: {
-    color: '#8B0000',
-    fontWeight: '800',
-    fontSize: height * 0.02,
-  },
-  cardAuthorInfo: {
-    flex: 1,
-  },
-  authorName: {
-    fontSize: height * 0.018,
-    marginBottom: 2,
-    textAlign: 'left',
-  },
-  starsRow: {
-    flexDirection: 'row',
-    gap: 1,
-  },
-  star: {
-    fontSize: 13,
-  },
-  starFilled: {
-    color: COLORS.gold,
-  },
-  starEmpty: {
-    color: 'rgba(255,255,255,0.3)',
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusBadgeText: {
-    fontSize: height * 0.013,
-    textAlign: 'center',
-  },
-  cardMeta: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 8,
-  },
-  metaText: {
-    fontSize: height * 0.013,
-    textAlign: 'left',
-  },
-  cardText: {
-    fontSize: height * 0.015,
-    marginBottom: 10,
-    textAlign: 'left',
-  },
-  cinemaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  cinemaIcon: {
-    fontSize: 13,
-  },
-  cinemaText: {
-    color: COLORS.gold,
-    fontSize: height * 0.013,
-    textAlign: 'left',
-  },
-  cardActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionBtn: {
-    flex: 1,
-    width: undefined,
-    height: height * 0.055,
-    marginTop: 0,
-    marginBottom: 0,
-  },
-  navEmoji: {
-    fontSize: height * 0.028,
-  },
-});
