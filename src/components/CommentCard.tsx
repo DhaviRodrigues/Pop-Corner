@@ -7,14 +7,22 @@ import { Comment } from '@/types/comment';
 
 interface CommentCardProps {
   comment: Comment;
+  selected: boolean;
+  onToggleSelect: (id: string) => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  onArchive: (id: string) => void;
 }
 
-export function CommentCard({ comment, onApprove, onReject }: CommentCardProps) {
+export function CommentCard({ comment, selected, onToggleSelect, onApprove, onReject, onArchive }: CommentCardProps) {
   return (
-    <View style={S.cardWrapper}>
-      <View style={S.cardCircleSelect} />
+    <View style={[S.cardWrapper, selected && S.cardSelected]}>
+      <TouchableOpacity
+        style={[S.cardCircleSelect, selected && S.cardCircleSelectSelected]}
+        onPress={() => onToggleSelect(comment.id)}
+      >
+        {selected && <Text style={S.cardCircleSelectTick}>✓</Text>}
+      </TouchableOpacity>
 
       <View style={S.card}>
         <View style={S.cardTopRow}>
@@ -55,6 +63,9 @@ export function CommentCard({ comment, onApprove, onReject }: CommentCardProps) 
             </TouchableOpacity>
             <TouchableOpacity style={[S.actionBtn, S.rejectBtnBg]} onPress={() => onReject(comment.id)}>
               <Text style={S.actionBtnText}>Rejeitar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[S.actionBtn, S.archiveBtnBg]} onPress={() => onArchive(comment.id)}>
+              <Text style={S.actionBtnText}>Spam</Text>
             </TouchableOpacity>
           </View>
         </View>
