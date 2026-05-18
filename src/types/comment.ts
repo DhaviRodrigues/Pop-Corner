@@ -1,6 +1,4 @@
-export type FilterTab = "Pendentes" | "Aprovados" | "Arquivados" | "Feitos";
-
-export type CommentStatus = "Pendente" | "Aprovado" | "Recusado";
+export type CommentStatus = 'Pendente' | 'Aprovado' | 'Recusado' | 'Arquivado';
 
 export interface Comment {
   id: string;

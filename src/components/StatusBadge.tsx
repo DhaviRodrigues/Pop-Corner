@@ -7,6 +7,7 @@ const STATUS_COLOR: Record<CommentStatus, string> = {
   Pendente: '#E67E22',
   Aprovado: '#27AE60',
   Recusado: '#E74C3C',
+  Arquivado: '#6C3483',
 };
 
 interface StatusBadgeProps {
