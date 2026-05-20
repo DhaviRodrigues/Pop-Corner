@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
-  StyleSheet,
   TouchableOpacity,
   Image,
   Platform,
+  Text,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { mockCinemas } from "@/data/mockCinemas";
 import BottomNavbar from "@/components/Navbar";
-import { COLORS } from "@/constants/colors";
+import { style, popupStyles } from "@/styles/cinema";
 
-// 1. Transformamos a função em um Componente React para o Popup renderizar corretamente
 const DynamicStarsPopup = ({ rating }: { rating: number }) => {
   return (
-    <div style={popupStyles.starsContainer}>
+    <div style={popupStyles.starsContainer as React.CSSProperties}>
       {Array.from({ length: 5 }, (_, i) => {
         const fill = Math.max(0, Math.min(1, rating - i)) * 100;
         return (
@@ -50,155 +49,164 @@ const DynamicStarsPopup = ({ rating }: { rating: number }) => {
 export default function MapaWeb() {
   const router = useRouter();
   const [MapComponents, setMapComponents] = useState<any>(null);
+  
+  // States de Geolocalização
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [locationError, setLocationError] = useState<boolean>(false);
+
+  // Função para pedir e processar a localização
+  const requestLocation = () => {
+    setLocationError(false);
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+          setAccuracy(position.coords.accuracy);
+          setLocationError(false);
+        },
+        (error) => {
+          console.error("Erro de localização:", error);
+          setLocationError(true);
+          alert("Por favor, permita o acesso à sua localização para que o mapa funcione corretamente.");
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      );
+    } else {
+      alert("A geolocalização não é suportada neste navegador.");
+      setLocationError(true);
+    }
+  };
 
   useEffect(() => {
     if (Platform.OS === "web") {
       Promise.all([import("react-leaflet"), import("leaflet")]).then(
         ([ReactLeaflet, L]) => {
           setMapComponents({ ...ReactLeaflet, L: L.default });
-        },
+          requestLocation(); // Dispara o pedido de localização assim que o mapa carregar
+        }
       );
     }
   }, []);
 
   if (!MapComponents) {
-    return <View style={{ flex: 1, backgroundColor: "#000" }} />;
+    return <View style={style.mapContainer} />;
   }
 
-  const { MapContainer, TileLayer, Marker, Popup, L } = MapComponents;
+  // Extração dos componentes Leaflet importados dinamicamente
+  const { MapContainer, TileLayer, Marker, Popup, Circle, useMap, L } = MapComponents;
+
+  // Sub-componente mágico do Leaflet que move a câmera quando a localização é descoberta
+  const MapUpdater = ({ center }: { center: [number, number] | null }) => {
+    const map = useMap();
+    useEffect(() => {
+      if (center) {
+        map.flyTo(center, 14, { duration: 1.5 }); // flyTo faz a transição de câmera suave
+      }
+    }, [center, map]);
+    return null;
+  };
 
   const customIcon = new L.Icon({
-    iconUrl:
-      "https://raw.githubusercontent.com/DhaviRodrigues/Pop-Corner/e63d33c613bef08c923a14e758fd10eda1f1b608/src/screenAssets/pin-localizacao.svg",
-    iconSize: [35, 45], // Aumentado um pouco para melhor visibilidade
+    iconUrl: "https://raw.githubusercontent.com/DhaviRodrigues/Pop-Corner/e63d33c613bef08c923a14e758fd10eda1f1b608/src/screenAssets/pin-localizacao.svg",
+    iconSize: [35, 45],
     iconAnchor: [17, 45],
     popupAnchor: [1, -34],
   });
 
+
+  const urlFotoUsuario = require("@/screenAssets/icon-perfil.png"); 
+  const urlPinFundo =require ("@/screenAssets/pin-user.svg"); 
+
+  const createUserPin = (profilePicUrl: string) => {
+    return new L.divIcon({
+      className: "custom-user-marker", 
+      html: `
+        <div style="position: relative; width: 55px; height: 70px; display: flex; justify-content: center;">
+          <img src="${urlPinFundo}" style="width: 100%; height: 100%; position: absolute; z-index: 1;" />
+          <img src="${profilePicUrl}" style="
+            width: 30px; 
+            height: 30px; 
+            border-radius: 50%; 
+            position: absolute; 
+            top: 7px; /* Ajuste o top caso a foto fique desalinhada do buraco do SVG */
+            z-index: 2; 
+            object-fit: cover;
+            border: 3px solid #000000;
+          " />
+        </div>
+      `,
+      iconSize: [55, 70],      
+      iconAnchor: [27.5, 70],  
+      popupAnchor: [0, -70],   
+    });
+  };
+
+  const userLocationIcon = createUserPin(urlFotoUsuario);
+
   return (
-    <View style={styles.container}>
+    <View style={style.mapContainer}>
       <MapContainer
-        center={[-8.1147, -34.9037]}
+        center={userLocation || [-8.1147, -34.9037]} 
         zoom={13}
         style={{ height: "100%", width: "100%" }}
       >
+        <MapUpdater center={userLocation} />
+
         <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
 
+        {/* Marcador e círculo de acurácia do Usuário */}
+        {userLocation && (
+          <>
+            <Circle 
+              center={userLocation} 
+              radius={accuracy || 50} 
+              pathOptions={{ color: '#ff0000', fillColor: '#330707', fillOpacity: 0.2 }} 
+            />
+            <Marker position={userLocation} icon={userLocationIcon}>
+              <Popup>Você está aqui</Popup>
+            </Marker>
+          </>
+        )}
+
+        {/* Marcadores dos Cinemas Mockados */}
         {mockCinemas.map((cinema) => (
-          <Marker
-            key={cinema.id}
-            position={[cinema.latitude, cinema.longitude]}
-            icon={customIcon}
-          >
+          <Marker key={cinema.id} position={[cinema.latitude, cinema.longitude]} icon={customIcon}>
             <Popup className="custom-popup">
-              <div style={popupStyles.container}>
-                {/* LADO ESQUERDO: Texto, Estrelas e Botão */}
-                <div style={popupStyles.textSection}>
-                  <h3 style={popupStyles.title}>{cinema.nome}</h3>
-
+              <div style={popupStyles.container as React.CSSProperties}>
+                <div style={popupStyles.textSection as React.CSSProperties}>
+                  <h3 style={popupStyles.title as React.CSSProperties}>{cinema.nome}</h3>
                   <DynamicStarsPopup rating={cinema.avaliacao} />
-
-                  <button
-                    style={popupStyles.button}
-                    onClick={() => alert("Detalhes de " + cinema.nome)}
-                  >
+                  <button style={popupStyles.button as React.CSSProperties} onClick={() => alert("Detalhes de " + cinema.nome)}>
                     Ver Detalhes
                   </button>
                 </div>
-
-                {/* LADO DIREITO: Imagem do Cinema */}
-                <img
-                  src={cinema.imagem}
-                  alt={cinema.nome}
-                  style={popupStyles.image}
-                />
+                <img src={cinema.imagem} alt={cinema.nome} style={popupStyles.image as React.CSSProperties} />
               </div>
             </Popup>
           </Marker>
         ))}
       </MapContainer>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Image
-          source={require("@/screenAssets/back-icon-buttom.svg")}
-          style={styles.backIcon}
-        />
+   
+      {locationError && (
+        <View style={style.retryContainer}>
+          <Text style={style.retryText}>
+            Não conseguimos acesso à sua localização para mostrar os cinemas perto de você.
+          </Text>
+          <TouchableOpacity style={style.retryButton} onPress={requestLocation}>
+            <Text style={style.retryButtonText}>Tentar Novamente</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <TouchableOpacity style={style.backButtonMap} onPress={() => router.back()}>
+        <Image source={require("@/screenAssets/back-icon-buttom.svg")} style={style.backIconMap} />
       </TouchableOpacity>
 
-      <View style={styles.navbarWrapper}>
+      <View style={style.navbarWrapperMap}>
         <BottomNavbar />
       </View>
     </View>
   );
 }
-
-const popupStyles = {
-  container: {
-    backgroundColor: COLORS.primary,
-    padding: "12px",
-    borderRadius: "12px",
-    display: "flex",
-    flexDirection: "row" as const,
-    alignItems: "center",
-    gap: "15px",
-    minWidth: "280px",
-    elevation: 50,
-  },
-  textSection: {
-    flex: 1,
-    textAlign: "left" as const,
-  },
-  title: {
-    margin: "0 0 5px 0",
-    color: "#FFF",
-    fontFamily: "Poppins-Bold, sans-serif",
-    fontSize: "16px",
-    lineHeight: "1.2",
-  },
-  image: {
-    width: "130px",
-    height: "100px",
-    borderRadius: "8px",
-    objectFit: "cover" as const,
-  },
-  starsContainer: {
-    display: "flex",
-    justifyContent: "flex-start",
-    marginBottom: "8px",
-  },
-  button: {
-    backgroundColor: "#FFFEB2",
-    color: "#000",
-    border: "none",
-    padding: "8px",
-    borderRadius: "6px",
-    fontFamily: "Poppins-Bold, sans-serif",
-    fontWeight: "bold" as const,
-    cursor: "pointer",
-    width: "90%",
-    fontSize: "12px",
-  },
-};
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000" },
-  backButton: {
-    position: "absolute",
-    top: 20,
-    left: 10,
-    zIndex: 1000,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    padding: 10,
-    borderRadius: 50,
-  },
-  backIcon: { 
-    width: 50,
-    height: 50,
-  },
-  navbarWrapper: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    zIndex: 1000,
-  },
-});

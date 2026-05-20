@@ -154,5 +154,103 @@ export const style = StyleSheet.create({
     width: 280, 
     height: 70, 
     resizeMode: 'contain' 
-  }
+  },
+
+  mapContainer: { flex: 1, backgroundColor: "#000" },
+  backButtonMap: {
+    position: "absolute",
+    top: 20,
+    left: 10,
+    zIndex: 1000,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    padding: 10,
+    borderRadius: 50,
+  },
+  backIconMap: { 
+    width: 50,
+    height: 50,
+  },
+  navbarWrapperMap: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    zIndex: 1000,
+  },
+  retryContainer: {
+    position: "absolute",
+    top: "40%",
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.85)",
+    padding: 20,
+    borderRadius: 12,
+    zIndex: 2000,
+    alignItems: "center",
+    width: "80%",
+    maxWidth: 350,
+  },
+  retryText: {
+    color: "#FFF",
+    fontFamily: "Poppins-Regular",
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 14,
+  },
+  retryButton: {
+    backgroundColor: "#FFFEB2",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#000",
+    fontFamily: "Poppins-Bold",
+    fontSize: 14,
+  },
 })
+
+export const popupStyles = {
+  container: {
+    backgroundColor: "#B22300", // Cor Primária
+    padding: "12px",
+    borderRadius: "12px",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: "15px",
+    minWidth: "280px",
+  },
+  textSection: {
+    flex: 1,
+    textAlign: "left",
+  },
+  title: {
+    margin: "0 0 5px 0",
+    color: "#FFF",
+    fontFamily: "Poppins-Bold, sans-serif",
+    fontSize: "16px",
+    lineHeight: "1.2",
+  },
+  image: {
+    width: "130px",
+    height: "100px",
+    borderRadius: "8px",
+    objectFit: "cover",
+  },
+  starsContainer: {
+    display: "flex",
+    justifyContent: "flex-start",
+    marginBottom: "8px",
+  },
+  button: {
+    backgroundColor: "#FFFEB2",
+    color: "#000",
+    border: "none",
+    padding: "8px",
+    borderRadius: "6px",
+    fontFamily: "Poppins-Bold, sans-serif",
+    fontWeight: "bold",
+    cursor: "pointer",
+    width: "90%",
+    fontSize: "12px",
+  },
+};
