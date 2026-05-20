@@ -13,7 +13,7 @@ export const componentStyle = StyleSheet.create({
     width: "90%",
     marginVertical: height * 0.01,
     borderWidth: height * 0.005,
-    borderColor: COLORS.red,
+    borderColor: COLORS.red
   },
   inputIcon: {
     width: "6%",
@@ -44,7 +44,7 @@ export const componentStyle = StyleSheet.create({
     height: "100%",
     width: "100%",
     borderRadius: (height * 0.15) / 2,
-    resizeMode: "contain",
+    resizeMode: "cover",
   },
   popUpButtonContainer: {
   flexDirection: "row",

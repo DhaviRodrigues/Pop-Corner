@@ -27,15 +27,26 @@ export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [profilePhotoUri, setProfilePhotoUri] = useState<string | null>(null);
     const [validationMessage, setValidationMessage] = useState("");
     const [showValidationPopup, setShowValidationPopup] = useState(false);
     
     // Estado único de carregamento
     const [isLoading, setIsLoading] = useState(false);
+    const [isPhotoLoading, setIsPhotoLoading] = useState(false);
+
+    const handlePhotoSelecting = () => {
+        setIsPhotoLoading(true);
+    };
+
+    const handlePhotoSelected = (photoUri: string | null) => {
+        setProfilePhotoUri(photoUri);
+        setIsPhotoLoading(false);
+    };
 
     const handleContinue = async () => {
         // Trava para evitar cliques duplos se já estiver carregando
-        if (isLoading) return;
+        if (isLoading || isPhotoLoading) return;
 
         const result = validateRegister(name, email, password, confirmPassword);
 
@@ -47,7 +58,7 @@ export default function Register() {
 
         setIsLoading(true);
 
-        const code = Math.floor(100000 + Math.random() * 900000).toString(); // Ajustado para 6 dígitos conforme seu CodeInput
+        const code = Math.floor(10000 + Math.random() * 90000).toString(); 
 
         const cleanEmail = email.trim().toLowerCase();
 
@@ -67,16 +78,19 @@ export default function Register() {
             return;
         }
 
-        // Salvar dados no contexto
+        // Salvar dados no contexto, incluindo a URI da foto de perfil (será feito upload em genre.tsx)
         setData({
             name: name.trim(),
             email: cleanEmail,
             password,
+            profilePhotoUri: profilePhotoUri || undefined,
             favoriteGenres: [],
         });
 
         router.push('/verificacaoEmail');
-        // Não resetamos o isLoading aqui para o botão não "piscar" antes de trocar de tela
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
     };
 
     function closeValidationPopup() {
@@ -91,8 +105,8 @@ export default function Register() {
                 <Box vw={0.80} padTop={0}>
                     <View style={miscStyle.formContainer}>
                         <Text style={textStyle.text}>Foto de Perfil</Text>
-                        <ProfileIcon>
-                            <Pencil onPress={() => console.log("Editar foto")} />
+                        <ProfileIcon source={profilePhotoUri ? { uri: profilePhotoUri } : undefined}>
+                            <Pencil onPhotoSelecting={handlePhotoSelecting} onPhotoSelected={handlePhotoSelected} isLoading={isLoading} />
                         </ProfileIcon>
                         
                         <Text style={textStyle.text}>Insira suas informações pessoais</Text>
@@ -130,9 +144,9 @@ export default function Register() {
 
                         {/* Apenas um botão, usando o estado isLoading */}
                         <ButtonY 
-                            title={isLoading ? "Enviando..." : "Continuar"} 
+                            title={isLoading ? "Enviando..." : isPhotoLoading ? "Carregando foto..." : "Continuar"} 
                             onPress={handleContinue} 
-                            disabled={isLoading} 
+                            disabled={isLoading || isPhotoLoading} 
                         />
                         
                         <ButtonVoltar title="Voltar" onPress={() => router.push('/')} />

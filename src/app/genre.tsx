@@ -6,12 +6,15 @@ import { ValidationPopup } from "@/components/ValidationPopup";
 import { useUser } from '@/contexts/UserContext';
 import { useUserRegistration } from '@/contexts/UserRegistrationContext';
 import { fetchUserData, registerUser } from '@/services/authentication';
+import { uploadUserPhoto } from '@/services/storage';
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, Text, View } from "react-native";
+import { auth, db } from '@/config/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 const { height } = Dimensions.get('window');
 
@@ -63,7 +66,23 @@ export default function Genre(){
             // Se o cadastro deu bom, já fazemos o fetch pra pegar os dados da sessão/perfil desse novo usuário no banco.
             const userData = await fetchUserData();
             if (userData) {
-                // Atualiza o estado global de autenticação. É provável que algum RootLayout esteja ouvindo isso pra liberar o acesso ao resto do app.
+                if (data.profilePhotoUri && auth.currentUser) {
+                    try {
+                        const uploadResponse = await uploadUserPhoto(
+                            data.profilePhotoUri,
+                            'perfil_foto',
+                            auth.currentUser.uid
+                        );
+
+                        if (uploadResponse.success && uploadResponse.signedUrl) {
+                            await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+                                profile_picture: uploadResponse.signedUrl
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Erro ao fazer upload da foto de perfil:', error);
+                    }
+                }
                 setUser(userData);
             }
 
