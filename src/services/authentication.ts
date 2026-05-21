@@ -1,5 +1,5 @@
 import { auth, db } from "@/config/firebase";
-import { AuthError, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { AuthError, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { getLoginErrorMessage} from "@/validation/login";
 import { getRegisterErrorMessage } from "@/validation/user_register";
@@ -13,6 +13,44 @@ export interface AuthResult {
 export async function loginUser(email: string, password: string): Promise<AuthResult> {
   try {
     await signInWithEmailAndPassword(auth, email, password);
+    return {
+      valid: true,
+      error: ""
+    };
+  } catch (error) {
+    const authError = error as AuthError;
+    return {
+      valid: false,
+      error: getLoginErrorMessage(authError.code)
+    };
+  }
+}
+
+export async function loginUserAdmin(email: string, password: string): Promise<AuthResult> {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    const userDocRef = doc(db, 'users', user.uid);
+    const userSnapshot = await getDoc(userDocRef);
+
+    if (!userSnapshot.exists()) {
+      await signOut(auth);
+      return {
+        valid: false,
+        error: 'Conta de administrador não encontrada.'
+      };
+    }
+
+    const userData = userSnapshot.data();
+
+    if (!userData?.isAdmin) {
+      await signOut(auth);
+      return {
+        valid: false,
+        error: 'Acesso negado. Esta conta não possui privilégios de administrador.'
+      };
+    }
+
     return {
       valid: true,
       error: ""
