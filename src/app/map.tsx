@@ -11,6 +11,8 @@ import { mockCinemas } from "@/data/mockCinemas";
 import BottomNavbar from "@/components/Navbar";
 import { style, popupStyles } from "@/styles/cinema";
 
+import { useUser } from "@/contexts/UserContext";
+
 const DynamicStarsPopup = ({ rating }: { rating: number }) => {
   return (
     <div style={popupStyles.starsContainer as React.CSSProperties}>
@@ -50,12 +52,15 @@ export default function MapaWeb() {
   const router = useRouter();
   const [MapComponents, setMapComponents] = useState<any>(null);
   
-  // States de Geolocalização
+
+  const { user } = useUser();
+
+
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [locationError, setLocationError] = useState<boolean>(false);
 
-  // Função para pedir e processar a localização
+
   const requestLocation = () => {
     setLocationError(false);
     if ("geolocation" in navigator) {
@@ -83,7 +88,7 @@ export default function MapaWeb() {
       Promise.all([import("react-leaflet"), import("leaflet")]).then(
         ([ReactLeaflet, L]) => {
           setMapComponents({ ...ReactLeaflet, L: L.default });
-          requestLocation(); // Dispara o pedido de localização assim que o mapa carregar
+          requestLocation(); 
         }
       );
     }
@@ -93,10 +98,8 @@ export default function MapaWeb() {
     return <View style={style.mapContainer} />;
   }
 
-  // Extração dos componentes Leaflet importados dinamicamente
   const { MapContainer, TileLayer, Marker, Popup, Circle, useMap, L } = MapComponents;
 
-  // Sub-componente mágico do Leaflet que move a câmera quando a localização é descoberta
   const MapUpdater = ({ center }: { center: [number, number] | null }) => {
     const map = useMap();
     useEffect(() => {
@@ -107,6 +110,7 @@ export default function MapaWeb() {
     return null;
   };
 
+  // Ícone dos cinemas
   const customIcon = new L.Icon({
     iconUrl: "https://raw.githubusercontent.com/DhaviRodrigues/Pop-Corner/e63d33c613bef08c923a14e758fd10eda1f1b608/src/screenAssets/pin-localizacao.svg",
     iconSize: [35, 45],
@@ -114,9 +118,9 @@ export default function MapaWeb() {
     popupAnchor: [1, -34],
   });
 
-
-  const urlFotoUsuario = require("@/screenAssets/icon-perfil.png"); 
-  const urlPinFundo =require ("@/screenAssets/pin-user.svg"); 
+  
+  const urlFotoUsuario = user ? user.getProfilePicture() : require("@/screenAssets/icon-perfil.png"); 
+  const urlPinFundo = require("@/screenAssets/pin-user.svg"); 
 
   const createUserPin = (profilePicUrl: string) => {
     return new L.divIcon({
@@ -129,7 +133,7 @@ export default function MapaWeb() {
             height: 30px; 
             border-radius: 50%; 
             position: absolute; 
-            top: 7px; /* Ajuste o top caso a foto fique desalinhada do buraco do SVG */
+            top: 7px;
             z-index: 2; 
             object-fit: cover;
             border: 3px solid #000000;
@@ -188,7 +192,7 @@ export default function MapaWeb() {
         ))}
       </MapContainer>
 
-   
+      {/* Caixa de Erro se o usuário não permitiu a localização */}
       {locationError && (
         <View style={style.retryContainer}>
           <Text style={style.retryText}>
