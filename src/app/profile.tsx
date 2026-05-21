@@ -6,15 +6,13 @@ import BottomNavbar from "@/components/Navbar";
 import { ProfileIcon } from "@/components/ProfileIcon";
 import { UserPipoka } from "@/components/UserPipoka";
 import { useUser } from "@/contexts/UserContext";
-import { signOut } from 'firebase/auth';
-import { auth } from '@/config/firebase';
+import { User } from '@/types/user';
 import { miscStyle } from "@/styles/misc";
 import { profileStyle } from "@/styles/profile";
 import { textStyle } from "@/styles/text";
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { Dimensions, ScrollView, Text, View} from "react-native";
-import { fetchUserData } from "@/services/authentication";
 
 // Pega a altura da tela pra garantir que os espaçamentos (tipo o padTop da BoxDark lá embaixo) fiquem proporcionais em qualquer celular.
 const { height } = Dimensions.get('window');
@@ -30,14 +28,14 @@ export default function Profile(){
         useCallback(() => {
             const syncProfile = async () => {
                 try {
-                    const updatedUser = await fetchUserData();
+                    const updatedUser = await User.fetchUserData();
                     if (updatedUser) {
                         setUser(updatedUser);
                     } else {
                         setUser(null);
                     }
                 } catch (error) {
-                    console.error("Erro ao sincronizar perfil com fetchUserData:", error);
+                    console.error("Erro ao sincronizar perfil com User.fetchUserData:", error);
                 } finally {
                     setIsLoading(false);
                 }
@@ -58,10 +56,12 @@ export default function Profile(){
         });
     };
 
-    // Faz logout no Firebase, reseta contexts e redireciona para a tela inicial
+    // Faz logout através da classe User, reseta contexts e redireciona para a tela inicial
     const handleLogout = async () => {
         try {
-            await signOut(auth);
+            if (user) {
+                await user.logout();
+            }
         } catch (error) {
             console.warn('Erro ao deslogar do Firebase:', error);
         } finally {

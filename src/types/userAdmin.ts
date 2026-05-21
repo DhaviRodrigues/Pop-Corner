@@ -1,32 +1,16 @@
-export class UserAdmin {
+import { User } from './user';
+
+export class UserAdmin extends User {
   constructor(
-    public id: number,
-    private name: string,
-    private email: string,
-    private profile_picture: string,
-    private favorite_genres: string[],
-    private pipoka: number,
+    id: number,
+    name: string,
+    email: string,
+    profile_picture: string,
+    favorite_genres: string[],
+    pipoka: number,
     private isAdmin: boolean
-  ) {}
-
-  getName(): string {
-    return this.name;
-  }
-
-  getEmail(): string {
-    return this.email;
-  }
-
-  getGenres(): string[] {
-    return this.favorite_genres;
-  }
-
-  getProfilePicture(): string {
-    return this.profile_picture;
-  }
-
-  getPipoka(): number {
-    return this.pipoka;
+  ) {
+    super(id, name, email, profile_picture, favorite_genres, pipoka);
   }
 
   getIsAdmin(): boolean {
@@ -51,5 +35,47 @@ export class UserAdmin {
       payload.pipoka,
       payload.isAdmin
     );
+  }
+
+  static async loginUserAdmin(email: string, password: string) {
+    const { auth, db } = await import('@/config/firebase');
+    const { signInWithEmailAndPassword, signOut } = await import('firebase/auth');
+    const { doc, getDoc } = await import('firebase/firestore');
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      const userDocRef = doc(db, 'users', user.uid);
+      const userSnapshot = await getDoc(userDocRef);
+
+      if (!userSnapshot.exists()) {
+        await signOut(auth);
+        return {
+          valid: false,
+          error: 'Conta de administrador não encontrada.'
+        };
+      }
+
+      const userData = userSnapshot.data();
+
+      if (!userData?.isAdmin) {
+        await signOut(auth);
+        return {
+          valid: false,
+          error: 'Acesso negado. Esta conta não possui privilégios de administrador.'
+        };
+      }
+
+      return {
+        valid: true,
+        error: ""
+      };
+    } catch (error) {
+      const authError = error as any;
+      return {
+        valid: false,
+        error: User.getLoginErrorMessage(authError.code)
+      };
+    }
   }
 }

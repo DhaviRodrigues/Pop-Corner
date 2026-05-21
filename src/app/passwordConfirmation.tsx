@@ -3,8 +3,7 @@ import { ButtonVoltar } from "@/components/ButtonVoltar";
 import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
-import { loginUser } from "@/services/authentication";
-import { validateLogin } from "@/validation/login";
+import { User } from "@/types/user";
 import { auth } from "@/config/firebase";
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
@@ -25,7 +24,7 @@ export default function PasswordConfirmation() {
 
   const handleConfirm = async (targetPath: string) => {
     const email = auth.currentUser?.email ?? "";
-    const validation = validateLogin(email, password);
+    const validation = User.validateLogin(email, password);
 
     if (!validation.valid) {
       setValidationMessage(validation.error);
@@ -34,7 +33,7 @@ export default function PasswordConfirmation() {
     }
 
     setIsLoading(true);
-    const result = await loginUser(email, password);
+    const result = await User.loginUser(email, password);
     setIsLoading(false);
 
     if (!result.valid) {
