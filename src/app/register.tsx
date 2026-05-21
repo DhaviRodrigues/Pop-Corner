@@ -11,22 +11,43 @@ import { textStyle } from "@/styles/text";
 import { validateRegister } from "@/validation/user_register";
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Dimensions, Image, ScrollView, Text, View } from "react-native";
+import { Dimensions, Image, Text, View } from "react-native";
 import { useUserRegistration } from '@/contexts/UserRegistrationContext';
+import { db } from '@/config/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { sendVerificationEmail } from '@/services/cadastro2fa';
 
 const { height } = Dimensions.get('window');
 
-export default function Register(){
+export default function Register() {
     const router = useRouter();
     const { setData } = useUserRegistration();
+    
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [profilePhotoUri, setProfilePhotoUri] = useState<string | null>(null);
     const [validationMessage, setValidationMessage] = useState("");
     const [showValidationPopup, setShowValidationPopup] = useState(false);
+    
+    // Estado único de carregamento
+    const [isLoading, setIsLoading] = useState(false);
+    const [isPhotoLoading, setIsPhotoLoading] = useState(false);
 
-    const handleContinue = () => {
+    const handlePhotoSelecting = () => {
+        setIsPhotoLoading(true);
+    };
+
+    const handlePhotoSelected = (photoUri: string | null) => {
+        setProfilePhotoUri(photoUri);
+        setIsPhotoLoading(false);
+    };
+
+    const handleContinue = async () => {
+        // Trava para evitar cliques duplos se já estiver carregando
+        if (isLoading || isPhotoLoading) return;
+
         const result = validateRegister(name, email, password, confirmPassword);
 
         if (!result.valid) {
@@ -35,69 +56,109 @@ export default function Register(){
             return;
         }
 
-        // Salvar dados no contexto
+        setIsLoading(true);
+
+        const code = Math.floor(10000 + Math.random() * 90000).toString(); 
+
+        const cleanEmail = email.trim().toLowerCase();
+
+        // Salvar no Firestore
+        await setDoc(doc(db, "temp_codes", cleanEmail), {
+            code: code,
+            createdAt: serverTimestamp()
+        });
+
+        // Enviar o e-mail
+        const enviado = await sendVerificationEmail(email.trim(), code);
+
+        if (!enviado) {
+            setValidationMessage("Erro ao enviar e-mail. Tente novamente.");
+            setShowValidationPopup(true);
+            setIsLoading(false); 
+            return;
+        }
+
+        // Salvar dados no contexto, incluindo a URI da foto de perfil (será feito upload em genre.tsx)
         setData({
             name: name.trim(),
-            email: email.trim(),
+            email: cleanEmail,
             password,
-            favoriteGenres: [], // será definido depois
+            profilePhotoUri: profilePhotoUri || undefined,
+            favoriteGenres: [],
         });
 
         router.push('/verificacaoEmail');
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 1000);
     };
 
     function closeValidationPopup() {
         setShowValidationPopup(false);
     }
 
-    return(
+    return (
         <View style={miscStyle.background}>
-            <Image source={require('@/screenAssets/logo/full-logo.png')} style={logoStyle.logoS} height={height * 1} />
-            <View style={miscStyle.center}> 
-                <Box vw={0.80} padTop={0}> 
+            <Image source={require('@/screenAssets/logo/full-logo.png')} style={logoStyle.logoS} />
+            
+            <View style={miscStyle.center}>
+                <Box vw={0.80} padTop={0}>
                     <View style={miscStyle.formContainer}>
                         <Text style={textStyle.text}>Foto de Perfil</Text>
-                        <ProfileIcon>
-                            <Pencil onPress={() => console.log("Editar foto")} />
+                        <ProfileIcon source={profilePhotoUri ? { uri: profilePhotoUri } : undefined}>
+                            <Pencil onPhotoSelecting={handlePhotoSelecting} onPhotoSelected={handlePhotoSelected} isLoading={isLoading} />
                         </ProfileIcon>
+                        
                         <Text style={textStyle.text}>Insira suas informações pessoais</Text>
+                        
                         <Input
-                          icon={require('@/screenAssets/Navbar/perfil-icon.svg')}
-                          text="Nome:"
-                          value={name}
-                          onChangeText={setName}
+                            icon={require('@/screenAssets/Navbar/perfil-icon.svg')}
+                            text="Nome:"
+                            value={name}
+                            onChangeText={setName}
                         />
                         <Input
-                          icon={require('@/screenAssets/icons/email-icon.png')}
-                          text="Email:"
-                          value={email}
-                          onChangeText={setEmail}
+                            icon={require('@/screenAssets/icons/email-icon.png')}
+                            text="Email:"
+                            value={email}
+                            onChangeText={setEmail}
                         />
                         <Input
-                          icon={require('@/screenAssets/icons/password-icon.png')}
-                          text="Senha:"
-                          secureTextEntry={true}
-                          value={password}
-                          onChangeText={setPassword}
+                            icon={require('@/screenAssets/icons/password-icon.png')}
+                            text="Senha:"
+                            secureTextEntry={true}
+                            value={password}
+                            onChangeText={setPassword}
                         />
                         <Input
-                          icon={require('@/screenAssets/icons/password-icon.png')}
-                          text="Confirmar Senha:"
-                          secureTextEntry={true}
-                          value={confirmPassword}
-                          onChangeText={setConfirmPassword}
+                            icon={require('@/screenAssets/icons/password-icon.png')}
+                            text="Confirmar Senha:"
+                            secureTextEntry={true}
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
                         />
-                        <Text style={textStyle.message}>*A senha deve conter mais de 8 caracteres, letras maiúsculas e números</Text>
-                        <ButtonY title="Continuar" onPress={handleContinue} />
+
+                        <Text style={textStyle.message}>
+                            *A senha deve conter mais de 8 caracteres, letras maiúsculas e números
+                        </Text>
+
+                        {/* Apenas um botão, usando o estado isLoading */}
+                        <ButtonY 
+                            title={isLoading ? "Enviando..." : isPhotoLoading ? "Carregando foto..." : "Continuar"} 
+                            onPress={handleContinue} 
+                            disabled={isLoading || isPhotoLoading} 
+                        />
+                        
                         <ButtonVoltar title="Voltar" onPress={() => router.push('/')} />
                     </View>
-                </Box>    
+                </Box>
             </View>
+
             <ValidationPopup
                 visible={showValidationPopup}
                 message={validationMessage}
                 onClose={closeValidationPopup}
             />
         </View>
-    )
+    );
 }

@@ -124,6 +124,9 @@ export default function Cinemas() {
         renderItem={renderCinema}
         keyExtractor={(item, index) => `${item.id}-${index}`}
         showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        bounces={false}
+        overScrollMode="never"
         contentContainerStyle={{ paddingBottom: 200 }}
         ListFooterComponent={
           <View

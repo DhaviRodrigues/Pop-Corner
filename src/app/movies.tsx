@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, ListRenderItem } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { MOVIES, Movie } from '@/data/mockFilmes';
 import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY';
@@ -10,9 +9,7 @@ import SortFilterBar from '@/components/SortFilterBar';
 import GenreFilter from '@/components/GenreFilter';
 
 import { movieStyle } from '@/styles/movie';
-import { miscStyle } from '@/styles/misc';
 import { textStyle } from '@/styles/text';
-import { logoStyle } from '@/styles/logo';
 
 function DynamicStars({ rating }: { rating: number }) {
   const fill1 = Math.max(0, Math.min(1, rating - 0));
@@ -42,8 +39,10 @@ export default function MoviesScreen() {
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [sortType, setSortType] = useState('alphabetical');
   const [sortAscending, setSortAscending] = useState(true);
-  
   const [showFilters, setShowFilters] = useState(false);
+
+  // --- LÓGICA DE PAGINAÇÃO ---
+  const [visibleCount, setVisibleCount] = useState(10); // Começa com 10
 
   const availableGenres = useMemo(() => {
     const allTags = MOVIES.flatMap(movie => movie.tags);
@@ -55,6 +54,7 @@ export default function MoviesScreen() {
     { label: 'Nota', value: 'rating' },
   ];
 
+  // Filtra e ordena a lista completa primeiro
   const filteredAndSortedMovies = useMemo(() => {
     let result = MOVIES;
 
@@ -63,7 +63,6 @@ export default function MoviesScreen() {
         m.title.toLowerCase().includes(searchText.toLowerCase())
       );
     }
-
 
     if (selectedGenres.length > 0) {
       result = result.filter(m => 
@@ -81,27 +80,35 @@ export default function MoviesScreen() {
       return sortAscending ? comp : -comp;
     });
 
+    // Resetamos a paginação sempre que um filtro ou busca for alterado
+    // para o usuário não ficar perdido no meio da lista.
     return result;
   }, [searchText, selectedGenres, sortType, sortAscending]);
 
+  // Corta a lista para mostrar apenas o que a paginação permite
+  const paginatedMovies = useMemo(() => {
+    return filteredAndSortedMovies.slice(0, visibleCount);
+  }, [filteredAndSortedMovies, visibleCount]);
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + 10);
+  };
 
   const toggleGenre = (genre: string) => {
     setSelectedGenres(prev => 
       prev.includes(genre) ? prev.filter(g => g !== genre) : [...prev, genre]
     );
+    setVisibleCount(10); // Reset da página ao filtrar
   };
 
   const renderMovie: ListRenderItem<Movie> = ({ item }) => (
     <View style={movieStyle.filmesCard}>
       <Image source={{ uri: item.image }} style={movieStyle.filmesPoster} resizeMode="cover" />
-      
       <Text style={textStyle.filmesMovieTitle} numberOfLines={1}>{item.title}</Text>
-      
       <View style={movieStyle.filmesRatingContainer}>
         <Text style={movieStyle.filmesRatingLabel}>Avaliação: {item.rating.toFixed(1)}</Text>
         <DynamicStars rating={item.rating} />
       </View>
-      
       <View style={movieStyle.filmesTagRow}>
         {item.tags.map((tag, index) => (
           <View key={index} style={tag === 'AÇÃO' ? movieStyle.filmesTagYellow : movieStyle.filmesTagRed}>
@@ -109,11 +116,10 @@ export default function MoviesScreen() {
           </View>
         ))}
       </View>
-
       <TouchableOpacity 
         style={movieStyle.filmesDetailsButton}
         onPress={() => router.push({
-          pathname: '/filme-details' as any,
+          pathname: '/movieDetails' as any,
           params: { id: item.id } 
         })}
       >
@@ -123,7 +129,7 @@ export default function MoviesScreen() {
   );
 
   return (
-    <SafeAreaView style={movieStyle.filmesContainer}>
+    <View style={movieStyle.filmesContainer}>
       <View style={movieStyle.filmesHeader}>
         <Image 
           source={require('@/screenAssets/logo/full-logo.png')}
@@ -133,7 +139,7 @@ export default function MoviesScreen() {
         <View style={movieStyle.filmesSearchContainer}>
            <SearchBar 
              value={searchText} 
-             onChangeText={setSearchText} 
+             onChangeText={(txt) => { setSearchText(txt); setVisibleCount(10); }} 
              placeholder="Buscar um filme" 
              onToggleFilters={() => setShowFilters(!showFilters)}
              filtersVisible={showFilters}
@@ -146,11 +152,10 @@ export default function MoviesScreen() {
           <SortFilterBar 
             options={movieSortOptions}
             activeSort={sortType}
-            onSelectSort={setSortType}
+            onSelectSort={(val) => { setSortType(val); setVisibleCount(10); }}
             sortAscending={sortAscending}
-            onToggleAscending={() => setSortAscending(!sortAscending)}
+            onToggleAscending={() => { setSortAscending(!sortAscending); setVisibleCount(10); }}
           />
-          
           <GenreFilter 
             availableGenres={availableGenres}
             selectedGenres={selectedGenres}
@@ -160,19 +165,26 @@ export default function MoviesScreen() {
       )}
 
       <FlatList
-        data={filteredAndSortedMovies}
+        data={paginatedMovies} // Usamos a lista cortada aqui
         renderItem={renderMovie}
         keyExtractor={item => item.id.toString()}
         numColumns={2}
         columnWrapperStyle={movieStyle.filmesRow}
         contentContainerStyle={movieStyle.filmesListContent}
+        bounces={false}
+        overScrollMode="never"
         ListFooterComponent={
-          <View style={movieStyle.filmesFooterBtn}>
-            <ButtonY title="Ver mais" />
-          </View>
+          // O botão só aparece se ainda houver filmes para carregar
+          visibleCount < filteredAndSortedMovies.length ? (
+            <View style={movieStyle.filmesFooterBtn}>
+              <ButtonY title="Ver mais" onPress={handleLoadMore} />
+            </View>
+          ) : (
+            <View style={{ height: 40 }} /> // Espaço final se não houver mais filmes
+          )
         }
       />
       <BottomNavbar />
-    </SafeAreaView>
+    </View>
   );
 }

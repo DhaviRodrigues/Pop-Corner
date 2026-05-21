@@ -12,10 +12,13 @@ interface LogoutButtonProps {
 }
 
 export function LogoutButton({ onPress }: LogoutButtonProps) {
+  const iconSize = height * 0.028;
+  const iconMarginRight = height * 0.008;
+
   return (
     <TouchableOpacity style={buttonStyle.logoutButton} onPress={onPress}>
       {/* Implementação do ícone de saída com tamanho calculado proporcionalmente à altura da janela. */}
-      <MaterialCommunityIcons name="logout" size={height * 0.02} color={COLORS.black} />
+      <MaterialCommunityIcons name="logout" size={iconSize} color={COLORS.black} style={{ marginRight: iconMarginRight }} />
       <Text style={buttonStyle.logoutText}>Logout</Text>
     </TouchableOpacity>
   );
