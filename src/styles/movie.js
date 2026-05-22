@@ -201,10 +201,10 @@ export const movieStyle = StyleSheet.create({
     borderRadius: 15,    
     alignSelf: 'center',
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-    elevation: 15,
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 8,
   },
   detailsContentWrapper: {
     flex: 1,
@@ -240,8 +240,7 @@ export const movieStyle = StyleSheet.create({
   detailsWatchlistBtnWrapper: {
     width: width * 0.55, 
     alignSelf: 'center',
-    marginTop: height * 0.02, 
-    marginVertical: height * 0.01,
+    marginBottom: height * 0.01,
   },
   detailsSynopsisCard: {
     backgroundColor: "#FFF",

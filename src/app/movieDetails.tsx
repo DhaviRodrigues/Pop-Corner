@@ -13,6 +13,7 @@ import { InfoRow } from '@/components/InfoRow';
 import { ReviewItem } from '@/components/ReviewItem';
 import { movieStyle } from '@/styles/movie'; 
 import { textStyle } from '@/styles/text';
+import { DynamicStars } from '@/components/DynamicStars';
 
 export default function MovieDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -69,10 +70,22 @@ export default function MovieDetailsScreen() {
             
             {/* CARD DE NOTA */}
             <View style={movieStyle.detailsRatingCard}>
-              <Text style={textStyle.detailsRatingScore}>
-                  {movie.rating.toFixed(1).replace('.', ',')} ★
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={textStyle.detailsRatingScore}>
+                  {movie.rating.toFixed(1).replace('.', ',')}
+                </Text>
+                
+                <DynamicStars 
+                  rating={movie.rating} 
+                  starSize={26} 
+                  colorBackground="#D9D9D9" 
+                  colorForeground="#FFFEB2" 
+                />
+              </View>
+
+              <Text style={textStyle.detailsRatingCount}>
+                ({movie.ratingCount})
               </Text>
-              <Text style={textStyle.detailsRatingCount}>({movie.ratingCount} avaliações)</Text>
             </View>
 
             <View style={movieStyle.detailsInfoGroup}>
