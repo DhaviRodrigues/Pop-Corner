@@ -206,6 +206,30 @@ export const style = StyleSheet.create({
     fontFamily: "Poppins-Bold",
     fontSize: 14,
   },
+
+  adminFab: {
+    position: "absolute",
+    bottom: 90, 
+    right: 20,
+    width: 65,
+    height: 65,
+    borderRadius: 35,
+    backgroundColor: "#B22300", 
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 2000,
+    elevation: 6, 
+    shadowColor: "#000", 
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  adminFabText: {
+    color: "#FFF",
+    fontSize: 34,
+    fontFamily: "Poppins-Bold",
+    lineHeight: 38, 
+  },
 })
 
 export const popupStyles = {
