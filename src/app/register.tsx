@@ -5,10 +5,10 @@ import { Input } from "@/components/Input";
 import { Pencil } from "@/components/Pencil";
 import { ProfileIcon } from "@/components/ProfileIcon";
 import { ValidationPopup } from "@/components/ValidationPopup";
+import { User } from '@/types/user';
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
-import { validateRegister } from "@/validation/user_register";
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, Image, Text, View } from "react-native";
@@ -48,7 +48,7 @@ export default function Register() {
         // Trava para evitar cliques duplos se já estiver carregando
         if (isLoading || isPhotoLoading) return;
 
-        const result = validateRegister(name, email, password, confirmPassword);
+        const result = User.validateRegister(name, email, password, confirmPassword);
 
         if (!result.valid) {
             setValidationMessage(result.error);

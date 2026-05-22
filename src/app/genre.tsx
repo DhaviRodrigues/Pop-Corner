@@ -5,7 +5,7 @@ import { ButtonY } from "@/components/ButtonY";
 import { ValidationPopup } from "@/components/ValidationPopup";
 import { useUser } from '@/contexts/UserContext';
 import { useUserRegistration } from '@/contexts/UserRegistrationContext';
-import { fetchUserData, registerUser } from '@/services/authentication';
+import { User } from '@/types/user';
 import { uploadUserPhoto } from '@/services/storage';
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
@@ -55,7 +55,7 @@ export default function Genre(){
         setIsLoading(true);
         
         // Pega tudo que estava salvo no contexto do formulário e junta com a lista de gêneros dessa tela para bater na API do BCB inteligencia.
-        const result = await registerUser(
+        const result = await User.registerUser(
             data.name,
             data.email,
             data.password,
@@ -64,7 +64,7 @@ export default function Genre(){
 
         if (result.valid) {
             // Se o cadastro deu bom, já fazemos o fetch pra pegar os dados da sessão/perfil desse novo usuário no banco.
-            const userData = await fetchUserData();
+            const userData = await User.fetchUserData();
             if (userData) {
                 if (data.profilePhotoUri && auth.currentUser) {
                     try {

@@ -4,11 +4,10 @@ import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
 import { useUser } from "@/contexts/UserContext";
-import { fetchUserData, loginUser } from "@/services/authentication";
+import { User } from "@/types/user";
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
-import { validateLogin } from "@/validation/login";
 import { Link, useRouter } from 'expo-router';
 import { useState } from "react";
 import { ActivityIndicator, useWindowDimensions, Image, Text, TouchableOpacity, View } from "react-native";
@@ -32,7 +31,7 @@ export default function Index(){
 
     async function handleLogin() {
         // Validação no front-end antes de qualquer coisa para não mandar requisição inútil pra API se os campos estiverem vazios
-        const validation = validateLogin(email, password);
+        const validation = User.validateLogin(email, password);
         if (!validation.valid) {
             setValidationMessage(validation.error);
             setShowValidationPopup(true);
@@ -41,11 +40,11 @@ export default function Index(){
 
         // Trava o botão de submit com o spinner para evitar duplo clique
         setIsLoading(true);
-        const result = await loginUser(email, password);
+        const result = await User.loginUser(email, password);
 
         if (result.valid) {
             // Após validar as credenciais, é necessário buscar o resto dos dados do perfil para manter o app sincronizado
-            const userData = await fetchUserData();
+            const userData = await User.fetchUserData();
             if (userData) {
                 setUser(userData);
             }

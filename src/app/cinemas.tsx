@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState, useMemo, useEffect } from "react";
+import { View, Text, Image, FlatList, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNavbar from "@/components/Navbar";
 import CinemaCard from "@/components/CinemaCard";
@@ -7,15 +7,33 @@ import { ButtonY } from "@/components/ButtonY";
 import { filterMenuStyles as styles } from '@/styles/searchbar';
 import SearchBar from "@/components/SearchBar";
 import SortFilterBar from "@/components/SortFilterBar";
-import { mockCinemas } from "@/data/mockCinemas";
 import { movieStyle } from "@/styles/movie";
 import { style as cinemaStyle } from "@/styles/cinema";
 import { COLORS } from "@/constants/colors";
 import { useRouter } from "expo-router";
+import { useUser } from "@/contexts/UserContext";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/config/firebase";
 
 export default function Cinemas() {
   const router = useRouter();
 
+  const { user } = useUser();
+
+  console.log("DADOS DO USUÁRIO NO CONTEXTO:", user);
+
+  const isAdmin = user 
+    ? (
+       
+        (typeof (user as any).getIsAdmin === 'function' && (user as any).getIsAdmin() === true) || 
+      
+        ((user as any).isAdmin === true) ||
+        
+        ((user as any).email === "dhavirodrigues2@gmail.com")
+      )
+    : false;
+
+  const [cinemasList, setCinemasList] = useState<any[]>([]);
 
   const [searchText, setSearchText] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -28,12 +46,29 @@ export default function Cinemas() {
     { label: "Avaliação", value: "rating" },
   ];
 
+  useEffect(() => {
+    const fetchCinemas = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "cinemas"));
+        const cinemasData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setCinemasList(cinemasData);
+      } catch (error) {
+        console.error("Erro ao carregar cinemas do Firebase:", error);
+      }
+    };
+
+    fetchCinemas();
+  }, []);
+
   const filteredAndSortedCinemas = useMemo(() => {
-    let result = mockCinemas;
+    let result = cinemasList;
 
     if (searchText) {
       result = result.filter((c) =>
-        c.nome.toLowerCase().includes(searchText.toLowerCase())
+        c.nome?.toLowerCase().includes(searchText.toLowerCase())
       );
     }
 
@@ -44,17 +79,17 @@ export default function Cinemas() {
     result = [...result].sort((a, b) => {
       let comp = 0;
       if (sortType === "alphabetical") {
-        comp = a.nome.localeCompare(b.nome);
+        comp = (a.nome || "").localeCompare(b.nome || "");
       } else if (sortType === "rating") {
-        comp = a.avaliacao - b.avaliacao;
+        comp = (a.avaliacao || 0) - (b.avaliacao || 0);
       }
       return sortAscending ? comp : -comp;
     });
 
     return result;
-  }, [searchText, onlyPartners, sortType, sortAscending]);
+  }, [cinemasList, searchText, onlyPartners, sortType, sortAscending]);
 
-  const renderCinema = ({ item }: { item: (typeof mockCinemas)[0] }) => (
+  const renderCinema = ({ item }: { item: any }) => (
     <CinemaCard
       nome={item.nome}
       endereco={item.endereco}
@@ -62,7 +97,7 @@ export default function Cinemas() {
       avaliacao={item.avaliacao}
       distancia={item.distancia}
       imagem={item.imagem}
-      filmes={item.filmes}
+      filmes={item.filmes || []}
     />
   );
 
@@ -79,13 +114,49 @@ export default function Cinemas() {
           style={movieStyle.filmesLogo}
         />
 
-        <SearchBar
-          value={searchText}
-          onChangeText={setSearchText}
-          placeholder="Buscar um cinema"
-          onToggleFilters={() => setShowFilters(!showFilters)}
-          filtersVisible={showFilters}
-        />
+        <View style={{ flexDirection: "row", alignItems: "center", width: "100%", paddingHorizontal: 5 }}>
+          <View style={{ flex: 1 }}>
+            <SearchBar
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder="Buscar um cinema"
+              onToggleFilters={() => setShowFilters(!showFilters)}
+              filtersVisible={showFilters}
+            />
+          </View>
+
+          {isAdmin && (
+            <TouchableOpacity
+              onPress={() => router.push("/addTheater")}
+              style={{
+                backgroundColor: COLORS.primary,
+                width: 45,
+                height: 45,
+                borderRadius: 25, 
+                borderColor: COLORS.primaryDark,
+                borderWidth: 3,
+                justifyContent: "center",
+                alignItems: "center",
+                elevation: 4, 
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 3,
+              }}
+            >
+              <Text 
+                style={{ 
+                  color: COLORS.gold, 
+                  fontSize: 26, 
+                  fontFamily: "Poppins-Bold", 
+                  lineHeight: 30,
+                }}
+              >
+                +
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {showFilters && (
@@ -151,7 +222,7 @@ export default function Cinemas() {
               />
               <Text
                 style={{
-                  color: "#FFFEB2",
+                  color: COLORS.gold,
                   fontSize: 12,
                   fontFamily: "Poppins-Bold",
                   marginTop: 10,
@@ -168,5 +239,3 @@ export default function Cinemas() {
     </SafeAreaView>
   );
 }
-
-
