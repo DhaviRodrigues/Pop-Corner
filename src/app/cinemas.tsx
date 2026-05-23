@@ -15,31 +15,37 @@ import { useUser } from "@/contexts/UserContext";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/config/firebase";
 
+
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Raio da Terra em km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return parseFloat((R * c).toFixed(1));
+};
+
 export default function Cinemas() {
   const router = useRouter();
-
   const { user } = useUser();
-
-  console.log("DADOS DO USUÁRIO NO CONTEXTO:", user);
 
   const isAdmin = user 
     ? (
-       
         (typeof (user as any).getIsAdmin === 'function' && (user as any).getIsAdmin() === true) || 
-      
-        ((user as any).isAdmin === true) ||
-        
-        ((user as any).email === "dhavirodrigues2@gmail.com")
+        ((user as any).isAdmin === true)
       )
     : false;
 
   const [cinemasList, setCinemasList] = useState<any[]>([]);
-
   const [searchText, setSearchText] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [sortType, setSortType] = useState("alphabetical");
   const [sortAscending, setSortAscending] = useState(true);
   const [onlyPartners, setOnlyPartners] = useState(false); 
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
   const cinemaSortOptions = [
     { label: "Alfabético", value: "alphabetical" },
@@ -59,8 +65,15 @@ export default function Cinemas() {
         console.error("Erro ao carregar cinemas do Firebase:", error);
       }
     };
-
     fetchCinemas();
+
+    if (typeof window !== "undefined" && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+        (err) => console.warn("Não foi possível obter a localização do usuário na aba de cinemas.", err),
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: Infinity }
+      );
+    }
   }, []);
 
   const filteredAndSortedCinemas = useMemo(() => {
@@ -68,7 +81,8 @@ export default function Cinemas() {
 
     if (searchText) {
       result = result.filter((c) =>
-        c.nome?.toLowerCase().includes(searchText.toLowerCase())
+        c.nome?.toLowerCase().includes(searchText.toLowerCase()) || 
+        c.nome_search?.includes(searchText.toLowerCase())
       );
     }
 
@@ -89,17 +103,32 @@ export default function Cinemas() {
     return result;
   }, [cinemasList, searchText, onlyPartners, sortType, sortAscending]);
 
-  const renderCinema = ({ item }: { item: any }) => (
-    <CinemaCard
-      nome={item.nome}
-      endereco={item.endereco}
-      isParceiro={item.isParceiro}
-      avaliacao={item.avaliacao}
-      distancia={item.distancia}
-      imagem={item.imagem}
-      filmes={item.filmes || []}
-    />
-  );
+  const renderCinema = ({ item }: { item: any }) => {
+    let dist = "N/A"; 
+
+    if (userLocation) {
+      
+      const lat = item.coordinates?.latitude ?? item.latitude;
+      const lng = item.coordinates?.longitude ?? item.longitude;
+
+      if (lat !== undefined && lng !== undefined) {
+        const km = calculateDistance(userLocation[0], userLocation[1], lat, lng);
+        dist = `${km} km`;
+      }
+    }
+
+    return (
+      <CinemaCard
+        nome={item.nome}
+        endereco={item.endereco}
+        isParceiro={item.isParceiro}
+        avaliacao={item.avaliacao}
+        distancia={dist}
+        imagem={item.url_imagem || item.imagem} 
+        filmes={item.filmesEmCartaz || item.filmes || []} 
+      />
+    );
+  };
 
   return (
     <SafeAreaView
