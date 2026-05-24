@@ -128,11 +128,9 @@ export const style = StyleSheet.create({
   },
   cinemaMainImageRight: {
     width: "100%",
-    height: "130%",
+    height: "100%", 
     borderRadius: 6,
-    marginTop: 5,
     backgroundColor: '#000',
-    left: 10,
   },
   seeMoreBtnOverlay: {
     position: 'absolute',

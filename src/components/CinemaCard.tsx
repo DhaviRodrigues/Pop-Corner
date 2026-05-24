@@ -49,9 +49,10 @@ const CinemaCard = ({ nome, endereco, isParceiro, avaliacao, distancia, imagem, 
                     <DynamicStars rating={avaliacao} />
                 </View>
                 {isParceiro && (
-                    <Image
-                        source={require('@/screenAssets/cinema-parceiro.svg')}
-                        style={cinemaStyle.partnerBadgeIcon}
+                    <Image 
+                        source={{ uri: imagem }} 
+                        style={cinemaStyle.cinemaMainImageRight} 
+                        resizeMode="contain" 
                     />
                 )}
 

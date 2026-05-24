@@ -96,7 +96,7 @@ export default function Cinemas() {
       isParceiro={item.isParceiro}
       avaliacao={item.avaliacao}
       distancia={item.distancia}
-      imagem={item.imagem}
+      imagem={item.url_imagem} 
       filmes={item.filmes || []}
     />
   );
