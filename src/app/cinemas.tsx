@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { View, Text, Image, FlatList, TouchableOpacity } from "react-native";
+import { View, Text, Image, FlatList, TouchableOpacity, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNavbar from "@/components/Navbar";
 import CinemaCard from "@/components/CinemaCard";
@@ -12,34 +12,34 @@ import { style as cinemaStyle } from "@/styles/cinema";
 import { COLORS } from "@/constants/colors";
 import { useRouter } from "expo-router";
 import { useUser } from "@/contexts/UserContext";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/config/firebase";
+
+// Importações do Firebase: agora incluindo 'doc' e 'getDoc' para consultar o usuário
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/config/firebase"; // <-- Certifique-se de importar o auth
+
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; 
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return parseFloat((R * c).toFixed(1));
+};
 
 export default function Cinemas() {
   const router = useRouter();
-
   const { user } = useUser();
-
-  console.log("DADOS DO USUÁRIO NO CONTEXTO:", user);
-
-  const isAdmin = user 
-    ? (
-       
-        (typeof (user as any).getIsAdmin === 'function' && (user as any).getIsAdmin() === true) || 
-      
-        ((user as any).isAdmin === true) ||
-        
-        ((user as any).email === "dhavirodrigues2@gmail.com")
-      )
-    : false;
-
+  const [isAdmin, setIsAdmin] = useState(false);
   const [cinemasList, setCinemasList] = useState<any[]>([]);
-
   const [searchText, setSearchText] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [sortType, setSortType] = useState("alphabetical");
   const [sortAscending, setSortAscending] = useState(true);
   const [onlyPartners, setOnlyPartners] = useState(false); 
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
   const cinemaSortOptions = [
     { label: "Alfabético", value: "alphabetical" },
@@ -47,6 +47,7 @@ export default function Cinemas() {
   ];
 
   useEffect(() => {
+   
     const fetchCinemas = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "cinemas"));
@@ -59,16 +60,44 @@ export default function Cinemas() {
         console.error("Erro ao carregar cinemas do Firebase:", error);
       }
     };
-
     fetchCinemas();
-  }, []);
+
+    const checkAdminStatus = async () => {
+      try {
+    
+        if (auth.currentUser) {
+          const userRef = doc(db, "users", auth.currentUser.uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            if (userData.isAdm === true || userData.isAdmin === true) {
+              setIsAdmin(true);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao verificar status de admin:", error);
+      }
+    };
+    checkAdminStatus();
+
+    if (typeof window !== "undefined" && "geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+        (err) => console.warn("Não foi possível obter a localização do usuário na aba de cinemas.", err),
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: Infinity }
+      );
+    }
+  }, []); 
 
   const filteredAndSortedCinemas = useMemo(() => {
     let result = cinemasList;
 
     if (searchText) {
       result = result.filter((c) =>
-        c.nome?.toLowerCase().includes(searchText.toLowerCase())
+        c.nome?.toLowerCase().includes(searchText.toLowerCase()) || 
+        c.nome_search?.includes(searchText.toLowerCase())
       );
     }
 
@@ -89,17 +118,31 @@ export default function Cinemas() {
     return result;
   }, [cinemasList, searchText, onlyPartners, sortType, sortAscending]);
 
-  const renderCinema = ({ item }: { item: any }) => (
-    <CinemaCard
-      nome={item.nome}
-      endereco={item.endereco}
-      isParceiro={item.isParceiro}
-      avaliacao={item.avaliacao}
-      distancia={item.distancia}
-      imagem={item.url_imagem} 
-      filmes={item.filmes || []}
-    />
-  );
+  const renderCinema = ({ item }: { item: any }) => {
+    let dist = "N/A"; 
+
+    if (userLocation) {
+      const lat = item.coordinates?.latitude ?? item.latitude;
+      const lng = item.coordinates?.longitude ?? item.longitude;
+
+      if (lat !== undefined && lng !== undefined) {
+        const km = calculateDistance(userLocation[0], userLocation[1], lat, lng);
+        dist = `${km} km`;
+      }
+    }
+
+    return (
+      <CinemaCard
+        nome={item.nome}
+        endereco={item.endereco}
+        isParceiro={item.isParceiro}
+        avaliacao={item.avaliacao}
+        distancia={dist}
+        imagem={item.url_imagem || item.imagem} 
+        filmes={item.filmesEmCartaz || item.filmes || []} 
+      />
+    );
+  };
 
   return (
     <SafeAreaView
@@ -108,14 +151,49 @@ export default function Cinemas() {
         { flex: 1, backgroundColor: COLORS.primary },
       ]}
     >
-      <View style={movieStyle.filmesHeader}>
+      <View style={[movieStyle.filmesHeader, { position: 'relative' }]}>
         <Image
           source={require("@/screenAssets/logo/full-logo.png")}
           style={movieStyle.filmesLogo}
         />
 
-        <View style={{ flexDirection: "row", alignItems: "center", width: "100%", paddingHorizontal: 5 }}>
-          <View style={{ flex: 1 }}>
+        {isAdmin && (
+          <TouchableOpacity
+            onPress={() => router.push("/addTheater")}
+            style={{
+              position: "absolute",
+              top: Platform.OS === 'web' ? 20 : 40,
+              right: 20,
+              backgroundColor: COLORS.primary,
+              width: 55,
+              height: 55,
+              borderColor: COLORS.primaryDark,
+              borderWidth: 4,
+              borderRadius: 45, 
+              justifyContent: "center",
+              alignItems: "center",
+              elevation: 4, 
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 3,
+              zIndex: 100,
+            }}
+          >
+            <Text 
+              style={{ 
+                color: COLORS.gold, 
+                fontSize: 30, 
+                fontFamily: "Poppins-Bold", 
+                lineHeight: 30,
+              }}
+            >
+              +
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={{ width: "100%", paddingHorizontal: 5, marginTop: 10 }}>
             <SearchBar
               value={searchText}
               onChangeText={setSearchText}
@@ -123,39 +201,6 @@ export default function Cinemas() {
               onToggleFilters={() => setShowFilters(!showFilters)}
               filtersVisible={showFilters}
             />
-          </View>
-
-          {isAdmin && (
-            <TouchableOpacity
-              onPress={() => router.push("/addTheater")}
-              style={{
-                backgroundColor: COLORS.primary,
-                width: 45,
-                height: 45,
-                borderRadius: 25, 
-                borderColor: COLORS.primaryDark,
-                borderWidth: 3,
-                justifyContent: "center",
-                alignItems: "center",
-                elevation: 4, 
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.3,
-                shadowRadius: 3,
-              }}
-            >
-              <Text 
-                style={{ 
-                  color: COLORS.gold, 
-                  fontSize: 26, 
-                  fontFamily: "Poppins-Bold", 
-                  lineHeight: 30,
-                }}
-              >
-                +
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
       </View>
 
