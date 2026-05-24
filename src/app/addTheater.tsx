@@ -6,6 +6,8 @@ import { COLORS } from "@/constants/colors";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Image, StyleSheet, Text, useWindowDimensions, View, ScrollView, TouchableOpacity, TextInput } from "react-native";
+import { uploadUserPhoto } from "@/services/storage";
+import * as ImagePicker from 'expo-image-picker';
 
 import { Cinema } from "@/types/cinema"; 
 import { Sessao } from "@/types/sessao"; 
@@ -60,6 +62,7 @@ export default function CreateCinema() {
 
   const [erroSessao, setErroSessao] = useState<string>("");
   const [erroCinema, setErroCinema] = useState<string>("");
+  const [imageUri, setImageUri] = useState<string | null>(null);
 
   const isCinemaPronto = !!(
     nome.trim() && 
@@ -70,6 +73,21 @@ export default function CreateCinema() {
     urlImagem.trim()
   );
 
+  const handlePickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'], 
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      const selectedUri = result.assets[0].uri;
+      setImageUri(selectedUri);
+
+      setUrlImagem(selectedUri); 
+    }
+  };
 
   const handleAdicionarFilme = () => {
     if (!idFilme.trim()) {
@@ -89,7 +107,7 @@ export default function CreateCinema() {
   };
 
   const handleAdicionarSessao = () => {
-    setErroSessao(""); // Limpa o erro anterior logo que clica
+    setErroSessao(""); 
 
     if (!filmeSessao || filmesEmCartaz.length === 0) {
       setErroSessao("Por favor, selecione um filme no dropdown.");
@@ -123,6 +141,25 @@ export default function CreateCinema() {
     }
 
     try {
+      let urlFinal = urlImagem; 
+
+      if (imageUri) {
+        const identificadorUnico = `${nome.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}`;
+        
+        const uploadResult = await uploadUserPhoto(
+          imageUri, 
+          'cinema_foto', 
+          identificadorUnico
+        );
+
+        if (!uploadResult.success || !uploadResult.signedUrl) {
+          setErroCinema("Erro ao enviar a imagem para o servidor.");
+          return; 
+        }
+
+        urlFinal = uploadResult.signedUrl; 
+      }
+
       const sessoesInstanciadas = sessoes.map((sessaoCrua) => {
         return Sessao.createSessao({
           idFilme: sessaoCrua.idFilme, data: sessaoCrua.data, horario: sessaoCrua.horario
@@ -130,7 +167,7 @@ export default function CreateCinema() {
       });
 
       const novoCinema = Cinema.createCinema({
-        nome, cidade, endereco, latitude, longitude, urlImagem, filmesEmCartaz, sessoes: sessoesInstanciadas
+        nome, cidade, endereco, latitude, longitude, urlImagem: urlFinal, filmesEmCartaz, sessoes: sessoesInstanciadas
       });
 
       const resultado = await registerCinema(novoCinema);
@@ -196,7 +233,35 @@ export default function CreateCinema() {
           </View>
 
           <View style={styles.fullInput}>
-            <LocalInput text="URL da Imagem ou Arquivo" value={urlImagem} onChangeText={setUrlImagem} />
+            <TouchableOpacity 
+              style={[
+                componentStyle.inputContainer, 
+                { 
+                  width: '100%', 
+                  paddingVertical: 15, 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }
+              ]} 
+              onPress={handlePickImage}
+            >
+              <Text style={{ color: "#A9A9A9", fontSize: width * 0.035 }}>
+                {imageUri ? "Imagem Selecionada (Clique para trocar)" : "Selecionar Imagem da Galeria"}
+              </Text>
+            </TouchableOpacity>
+
+            {imageUri && (
+              <Image 
+                source={{ uri: imageUri }} 
+                style={{ 
+                  width: '100%', 
+                  height: 180, 
+                  borderRadius: 12, 
+                  marginTop: 15 
+                }} 
+                resizeMode="cover"
+              />
+            )}
           </View>
 
           <View 
