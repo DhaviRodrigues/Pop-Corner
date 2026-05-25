@@ -98,10 +98,37 @@ export default function MovieDetailsScreen() {
                 </View>
 
                 {/* INFORMAÇÕES DO FILME */}
-                <InfoRow icon="time-outline" label="Duração" value={movie.duration} />
-                <InfoRow icon="film-outline" label="Gêneros" value={movie.tags.join(', ')} />
-                <InfoRow icon="shield-checkmark-outline" label="Classificação" value={movie.classification} />
-                <InfoRow icon="videocam-outline" label="Diretor" value={movie.director} />
+                <InfoRow 
+                  icon="time-outline" 
+                  label="Duração" 
+                  value={movie.duration} 
+                />
+
+                <InfoRow 
+                  icon="film-outline" 
+                  label="Gêneros" 
+                  value={movie.tags}   // Passamos o array direto, SEM o .join(', ')
+                  isTag={true}         // Ativamos a renderização das tags vermelhas
+                />
+
+                <InfoRow 
+                  icon="shield-checkmark-outline" 
+                  label="Classificação" 
+                  value={movie.classification} 
+                />
+
+                <InfoRow 
+                  icon="videocam-outline" 
+                  label="Diretor" 
+                  value={movie.director} 
+                />
+
+                {/* NOVO ITEM: Ano de lançamento */}
+                <InfoRow 
+                  icon="calendar-outline" 
+                  label="Ano de lançamento" 
+                  value={String(movie.year)} 
+                />
             </View>
 
             {/* SEÇÃO DE AVALIAÇÃO */}
