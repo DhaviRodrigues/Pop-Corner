@@ -65,11 +65,4 @@ export const REVIEWS: Review[] = [
     rating: 5, 
     comment: 'Sombrio, genial e completamente insano. Um clássico.' 
   },
-  { 
-    id: 9, 
-    movieId: 3, // Filme genérico caso você adicione um ID 3 depois
-    user: 'CinéfiloBR', 
-    rating: 3, 
-    comment: 'A direção de arte é linda, mas o roteiro se perde no terceiro ato.' 
-  }
 ];

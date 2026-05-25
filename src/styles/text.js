@@ -65,7 +65,7 @@ export const textStyle = StyleSheet.create({
   },
   detailsRatingCount: {
     color: '#FFFEB2', 
-    fontSize: 12,
+    fontSize: 16,
   },
   detailsSectionTitle: {
     textAlign: 'center', 
