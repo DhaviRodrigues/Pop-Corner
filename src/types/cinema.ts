@@ -10,7 +10,9 @@ export class Cinema {
     private longitude: number,
     private urlImagem: string,
     private filmesEmCartaz: string[], 
-    private sessoes: Sessao[]         
+    private sessoes: Sessao[],
+    private avaliacao: number = 0,
+    private comentarios: any[] = []         
   ) {}
 
   getNome() { return this.nome; }
@@ -19,6 +21,8 @@ export class Cinema {
   getLatitude() { return this.latitude; }
   getLongitude() { return this.longitude; }
   getUrlImagem() { return this.urlImagem; }
+  getAvaliacao() { return this.avaliacao; }
+  getComentarios() { return this.comentarios; }
 
   static createCinema(payload: {
     nome: string;
@@ -28,7 +32,9 @@ export class Cinema {
     longitude: string | number;
     urlImagem: string;
     filmesEmCartaz?: string[]; 
-    sessoes?: Sessao[];        
+    sessoes?: Sessao[];  
+    avaliacao?: number;
+    comentarios?: any[];      
   }): Cinema {
 
     const nomeLimpo = payload.nome.trim();
@@ -71,7 +77,9 @@ export class Cinema {
       lng,
       urlLimpa,
       listaFilmes, 
-      listaSessoes                
+      listaSessoes,
+      payload.avaliacao || 0,
+      payload.comentarios || []               
     );
   }
 
@@ -85,7 +93,9 @@ export class Cinema {
       created_at: Timestamp.now(),
       nome_search: this.nome.toLowerCase(),
       filmesEmCartaz: this.filmesEmCartaz,
-      sessoes: this.sessoes.map(sessao => sessao.toFirestore()) 
+      sessoes: this.sessoes.map(sessao => sessao.toFirestore()),
+      avaliacao: this.avaliacao,
+      comentarios: this.comentarios
     };
   }
 }

@@ -141,11 +141,11 @@ export const style = StyleSheet.create({
     borderRadius: 8,
     zIndex: 10,          
     elevation: 5,
-    left: 35,    
+    left: 16,    
   },
   seeMoreBtnText: {
     color: '#FFFEB2',
-    fontSize: 10,
+    fontSize: 14,
     fontFamily: 'Poppins-Bold',
   },
   mapButtom:{

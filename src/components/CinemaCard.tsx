@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { style as cinemaStyle } from '@/styles/cinema';
+
 interface CinemaCardProps {
+    id: string; 
     nome: string;
     endereco: string;
     isParceiro: boolean;
@@ -11,7 +14,6 @@ interface CinemaCardProps {
     filmes: { id: number, image: string }[];
 }
 
-// Função de Estrelas Dinâmicas adaptada para o tema Cinema (Vermelha)
 function DynamicStars({ rating }: { rating: number }) {
     const fills = Array.from({ length: 5 }, (_, i) => Math.max(0, Math.min(1, rating - i)));
 
@@ -29,11 +31,12 @@ function DynamicStars({ rating }: { rating: number }) {
     );
 }
 
-const CinemaCard = ({ nome, endereco, isParceiro, avaliacao, distancia, imagem, filmes }: CinemaCardProps) => {
+const CinemaCard = ({ id, nome, endereco, isParceiro, avaliacao, distancia, imagem, filmes }: CinemaCardProps) => {
+    const router = useRouter(); // <-- Hook de roteamento
+
     return (
         <View style={cinemaStyle.cinemaCardContainer}>
 
-            {/* Lado Esquerdo: Informações do Cinema */}
             <View style={cinemaStyle.cinemaDetailsContainer}>
                 <View>
                     <View style={cinemaStyle.cinemaHeaderRow}>
@@ -56,26 +59,27 @@ const CinemaCard = ({ nome, endereco, isParceiro, avaliacao, distancia, imagem, 
                     />
                 )}
 
-                {/* Filmes em Cartaz (Abaixo das informações) */}
                 <View style={cinemaStyle.moviesRowBottom}>
-                    {filmes.slice(0, 2).map((filme) => (
+                    {filmes.slice(0, 2).map((filme, index) => (
                         <Image
-                            key={filme.id}
-                            source={{ uri: filme.image }}
+                            key={filme.id ? filme.id : index} 
+                            source={{ uri: filme.image || "https://placehold.co/200x300/1A1A1A/FFFEB2?text=Filme" }}
                             style={cinemaStyle.miniPosterImage}
                         />
                     ))}
                 </View>
             </View>
 
-            {/* Lado Direito: Botão Acima e Imagem Abaixo */}
             <View style={cinemaStyle.cinemaRightActionContainer}>
-                {/* A imagem agora é o fundo do container da direita */}
                 <View style={cinemaStyle.imageContainerWithButton}>
                     <Image source={{ uri: imagem }} style={cinemaStyle.cinemaMainImageRight} />
 
-                    {/* Botão sobrepondo a imagem */}
-                    <TouchableOpacity style={cinemaStyle.seeMoreBtnOverlay} activeOpacity={0.8}>
+                    {/* REDIRECIONA PASSANDO O ID DO CINEMA */}
+                    <TouchableOpacity 
+                        style={cinemaStyle.seeMoreBtnOverlay} 
+                        activeOpacity={0.8}
+                        onPress={() => router.push({ pathname: '/cinemaDetails', params: { id } })}
+                    >
                         <Text style={cinemaStyle.seeMoreBtnText}>Ver mais</Text>
                     </TouchableOpacity>
                 </View>
@@ -86,4 +90,3 @@ const CinemaCard = ({ nome, endereco, isParceiro, avaliacao, distancia, imagem, 
 };
 
 export default CinemaCard;
-

@@ -3,18 +3,18 @@ import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
 import { componentStyle } from "@/styles/component"; 
 import { COLORS } from "@/constants/colors"; 
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import { Alert, Image, StyleSheet, Text, useWindowDimensions, View, ScrollView, TouchableOpacity, TextInput } from "react-native";
 import { uploadUserPhoto } from "@/services/storage";
 import * as ImagePicker from 'expo-image-picker';
-
 import { Cinema } from "@/types/cinema"; 
 import { Sessao } from "@/types/sessao"; 
 import { registerCinema } from "@/services/cinemaService";
-
 import { ButtonY } from "../components/ButtonY";
 import BottomNavbar from "../components/Navbar"; 
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/config/firebase";
 
 function LocalInput({ text, value, onChangeText }: { text: string, value: string, onChangeText: (v: string) => void }) {
   return (
@@ -22,16 +22,7 @@ function LocalInput({ text, value, onChangeText }: { text: string, value: string
       <TextInput
         placeholder={text}
         placeholderTextColor="#A9A9A9"
-        style={[
-          componentStyle.inputText, 
-          { 
-            flex: 1, 
-            flexShrink: 1, 
-            minWidth: 0,   
-            width: '100%', 
-            outlineStyle: 'none' 
-          } as any
-        ]} 
+        style={[componentStyle.inputText, { flex: 1, flexShrink: 1, minWidth: 0, width: '100%', outlineStyle: 'none' } as any]} 
         value={value}
         onChangeText={onChangeText}
       />
@@ -43,35 +34,54 @@ export default function CreateCinema() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const styles = getStyles(width, height);
+  const { editId } = useLocalSearchParams();
 
-  const [nome, setNome] = useState<string>("");
-  const [cidade, setCidade] = useState<string>("");
-  const [endereco, setEndereco] = useState<string>("");
-  const [latitude, setLatitude] = useState<string>("");
-  const [longitude, setLongitude] = useState<string>("");
-  const [urlImagem, setUrlImagem] = useState<string>("");
-
-  const [idFilme, setIdFilme] = useState<string>("");
-  const [filmeSessao, setFilmeSessao] = useState<string>("");
-  const [dataSessao, setDataSessao] = useState<string>("");
-  const [horarioSessao, setHorarioSessao] = useState<string>("");
+  const [nome, setNome] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+  const [urlImagem, setUrlImagem] = useState("");
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [idFilme, setIdFilme] = useState("");
+  const [filmeSessao, setFilmeSessao] = useState("");
+  const [dataSessao, setDataSessao] = useState("");
+  const [horarioSessao, setHorarioSessao] = useState("");
   const [dropdownAberto, setDropdownAberto] = useState(false);
-
   const [filmesEmCartaz, setFilmesEmCartaz] = useState<string[]>([]);
   const [sessoes, setSessoes] = useState<{ idFilme: string; data: string; horario: string }[]>([]);
+  const [erroSessao, setErroSessao] = useState("");
+  const [erroCinema, setErroCinema] = useState("");
 
-  const [erroSessao, setErroSessao] = useState<string>("");
-  const [erroCinema, setErroCinema] = useState<string>("");
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  const isCinemaPronto = !!(nome.trim() && cidade.trim() && endereco.trim() && latitude.trim() && longitude.trim() && urlImagem.trim());
 
-  const isCinemaPronto = !!(
-    nome.trim() && 
-    cidade.trim() && 
-    endereco.trim() && 
-    latitude.trim() && 
-    longitude.trim() && 
-    urlImagem.trim()
-  );
+  useEffect(() => {
+    if (editId) {
+      const loadCinema = async () => {
+        try {
+          const docRef = doc(db, 'cinemas', editId as string);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setNome(data.nome || "");
+            setCidade(data.cidade || "");
+            setEndereco(data.endereco || "");
+            if (data.coordinates) {
+              setLatitude(String(data.coordinates.latitude || ""));
+              setLongitude(String(data.coordinates.longitude || ""));
+            }
+            const imagemUrl = data.url_imagem || data.imagem || "";
+            setUrlImagem(imagemUrl);
+            setImageUri(imagemUrl);
+            setFilmesEmCartaz(data.filmesEmCartaz || []);
+          }
+        } catch (error) {
+          console.error("Erro ao carregar cinema:", error);
+        }
+      };
+      loadCinema();
+    }
+  }, [editId]);
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -80,11 +90,9 @@ export default function CreateCinema() {
       aspect: [16, 9],
       quality: 0.7,
     });
-
     if (!result.canceled) {
       const selectedUri = result.assets[0].uri;
       setImageUri(selectedUri);
-
       setUrlImagem(selectedUri); 
     }
   };
@@ -94,91 +102,73 @@ export default function CreateCinema() {
       Alert.alert("Aviso", "Digite o ID do filme antes de adicionar.");
       return;
     }
-    
-    setFilmesEmCartaz(prev => {
-      const novaLista = [...prev, idFilme.trim()];
-      if (novaLista.length === 1) {
-        setFilmeSessao(novaLista[0]);
-      }
-      return novaLista;
-    });
-    
+    setFilmesEmCartaz(prev => [...prev, idFilme.trim()]);
     setIdFilme("");
   };
 
   const handleAdicionarSessao = () => {
     setErroSessao(""); 
-
     if (!filmeSessao || filmesEmCartaz.length === 0) {
-      setErroSessao("Por favor, selecione um filme no dropdown.");
+      setErroSessao("Selecione um filme.");
       return;
     }
-
     try {
       Sessao.createSessao({ idFilme: filmeSessao, data: dataSessao, horario: horarioSessao });
-
-      const novaSessao = {
-        idFilme: filmeSessao, 
-        data: dataSessao.trim(),
-        horario: horarioSessao.trim()
-      };
-
-      setSessoes(prev => [...prev, novaSessao]);
+      setSessoes(prev => [...prev, { idFilme: filmeSessao, data: dataSessao, horario: horarioSessao }]);
       setDataSessao("");
       setHorarioSessao("");
-
     } catch (error: any) {
       setErroSessao(error.message);
     }
   };
 
-  const handleConfirmar = async () => {
+const handleConfirmar = async () => {
     setErroCinema(""); 
-
     if (!isCinemaPronto) {
-      setErroCinema("Por favor, preencha todos os dados básicos do cinema primeiro.");
+      setErroCinema("Preencha todos os dados.");
       return; 
     }
 
     try {
       let urlFinal = urlImagem; 
+      if (imageUri && !imageUri.startsWith('http')) {
+        const res = await uploadUserPhoto(imageUri, 'cinema_foto', `${nome.replace(/\s+/g, '_')}_${Date.now()}`);
+        if (!res.success) return setErroCinema("Erro na imagem.");
+        urlFinal = res.signedUrl!;
+      }
 
-      if (imageUri) {
-        const identificadorUnico = `${nome.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}`;
+      const sessoesInstanciadas = sessoes.map(s => Sessao.createSessao({ idFilme: s.idFilme, data: s.data, horario: s.horario }));
+      
+      // Cria a instância base
+      const cinemaInstancia = Cinema.createCinema({ 
+          nome, cidade, endereco, latitude, longitude, urlImagem: urlFinal, filmesEmCartaz, sessoes: sessoesInstanciadas 
+      });
+
+      const dadosParaSalvar = cinemaInstancia.toFirestore();
+
+      if (editId) {
+        // --- AQUI ESTÁ A CHAVE: BUSCAR DADOS ATUAIS ANTES DE ATUALIZAR ---
+        const docRef = doc(db, 'cinemas', editId as string);
+        const docSnap = await getDoc(docRef);
         
-        const uploadResult = await uploadUserPhoto(
-          imageUri, 
-          'cinema_foto', 
-          identificadorUnico
-        );
-
-        if (!uploadResult.success || !uploadResult.signedUrl) {
-          setErroCinema("Erro ao enviar a imagem para o servidor.");
-          return; 
+        if (docSnap.exists()) {
+            const dadosAtuais = docSnap.data();
+            
+            // Mescla os novos dados com os campos de avaliação e comentários que já existiam
+            const updatePayload = {
+                ...dadosParaSalvar,
+                avaliacao: dadosAtuais.avaliacao || 0,
+                comentarios: dadosAtuais.comentarios || []
+            };
+            
+            await updateDoc(docRef, updatePayload);
+            Alert.alert("Sucesso!", "Cinema atualizado.");
         }
-
-        urlFinal = uploadResult.signedUrl; 
-      }
-
-      const sessoesInstanciadas = sessoes.map((sessaoCrua) => {
-        return Sessao.createSessao({
-          idFilme: sessaoCrua.idFilme, data: sessaoCrua.data, horario: sessaoCrua.horario
-        });
-      });
-
-      const novoCinema = Cinema.createCinema({
-        nome, cidade, endereco, latitude, longitude, urlImagem: urlFinal, filmesEmCartaz, sessoes: sessoesInstanciadas
-      });
-
-      const resultado = await registerCinema(novoCinema);
-
-      if (resultado.valid) {
-        Alert.alert("Sucesso!", "O cinema foi cadastrado.");
-        router.back(); 
       } else {
-        setErroCinema(resultado.error);
+        await registerCinema(cinemaInstancia);
+        Alert.alert("Sucesso!", "Cinema cadastrado.");
       }
-
+      router.back(); 
     } catch (error: any) {
       setErroCinema(error.message);
     }
@@ -186,7 +176,13 @@ export default function CreateCinema() {
 
   return (
     <View style={miscStyle.background}>
-      <TouchableOpacity style={styles.backButtonContainer} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButtonContainer} onPress={() => {
+      if (router.canGoBack()) {
+          router.back();
+      } else {
+          router.replace('/cinemas'); 
+      }
+  }}>
          <Image 
            source={require("../screenAssets/back-icon-buttom.svg")} 
            style={styles.backIcon} 
