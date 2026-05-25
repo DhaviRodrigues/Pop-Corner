@@ -5,6 +5,7 @@ import { doc, setDoc, getDoc } from "firebase/firestore";
 export interface AuthResult {
   valid: boolean;
   error: string;
+  uid?: string;
 }
 
 export interface LoginValidationResult {
@@ -189,7 +190,8 @@ export class User {
 
       return {
         valid: true,
-        error: ""
+        error: "",
+        uid: user.uid,
       };
     } catch (error) {
       const authError = error as AuthError;

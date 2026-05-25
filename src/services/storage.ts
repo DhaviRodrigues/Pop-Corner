@@ -12,13 +12,17 @@ interface UploadResponse {
 export async function uploadUserPhoto(
   fileUri: string, 
   folder: 'perfil_foto' | 'cinema_foto' |'filme_foto', 
-  identifier: string
+  identifier: string,
+  fileName?: string
 ): Promise<UploadResponse> {
     const response = await fetch(fileUri);
     const blob = await response.blob();
     
-    // Tentar extrair extensão da URI
-    let fileExtension = fileUri.split('.').pop()?.split('?')[0] || '';
+    // Tentar extrair extensão da fileName primeiro, depois da URI
+    let fileExtension = fileName?.split('.').pop()?.split('?')[0] || '';
+    if (!fileExtension) {
+      fileExtension = fileUri.split('.').pop()?.split('?')[0] || '';
+    }
     let normalizedExtension = fileExtension.toLowerCase();
 
     // Se extensão não for válida, tentar extrair do blob.type (mime type)

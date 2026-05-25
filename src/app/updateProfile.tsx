@@ -104,7 +104,7 @@ export default function UpdateProfile() {
         return;
       }
 
-      const uploadResponse = await uploadUserPhoto(uri, 'perfil_foto', auth.currentUser.uid);
+      const uploadResponse = await uploadUserPhoto(uri, 'perfil_foto', auth.currentUser.uid, fileName);
       if (!uploadResponse.success) {
         setValidationMessage(uploadResponse.error || 'Erro ao fazer upload da foto.');
         setShowValidationPopup(true);

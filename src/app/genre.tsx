@@ -12,7 +12,9 @@ import { textStyle } from "@/styles/text";
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, Text, View } from "react-native";
-
+import { auth, db } from '@/config/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { uploadUserPhoto } from '@/services/storage';
 const { height } = Dimensions.get('window');
 
 // Array estático com os gêneros. Como não muda com frequência, fica hardcoded aqui mesmo, mas se a ideia for expandir, o ideal seria puxar do banco depois.
@@ -60,6 +62,36 @@ export default function Genre(){
         );
 
         if (result.valid) {
+            const userId = result.uid || auth.currentUser?.uid;
+            if (!userId) {
+                setValidationMessage('Não foi possível identificar o usuário após o registro. Tente novamente.');
+                setShowValidationPopup(true);
+                setIsLoading(false);
+                return;
+            }
+
+            if (data.profilePhotoUri) {
+                const uploadResult = await uploadUserPhoto(
+                    data.profilePhotoUri,
+                    'perfil_foto',
+                    userId,
+                    data.profilePhotoFileName
+                );
+
+                if (!uploadResult.success) {
+                    setValidationMessage(uploadResult.error || 'Erro ao enviar a foto de perfil. Tente novamente.');
+                    setShowValidationPopup(true);
+                    setIsLoading(false);
+                    return;
+                }
+
+                if (uploadResult.signedUrl) {
+                    await updateDoc(doc(db, 'users', userId), {
+                        profile_picture: uploadResult.signedUrl,
+                    });
+                }
+            }
+
             // Se o cadastro deu bom, já fazemos o fetch pra pegar os dados da sessão/perfil desse novo usuário no banco.
             const userData = await User.fetchUserData();
             if (userData) {

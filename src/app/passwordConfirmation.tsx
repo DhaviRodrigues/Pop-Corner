@@ -5,6 +5,8 @@ import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
 import { User } from "@/types/user";
 import { auth } from "@/config/firebase";
+import { useUser } from '@/contexts/UserContext';
+import { deleteUserProfile } from '@/services/userupdate';
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
@@ -16,6 +18,7 @@ export default function PasswordConfirmation() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const styles = getStyles(width, height);
+  const { setUser } = useUser();
   const [password, setPassword] = useState("");
   const [validationMessage, setValidationMessage] = useState("");
   const [showValidationPopup, setShowValidationPopup] = useState(false);
@@ -46,6 +49,18 @@ export default function PasswordConfirmation() {
     if (from === 'profile') {
       router.push('/updatePassword');
     } else if (from === 'updateProfile') {
+      // Move user to deleted_users, delete auth user and clear session
+      setIsLoading(true);
+      const delResult = await deleteUserProfile();
+      setIsLoading(false);
+
+      if (!delResult.valid) {
+        setValidationMessage(delResult.error || 'Erro ao remover conta. Tente novamente.');
+        setShowValidationPopup(true);
+        return;
+      }
+
+      if (setUser) setUser(null);
       router.push('/');
     }
   };

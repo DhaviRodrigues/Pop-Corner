@@ -29,6 +29,7 @@ export default function Register() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [profilePhotoUri, setProfilePhotoUri] = useState<string | null>(null);
+    const [profilePhotoFileName, setProfilePhotoFileName] = useState<string | undefined>(undefined);
     const [validationMessage, setValidationMessage] = useState("");
     const [showValidationPopup, setShowValidationPopup] = useState(false);
     
@@ -40,9 +41,13 @@ export default function Register() {
         return uri.split('.').pop()?.split('?')[0]?.toLowerCase() || '';
     };
 
-    const isValidPhotoFormat = (uri: string | null) => {
-        if (!uri) return true;
-        const ext = getImageExtension(uri);
+    const isValidPhotoFormat = (uri: string | null, fileName?: string | undefined) => {
+        if (!uri && !fileName) return true;
+
+        const extFromName = fileName ? getImageExtension(fileName) : '';
+        if (extFromName && ALLOWED_IMAGE_EXTENSIONS.includes(extFromName)) return true;
+
+        const ext = uri ? getImageExtension(uri) : '';
         return ext && ALLOWED_IMAGE_EXTENSIONS.includes(ext);
     };
 
@@ -50,8 +55,11 @@ export default function Register() {
         setIsPhotoLoading(true);
     };
 
-    const handlePhotoSelected = (photoUri: string | null) => {
-        setProfilePhotoUri(photoUri);
+    const handlePhotoSelected = (photo: { uri: string | null; fileName?: string } | null) => {
+        const uri = photo?.uri ?? null;
+        const fileName = photo?.fileName;
+        setProfilePhotoUri(uri);
+        setProfilePhotoFileName(fileName);
         setIsPhotoLoading(false);
     };
 
@@ -67,7 +75,7 @@ export default function Register() {
             return;
         }
 
-        if (!isValidPhotoFormat(profilePhotoUri)) {
+        if (!isValidPhotoFormat(profilePhotoUri, profilePhotoFileName)) {
             setValidationMessage('Formato de imagem inválido. Use apenas JPG, JPEG ou PNG.');
             setShowValidationPopup(true);
             return;
@@ -101,6 +109,7 @@ export default function Register() {
             email: cleanEmail,
             password,
             profilePhotoUri: profilePhotoUri || undefined,
+            profilePhotoFileName: profilePhotoFileName || undefined,
             favoriteGenres: [],
         });
 

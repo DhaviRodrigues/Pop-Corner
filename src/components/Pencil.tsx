@@ -7,7 +7,7 @@ import { componentStyle } from '@/styles/component';
 type PencilProps = {
   onPress?: () => void;
   onPhotoSelecting?: () => void; // Callback para notificar o início da seleção
-  onPhotoSelected?: (photoUri: string | null) => void;
+  onPhotoSelected?: (photo: { uri: string | null; fileName?: string } | null) => void;
   isLoading?: boolean;
 };
 
@@ -41,9 +41,10 @@ export function Pencil({ onPress, onPhotoSelecting, onPhotoSelected, isLoading =
       if (!result.canceled && result.assets.length > 0) {
         const selectedImage = result.assets[0];
         const fileUri = selectedImage.uri;
-        
+        const fileName = (selectedImage as any).fileName || undefined;
+
         if (onPhotoSelected) {
-          onPhotoSelected(fileUri);
+          onPhotoSelected({ uri: fileUri, fileName });
         }
       } else {
         if (onPhotoSelected) onPhotoSelected(null);

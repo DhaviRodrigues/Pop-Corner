@@ -6,6 +6,7 @@ interface UserRegistrationData {
   password: string;
   favoriteGenres: string[];
   profilePhotoUri?: string;
+  profilePhotoFileName?: string;
 }
 
 interface UserRegistrationContextType {
@@ -23,6 +24,7 @@ export const UserRegistrationProvider: React.FC<{ children: ReactNode }> = ({ ch
     password: '',
     favoriteGenres: [],
     profilePhotoUri: undefined,
+    profilePhotoFileName: undefined,
   });
 
   const setData = (newData: Partial<UserRegistrationData>) => {
@@ -36,6 +38,7 @@ export const UserRegistrationProvider: React.FC<{ children: ReactNode }> = ({ ch
       password: '',
       favoriteGenres: [],
       profilePhotoUri: undefined,
+      profilePhotoFileName: undefined,
     });
   };
 
