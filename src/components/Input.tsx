@@ -1,5 +1,14 @@
 import { componentStyle } from "@/styles/component";
-import { Image, ImageSourcePropType, TextInput, View, StyleProp, ViewStyle, TextStyle } from "react-native";
+import { 
+  Image, 
+  ImageSourcePropType, 
+  TextInput, 
+  View, 
+  StyleProp, 
+  ViewStyle, 
+  TextStyle,
+  KeyboardTypeOptions // 1. Adicionamos essa importação
+} from "react-native";
 
 type InputProps = {
   icon?: ImageSourcePropType;
@@ -7,11 +16,11 @@ type InputProps = {
   secureTextEntry?: boolean;
   value?: string;
   onChangeText?: (value: string) => void;
-  // Novas props adicionadas para permitir multiline e estilos customizados
   multiline?: boolean;
   numberOfLines?: number;
   containerStyle?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
+  keyboardType?: KeyboardTypeOptions; // 2. Colocamos na "lista VIP" (o ? significa que é opcional)
 };
 
 export function Input({ 
@@ -23,7 +32,8 @@ export function Input({
   multiline, 
   numberOfLines, 
   containerStyle, 
-  inputStyle 
+  inputStyle,
+  keyboardType // 3. Recebemos a prop aqui
 }: InputProps) {
   return (
     <View style={[componentStyle.inputContainer, containerStyle]}>
@@ -41,6 +51,7 @@ export function Input({
         multiline={multiline}
         numberOfLines={numberOfLines}
         textAlignVertical={multiline ? 'top' : 'center'}
+        keyboardType={keyboardType} 
       />
     </View>
   );
