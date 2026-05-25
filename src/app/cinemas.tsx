@@ -133,6 +133,7 @@ export default function Cinemas() {
 
     return (
       <CinemaCard
+        id={item.id} 
         nome={item.nome}
         endereco={item.endereco}
         isParceiro={item.isParceiro}
