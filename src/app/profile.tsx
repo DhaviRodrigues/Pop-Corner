@@ -87,7 +87,7 @@ export default function Profile(){
         >
             <View style={{ alignItems: 'center', width: '100%' }}> 
                 <Text style={textStyle.profileText}>Perfil de Usuário</Text>
-                <ProfileIcon/>
+                <ProfileIcon source={user?.getProfilePicture() ? { uri: user.getProfilePicture() } : undefined} />
                 <UserPipoka user={user} />
                 <Text style={textStyle.profileName}>{user?.getName()}</Text>
                 <Text style={[textStyle.message, { fontFamily: 'Poppins-Light' }]}>{user?.getEmail()}</Text>

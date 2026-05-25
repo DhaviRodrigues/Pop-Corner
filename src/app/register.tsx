@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, Image, Text, View } from "react-native";
 import { useUserRegistration } from '@/contexts/UserRegistrationContext';
+import { ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
 import { db } from '@/config/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { sendVerificationEmail } from '@/services/cadastro2fa';
@@ -35,6 +36,28 @@ export default function Register() {
     const [isLoading, setIsLoading] = useState(false);
     const [isPhotoLoading, setIsPhotoLoading] = useState(false);
 
+    const getImageExtension = (uri: string) => {
+        return uri.split('.').pop()?.split('?')[0]?.toLowerCase() || '';
+    };
+
+    const isValidPhotoFormat = async (uri: string | null) => {
+        if (!uri) return true;
+
+        const ext = getImageExtension(uri);
+        if (ext && ALLOWED_IMAGE_EXTENSIONS.includes(ext)) return true;
+
+        // Fallback: fetch file and inspect mime type when extension missing or ambiguous
+        try {
+            const res = await fetch(uri);
+            const blob = await res.blob();
+            const mime = blob.type || '';
+            if (mime.includes('png') || mime.includes('jpeg') || mime.includes('jpg')) return true;
+            return false;
+        } catch (e) {
+            return false;
+        }
+    };
+
     const handlePhotoSelecting = () => {
         setIsPhotoLoading(true);
     };
@@ -52,6 +75,12 @@ export default function Register() {
 
         if (!result.valid) {
             setValidationMessage(result.error);
+            setShowValidationPopup(true);
+            return;
+        }
+
+        if (!(await isValidPhotoFormat(profilePhotoUri))) {
+            setValidationMessage('Formato de imagem inválido. Use apenas JPG, JPEG ou PNG.');
             setShowValidationPopup(true);
             return;
         }
