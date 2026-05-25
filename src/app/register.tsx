@@ -40,22 +40,10 @@ export default function Register() {
         return uri.split('.').pop()?.split('?')[0]?.toLowerCase() || '';
     };
 
-    const isValidPhotoFormat = async (uri: string | null) => {
+    const isValidPhotoFormat = (uri: string | null) => {
         if (!uri) return true;
-
         const ext = getImageExtension(uri);
-        if (ext && ALLOWED_IMAGE_EXTENSIONS.includes(ext)) return true;
-
-        // Fallback: fetch file and inspect mime type when extension missing or ambiguous
-        try {
-            const res = await fetch(uri);
-            const blob = await res.blob();
-            const mime = blob.type || '';
-            if (mime.includes('png') || mime.includes('jpeg') || mime.includes('jpg')) return true;
-            return false;
-        } catch (e) {
-            return false;
-        }
+        return ext && ALLOWED_IMAGE_EXTENSIONS.includes(ext);
     };
 
     const handlePhotoSelecting = () => {
@@ -79,7 +67,7 @@ export default function Register() {
             return;
         }
 
-        if (!(await isValidPhotoFormat(profilePhotoUri))) {
+        if (!isValidPhotoFormat(profilePhotoUri)) {
             setValidationMessage('Formato de imagem inválido. Use apenas JPG, JPEG ou PNG.');
             setShowValidationPopup(true);
             return;

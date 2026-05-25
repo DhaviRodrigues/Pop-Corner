@@ -16,14 +16,24 @@ export async function uploadUserPhoto(
 ): Promise<UploadResponse> {
     const response = await fetch(fileUri);
     const blob = await response.blob();
-    const fileExtension = fileUri.split('.').pop()?.split('?')[0] || '';
-    const normalizedExtension = fileExtension.toLowerCase();
+    
+    // Tentar extrair extensão da URI
+    let fileExtension = fileUri.split('.').pop()?.split('?')[0] || '';
+    let normalizedExtension = fileExtension.toLowerCase();
 
+    // Se extensão não for válida, tentar extrair do blob.type (mime type)
     if (!ALLOWED_IMAGE_EXTENSIONS.includes(normalizedExtension)) {
-      return {
-        success: false,
-        error: 'Formato inválido. Use apenas JPG, JPEG ou PNG.',
-      };
+      const mimeType = blob.type.toLowerCase();
+      if (mimeType.includes('png')) {
+        normalizedExtension = 'png';
+      } else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) {
+        normalizedExtension = 'jpg';
+      } else {
+        return {
+          success: false,
+          error: 'Formato inválido. Use apenas JPG, JPEG ou PNG.',
+        };
+      }
     }
 
     const cleanExtension = normalizedExtension;
