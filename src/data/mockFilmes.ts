@@ -11,6 +11,7 @@ export interface Movie {
   classification: string;
   director: string;
   tags: string[];
+  year: number;
 }
 
 export const MOVIES: Movie[] = [
@@ -24,7 +25,8 @@ export const MOVIES: Movie[] = [
     duration: '2h 07min',
     classification: '18 anos',
     director: 'Shawn Levy',
-    tags: ['AÇÃO', 'COMÉDIA']
+    tags: ['AÇÃO', 'COMÉDIA'],
+    year: 2024
   },
   {
     id: 2,
@@ -36,7 +38,8 @@ export const MOVIES: Movie[] = [
     duration: '1h 25min',
     classification: '10 anos',
     director: 'James Wong',
-    tags: ['AVENTURA', 'FANTASIA']
+    tags: ['AVENTURA', 'FANTASIA'],
+    year: 2009
   },
   {
     id: 3,
@@ -48,7 +51,8 @@ export const MOVIES: Movie[] = [
     duration: '1h 54min',
     classification: '18 anos',
     director: 'Kevin Williamson',
-    tags: ['TERROR', 'COMÉDIA']
+    tags: ['TERROR', 'COMÉDIA'],
+    year: 2025
   },
   {
     id: 4,
@@ -60,7 +64,8 @@ export const MOVIES: Movie[] = [
     duration: '2h 19min',
     classification: '16 anos',
     director: 'David Fincher',
-    tags: ['AVENTURA', 'FANTASIA']
+    tags: ['AVENTURA', 'FANTASIA'],
+    year: 1999
   },
   {
     id: 5,
@@ -72,7 +77,8 @@ export const MOVIES: Movie[] = [
     duration: '2h 07min',
     classification: '18 anos',
     director: 'Shawn Levy',
-    tags: ['AÇÃO', 'COMÉDIA']
+    tags: ['AÇÃO', 'COMÉDIA'],
+    year: 2024
   },
   {
     id: 6,
@@ -84,7 +90,8 @@ export const MOVIES: Movie[] = [
     duration: '1h 26min',
     classification: '14 anos',
     director: 'Anthony C. Ferrante',
-    tags: ['AÇÃO', 'TERROR']
+    tags: ['AÇÃO', 'TERROR'],
+    year: 2013
   },
   {
     id: 7,
@@ -96,7 +103,8 @@ export const MOVIES: Movie[] = [
     duration: '2h 11min',
     classification: '16 anos',
     director: 'Kleber Mendonça Filho',
-    tags: ['SUSPENSE', 'FICÇÃO']
+    tags: ['SUSPENSE', 'FICÇÃO'],
+    year: 2019
   },
   {
     id: 8,
@@ -108,7 +116,8 @@ export const MOVIES: Movie[] = [
     duration: '1h 36min',
     classification: '12 anos',
     director: 'Daniel Ribeiro',
-    tags: ['DRAMA', 'ROMANCE']
+    tags: ['DRAMA', 'ROMANCE'],
+    year: 2014
   },
   {
     id: 9,
@@ -120,7 +129,8 @@ export const MOVIES: Movie[] = [
     duration: '2h 19min',
     classification: '16 anos',
     director: 'Karim Aïnouz',
-    tags: ['DRAMA', 'HISTÓRICO']
+    tags: ['DRAMA', 'HISTÓRICO'],
+    year: 2019
   },
   {
     id: 10,
@@ -132,7 +142,8 @@ export const MOVIES: Movie[] = [
     duration: '1h 30min',
     classification: 'Livre',
     director: 'Andrew Adamson',
-    tags: ['COMÉDIA', 'ANIMAÇÃO']
+    tags: ['COMÉDIA', 'ANIMAÇÃO'],
+    year: 2001
   },
   {
     id: 11,
@@ -144,7 +155,8 @@ export const MOVIES: Movie[] = [
     duration: '2h 32min',
     classification: '12 anos',
     director: 'Christopher Nolan',
-    tags: ['AÇÃO', 'DRAMA']
+    tags: ['AÇÃO', 'DRAMA'],
+    year: 2008
   },
   {
     id: 12,
@@ -156,6 +168,7 @@ export const MOVIES: Movie[] = [
     duration: '2h 49min',
     classification: '10 anos',
     director: 'Christopher Nolan',
-    tags: ['FICÇÃO', 'DRAMA']
+    tags: ['FICÇÃO', 'DRAMA'],
+    year: 2014
   },
 ];
