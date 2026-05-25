@@ -178,44 +178,7 @@ export default function MoviesScreen() {
           source={require('@/screenAssets/logo/full-logo.png')}
           style={movieStyle.filmesLogo} 
         />
-        
-        {/* Botão Flutuante de Adicionar Filme (Apenas Admins) */}
-        {isAdmin && (
-          <TouchableOpacity
-            onPress={() => router.push("/addMovie")}
-            style={{
-              position: "absolute",
-              top: Platform.OS === 'web' ? 20 : 40,
-              right: 20,
-              backgroundColor: COLORS.primary,
-              width: 55,
-              height: 55,
-              borderColor: COLORS.primaryDark,
-              borderWidth: 4,
-              borderRadius: 45,
-              justifyContent: "center",
-              alignItems: "center",
-              elevation: 4,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
-              shadowRadius: 3,
-              zIndex: 100,
-            }}
-          >
-            <Text 
-              style={{ 
-                color: COLORS.gold, 
-                fontSize: 30, 
-                fontFamily: "Poppins-Bold", 
-                lineHeight: 30,
-              }}
-            >
-              +
-            </Text>
-          </TouchableOpacity>
-        )}
-        
+      
         <View style={movieStyle.filmesSearchContainer}>
            <SearchBar 
              value={searchText} 
@@ -223,6 +186,8 @@ export default function MoviesScreen() {
              placeholder="Buscar um filme" 
              onToggleFilters={() => setShowFilters(!showFilters)}
              filtersVisible={showFilters}
+             showAddButton={isAdmin} 
+             onAddPress={() => router.push("/addMovie")}
            />
         </View>
       </View>

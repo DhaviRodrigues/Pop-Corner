@@ -5,13 +5,12 @@ const { height } = Dimensions.get('window');
 
 export const searchBarStyles = StyleSheet.create({
   container: {
-    width: "105%", 
+    width: "100%", 
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginVertical: height * 0.015,
     paddingHorizontal: "5%", 
-    left: "-4%", 
   },
   inputWrapper: {
     flex: 1, 
@@ -21,9 +20,14 @@ export const searchBarStyles = StyleSheet.create({
     borderRadius: 50, 
     borderWidth: 3, 
     borderColor: COLORS.red,
-    paddingHorizontal: 15,
+    paddingLeft: 15,
+    paddingRight: 15,
     height: height * 0.06,
     marginRight: 12, 
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   filterTrigger: {
     width: height * 0.06,  
@@ -38,6 +42,24 @@ export const searchBarStyles = StyleSheet.create({
   filterTriggerActive: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.gold,
+  },
+  addButton: {
+    position: 'absolute', 
+    right: 12,           
+    width: height * 0.045, 
+    height: height * 0.045,
+    borderRadius: (height * 0.045) / 2, 
+    justifyContent: 'center', 
+    alignItems: 'center',     
+    backgroundColor: COLORS.red, 
+  },
+  addButtonText: {
+    color: COLORS.white,
+    fontSize: height * 0.035, 
+    fontWeight: '400',           
+    textAlign: 'center', 
+    includeFontPadding: false,   
+    textAlignVertical: 'center',  
   },
   searchIcon: {
     width: 20,
