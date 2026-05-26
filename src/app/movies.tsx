@@ -215,7 +215,7 @@ export default function MoviesScreen() {
         keyExtractor={item => item.id.toString()}
         numColumns={2}
         columnWrapperStyle={movieStyle.filmesRow}
-        contentContainerStyle={[movieStyle.filmesListContent, { paddingBottom: 100 }]}
+        contentContainerStyle={[movieStyle.filmesListContent, { paddingBottom: 150 }]}
         bounces={false}
         overScrollMode="never"
         ListFooterComponent={

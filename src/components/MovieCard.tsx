@@ -1,20 +1,27 @@
-import { TouchableOpacity, Image, ImageSourcePropType } from "react-native";
+import { TouchableOpacity, Image } from "react-native";
 import { miscStyle } from "@/styles/misc";
+import { useRouter } from "expo-router";
 
-// Interface definida para tipar a fonte da imagem, permitindo o uso de assets locais ou URIs externas.
 type MovieCardProps = {
-  iconPath: ImageSourcePropType;
+  movie: {
+    id: string;
+    image: string;
+  };
 };
 
-export function MovieCard({ iconPath }: MovieCardProps) {
+export function MovieCard({ movie }: MovieCardProps) {
+  const router = useRouter();
+
   return (
-    // O uso do TouchableOpacity como container principal permite que o card seja um elemento clicável para navegação futura.
-    <TouchableOpacity style={miscStyle.movieCard} activeOpacity={0.7}>
+    <TouchableOpacity 
+      style={[miscStyle.movieCard, { overflow: 'hidden' }]} 
+      activeOpacity={0.8}
+      onPress={() => router.push({ pathname: "/movieDetails", params: { id: movie.id } })}
+    >
       <Image 
-        source={iconPath} 
-        style={miscStyle.movieCardIcon} 
-        // O resizeMode "contain" garante que o ícone ou poster do filme seja redimensionado sem distorção dentro dos limites do card.
-        resizeMode="contain" 
+        source={{ uri: movie.image }} 
+        style={{ width: '100%', height: '100%' }} 
+        resizeMode="cover" 
       />
     </TouchableOpacity>
   );
