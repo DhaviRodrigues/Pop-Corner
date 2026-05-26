@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, Image, ActivityIndicator, TouchableOpacity, Modal, TextInput, Alert, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore'; // Importei o updateDoc
 import { db, auth } from '@/config/firebase';
 import { Feather } from '@expo/vector-icons'; 
 
-import { REVIEWS } from '@/data/mockReviews';
 import { COLORS } from '@/constants/colors';
 import { useUser } from '@/contexts/UserContext';
 
@@ -26,11 +25,16 @@ export default function MovieDetailsScreen() {
   const router = useRouter();
   const { user } = useUser();
 
-  const [myReview, setMyReview] = useState('');
-  const [visibleCount, setVisibleCount] = useState(5);
   const [movie, setMovie] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(5);
 
+  // Estados de Avaliação
+  const [myReview, setMyReview] = useState('');
+  const [userRating, setUserRating] = useState(0); 
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  // Estados de Admin
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [isAdminState, setIsAdminState] = useState(false);
@@ -92,9 +96,81 @@ export default function MovieDetailsScreen() {
     }
   };
 
+  // Lógica de Envio da Avaliação
+  const handleSubmitReview = async () => {
+    if (userRating === 0) {
+        alert("Por favor, selecione uma nota de 1 a 5 estrelas.");
+        return;
+    }
+    if (!myReview.trim()) {
+        alert("Por favor, escreva um comentário para a sua avaliação.");
+        return;
+    }
+    if (!user && !auth.currentUser) {
+        alert("Você precisa estar logado para avaliar.");
+        return;
+    }
+
+    try {
+        setIsSubmittingReview(true);
+
+        const userName = typeof (user as any)?.getName === 'function' ? (user as any).getName() : ((user as any)?.name || "Usuário");
+        const userPic = typeof (user as any)?.getProfilePicture === 'function' ? (user as any).getProfilePicture() : ((user as any)?.profile_picture || "");
+
+        const newComment = {
+            id: Date.now().toString(), // Um ID único para a key da lista
+            user: userName,
+            profilePic: userPic,
+            rating: userRating,
+            comment: myReview.trim(),
+            createdAt: new Date().toISOString()
+        };
+
+        const currentComments = movie.comentarios || [];
+        const updatedComments = [newComment, ...currentComments]; 
+        
+        // Recalculando a média
+        const totalRating = updatedComments.reduce((acc, curr) => acc + curr.rating, 0);
+        const newAverage = totalRating / updatedComments.length;
+
+        // Atualizando no Firebase
+        const docRef = doc(db, 'filmes', id as string);
+        await updateDoc(docRef, {
+            comentarios: updatedComments,
+            rating: newAverage,
+            ratingCount: updatedComments.length // Atualiza também a quantidade de avaliações
+        });
+
+        // Atualizando o estado local para exibir na hora
+        setMovie({
+            ...movie,
+            comentarios: updatedComments,
+            rating: newAverage,
+            ratingCount: updatedComments.length
+        });
+
+        // Limpando os inputs
+        setMyReview('');
+        setUserRating(0);
+        
+        if (Platform.OS === 'web') {
+            window.alert("Avaliação enviada com sucesso!");
+        } else {
+            Alert.alert("Sucesso", "Sua avaliação foi enviada!");
+        }
+
+    } catch (error) {
+        console.error("Erro ao enviar avaliação:", error);
+        alert("Erro ao enviar avaliação. Tente novamente.");
+    } finally {
+        setIsSubmittingReview(false);
+    }
+  };
+
+  // Puxando os comentários reais do banco de dados do filme
   const currentMovieReviews = useMemo(() => {
-    return REVIEWS.filter(rev => String(rev.movieId) === String(id));
-  }, [id]);
+    return movie?.comentarios || [];
+  }, [movie?.comentarios]);
 
   const paginatedReviews = useMemo(() => {
     return currentMovieReviews.slice(0, visibleCount);
@@ -135,7 +211,7 @@ export default function MovieDetailsScreen() {
         paddingTop: Platform.OS === 'android' ? 25 : 0, 
       }]}>
         <View style={{ width: 60, alignItems: 'flex-start' }}>
-          <BackButton />
+          <BackButton onPress={() => router.back()}/>
         </View>
 
         <Text style={[textStyle.detailsTitleText, { flex: 1, textAlign: 'center' }]} numberOfLines={1}>
@@ -170,6 +246,7 @@ export default function MovieDetailsScreen() {
         resizeMode="cover"
       />
 
+      {/* Espaço extra (paddingBottom) para a Navbar não cobrir o final */}
       <ScrollView contentContainerStyle={[movieStyle.detailsScrollContent, {paddingBottom: 180 }]} showsVerticalScrollIndicator={false} bounces={false}>
         <View style={movieStyle.detailsPosterWrapper}>
           <Image source={{ uri: movie.image }} style={movieStyle.detailsPoster} resizeMode="cover" />
@@ -206,8 +283,13 @@ export default function MovieDetailsScreen() {
           <View style={movieStyle.detailsSectionGrey}>
             <Text style={textStyle.detailsSectionTitle}>Sua Avaliação</Text>
             
-            <View style={movieStyle.detailsStarsContainer}>
-                <Text style={textStyle.detailsUserStars}>☆☆☆☆☆</Text>
+            {/* Estrelas Interativas */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 20 }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity key={star} onPress={() => setUserRating(star)} style={{ paddingHorizontal: 5 }}>
+                        <Text style={{ fontSize: 36, color: star <= userRating ? COLORS.primary : '#666' }}>★</Text>
+                    </TouchableOpacity>
+                ))}
             </View>
             
             <Input
@@ -219,7 +301,11 @@ export default function MovieDetailsScreen() {
             />
             
             <View style={{ marginTop: 15, alignItems: 'center' }}>
-                <ButtonY title="Avaliar" onPress={() => console.log('Enviado!')} />
+                {isSubmittingReview ? (
+                    <ActivityIndicator size="small" color={COLORS.primary} />
+                ) : (
+                    <ButtonY title="Avaliar" onPress={handleSubmitReview} />
+                )}
             </View>
           </View>
 
@@ -233,9 +319,16 @@ export default function MovieDetailsScreen() {
                 </Text>
             ) : (
                 <>
-                {/* Renderizando os comentários */}
-                {paginatedReviews.map(rev => (
-                    <ReviewItem key={rev.id} review={rev} />
+                {paginatedReviews.map((rev: any, index: number) => (
+                    <ReviewItem 
+                        key={rev.id || index.toString()} 
+                        review={{
+                            ...rev,
+                            name: rev.user || rev.name,
+                            avatar: rev.profilePic || rev.avatar,
+                            content: rev.comment || rev.content
+                        }} 
+                    />
                 ))}
                 
                 {visibleCount < currentMovieReviews.length && (
