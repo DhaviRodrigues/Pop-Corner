@@ -43,7 +43,7 @@ export default function CreateMovie() {
         tags: tagsArray,
         image,
         synopsis,
-        rating: 5.0, 
+        rating: 0, 
         ratingCount: 0,
         createdAt: new Date()
       });
