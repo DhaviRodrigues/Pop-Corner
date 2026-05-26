@@ -85,7 +85,7 @@ export default function MovieDetailsScreen() {
     try {
       await deleteDoc(doc(db, 'filmes', id as string));
       setShowDeleteModal(false);
-      router.replace('/(tabs)/filmes'); // Volta para a listagem
+      router.replace('/(tabs)/filmes'); 
     } catch (error) {
       console.error("Erro ao deletar:", error);
       alert("Falha ao deletar filme.");
@@ -134,17 +134,14 @@ export default function MovieDetailsScreen() {
         height: 90, 
         paddingTop: Platform.OS === 'android' ? 25 : 0, 
       }]}>
-        {/* Coluna 1: BackButton  */}
         <View style={{ width: 60, alignItems: 'flex-start' }}>
           <BackButton />
         </View>
 
-        {/* Coluna 2: Título Centralizado */}
         <Text style={[textStyle.detailsTitleText, { flex: 1, textAlign: 'center' }]} numberOfLines={1}>
           {movie.title}
         </Text>
 
-        {/* Coluna 3: Ações de Admin (Edit/Delete Vermelhos) */}
         <View style={{ width: 100, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
           {isAdmin && (
             <>
@@ -173,7 +170,7 @@ export default function MovieDetailsScreen() {
         resizeMode="cover"
       />
 
-      <ScrollView contentContainerStyle={movieStyle.detailsScrollContent} showsVerticalScrollIndicator={false} bounces={false}>
+      <ScrollView contentContainerStyle={[movieStyle.detailsScrollContent, {paddingBottom: 180 }]} showsVerticalScrollIndicator={false} bounces={false}>
         <View style={movieStyle.detailsPosterWrapper}>
           <Image source={{ uri: movie.image }} style={movieStyle.detailsPoster} resizeMode="cover" />
         </View>
@@ -203,6 +200,51 @@ export default function MovieDetailsScreen() {
             <InfoRow icon="shield-checkmark-outline" label="Classificação" value={movie.classification} />
             <InfoRow icon="videocam-outline" label="Diretor" value={movie.director} />
             <InfoRow icon="calendar-outline" label="Ano de lançamento" value={String(movie.year || '')} />
+          </View>
+
+          {/* SEÇÃO DE AVALIAÇÃO */}
+          <View style={movieStyle.detailsSectionGrey}>
+            <Text style={textStyle.detailsSectionTitle}>Sua Avaliação</Text>
+            
+            <View style={movieStyle.detailsStarsContainer}>
+                <Text style={textStyle.detailsUserStars}>☆☆☆☆☆</Text>
+            </View>
+            
+            <Input
+                text="Escreva sua avaliação..."
+                value={myReview}
+                onChangeText={setMyReview}
+                multiline={true}
+                containerStyle={movieStyle.detailsReviewInput}
+            />
+            
+            <View style={{ marginTop: 15, alignItems: 'center' }}>
+                <ButtonY title="Avaliar" onPress={() => console.log('Enviado!')} />
+            </View>
+          </View>
+
+          {/* LISTA DE COMENTÁRIOS */}
+          <View style={movieStyle.detailsSectionGrey}>
+            <Text style={textStyle.detailsSectionTitle}>Comentários</Text>
+            
+            {currentMovieReviews.length === 0 ? (
+                <Text style={[textStyle.detailsReviewText, { textAlign: 'center' }]}>
+                Ainda não há comentários para este filme.
+                </Text>
+            ) : (
+                <>
+                {/* Renderizando os comentários */}
+                {paginatedReviews.map(rev => (
+                    <ReviewItem key={rev.id} review={rev} />
+                ))}
+                
+                {visibleCount < currentMovieReviews.length && (
+                    <View style={{ marginTop: 10, alignItems: 'center' }}>
+                    <ButtonB title="Ver mais" onPress={() => setVisibleCount(v => v + 5)} />
+                    </View>
+                )}
+                </>
+            )}
           </View>
 
         </View>

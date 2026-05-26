@@ -153,7 +153,7 @@ export const movieStyle = StyleSheet.create({
     marginTop: height * 0.02,
     marginBottom: height * 0.03,
     borderWidth: 2,
-    borderColor: "#FE481B",
+    borderColor: "#B22300",
     zIndex: 100, 
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -207,7 +207,7 @@ export const movieStyle = StyleSheet.create({
   detailsContentWrapper: {
     flex: 1,
     marginTop: -height * 0.05, 
-    backgroundColor: '#8E1600', 
+    backgroundColor: '#B22300', 
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
     paddingTop: 10, 
