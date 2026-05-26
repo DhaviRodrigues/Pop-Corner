@@ -355,4 +355,14 @@ export const movieStyle = StyleSheet.create({
     marginBottom: 20, 
     alignItems: 'center',
   },
+  adminHeaderButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFFEB2', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#B22300', 
+  },
 });
