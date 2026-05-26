@@ -7,7 +7,7 @@ import {
   StyleProp, 
   ViewStyle, 
   TextStyle,
-  KeyboardTypeOptions // 1. Adicionamos essa importação
+  KeyboardTypeOptions 
 } from "react-native";
 
 type InputProps = {
@@ -20,7 +20,7 @@ type InputProps = {
   numberOfLines?: number;
   containerStyle?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
-  keyboardType?: KeyboardTypeOptions; // 2. Colocamos na "lista VIP" (o ? significa que é opcional)
+  keyboardType?: KeyboardTypeOptions; 
 };
 
 export function Input({ 
@@ -33,7 +33,7 @@ export function Input({
   numberOfLines, 
   containerStyle, 
   inputStyle,
-  keyboardType // 3. Recebemos a prop aqui
+  keyboardType 
 }: InputProps) {
   return (
     <View style={[componentStyle.inputContainer, containerStyle]}>

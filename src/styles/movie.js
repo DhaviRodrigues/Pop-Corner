@@ -343,4 +343,16 @@ export const movieStyle = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+  formContainer: {
+    flex: 1,
+    justifyContent: 'center', 
+    alignItems: 'center',     
+    paddingHorizontal: 20,
+  },
+  formGroup: {
+    gap: 4,
+    width: '100%',
+    marginBottom: 20, 
+    alignItems: 'center',
+  },
 });

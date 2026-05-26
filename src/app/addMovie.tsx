@@ -1,28 +1,27 @@
 import React, { useState } from "react";
-import { View, ScrollView, TextInput, Text, Image, Alert } from "react-native";
+import { View, ScrollView, Text, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { db } from "@/config/firebase";
 import { collection, addDoc } from "firebase/firestore";
-import { COLORS } from "@/constants/colors";
 import { miscStyle } from "@/styles/misc";
-import { logoStyle } from "@/styles/logo";
 import { textStyle } from "@/styles/text";
+import { movieStyle } from "@/styles/movie"; 
 import { Input } from "@/components/Input";
 import { ButtonY } from "@/components/ButtonY";
 import BottomNavbar from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton"; 
+import { SynopsisInput } from "@/components/SynopsisInput";
 
 export default function CreateMovie() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  // States com os nomes no padrão da interface Movie
   const [title, setTitle] = useState("");
   const [director, setDirector] = useState("");
   const [year, setYear] = useState("");
   const [duration, setDuration] = useState("");
-  const [classification, setClassification] = useState("");
   const [tags, setTags] = useState("");
+  const [classification, setClassification] = useState("");
   const [image, setImage] = useState("");
   const [synopsis, setSynopsis] = useState("");
 
@@ -35,21 +34,19 @@ export default function CreateMovie() {
     setLoading(true);
     try {
       const tagsArray = tags.split(',').map(g => g.trim().toUpperCase());
-
       await addDoc(collection(db, "filmes"), {
-        title: title,
-        director: director || "Não informado",
-        year: parseInt(year) || new Date().getFullYear(),
-        duration: duration,
-        classification: classification,
+        title,
+        director,
+        year: Number(year) || new Date().getFullYear(),
+        duration,
+        classification,
         tags: tagsArray,
-        image: image,
-        synopsis: synopsis,
+        image,
+        synopsis,
         rating: 5.0, 
-        ratingCount: "0 avaliações",
+        ratingCount: 0,
         createdAt: new Date()
       });
-
       Alert.alert("Sucesso", "Filme adicionado com sucesso!");
       router.back();
     } catch (error) {
@@ -62,60 +59,51 @@ export default function CreateMovie() {
 
   return (
     <View style={[miscStyle.background, { flex: 1 }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 180 }} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 150 }} 
+        showsVerticalScrollIndicator={false}
+      >
 
-        <View style={{ padding: 20, paddingTop: 60, flexDirection: 'row', alignItems: 'center' }}>
-          <BackButton /> 
+        {/* HEADER */}
+        <View style={[movieStyle.filmesHeader, { height: 220, justifyContent: 'flex-end', paddingBottom: 10 }]}>
+          <View style={{ position: 'absolute', left: 20, top: 60, transform: [{ scale: 1.2 }] }}>
+            <BackButton /> 
+          </View>
+          
           <Image 
             source={require("@/screenAssets/logo/full-logo.png")} 
-            style={[logoStyle.escudo, { marginLeft: '20%' }]} 
+            style={[movieStyle.filmesLogo, { width: 180, height: 180, resizeMode: 'contain', transform: [{ translateY: 25 }] }]} 
           />
         </View>
 
-        <View style={{ paddingHorizontal: 20 }}>
-          <Text style={[textStyle.outBoxMessage, { textAlign: 'center', marginVertical: 20 }]}>
+        {/* CONTAINER DO FORMULÁRIO */}
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+
+          <Text style={[textStyle.outBoxMessage, { textAlign: 'center', marginBottom: 20, fontSize: 22 }]}>
             Escreva as Informações do Filme
           </Text>
 
-          <Input text="Nome do Filme" value={title} onChangeText={setTitle} />
-          <Input text="Diretor" value={director} onChangeText={setDirector} />
-          <Input text="Ano de Lançamento (Ex: 2024)" value={year} onChangeText={setYear} keyboardType="numeric" />
-          
-          <Input text="Duração (Ex: 2h 07min)" value={duration} onChangeText={setDuration} />
-          <Input text="Classificação (Ex: 18 anos)" value={classification} onChangeText={setClassification} />
-          <Input text="Gêneros (Separe por vírgula)" value={tags} onChangeText={setTags} />
-          
-          <Input text="URL da Imagem" value={image} onChangeText={setImage} />
-
-          <View style={{ 
-            backgroundColor: '#B0B0B0', 
-            borderRadius: 16, 
-            padding: 15, 
-            marginTop: 15 
-          }}>
-            <Text style={{ fontWeight: 'bold', color: '#000', textAlign: 'center', marginBottom: 10, fontSize: 16 }}>
-              Sinopse do Filme
-            </Text>
-            <TextInput 
-              multiline 
-              numberOfLines={5} 
-              style={{ 
-                backgroundColor: 'white', 
-                borderRadius: 12, 
-                padding: 15, 
-                textAlignVertical: 'top',
-                minHeight: 100,
-                fontSize: 14
-              }}
-              value={synopsis}
-              onChangeText={setSynopsis}
-              placeholder="Escreva a sinopse aqui..."
-            />
+          {/* INPUTS */}
+          <View style={movieStyle.formGroup}>
+            <Input text="Nome do Filme" value={title} onChangeText={setTitle} />
+            <Input text="Diretor" value={director} onChangeText={setDirector} />
+            <Input text="Ano de Lançamento (Ex: 2024)" value={year} onChangeText={setYear} keyboardType="numeric" />
+            <Input text="Duração (Ex: 2h 07min)" value={duration} onChangeText={setDuration} />
+            <Input text="Gêneros" value={tags} onChangeText={setTags} />
+            <Input text="Classificação indicativa" value={classification} onChangeText={setClassification} />
+            <Input text="URL da Imagem ou Arquivo" value={image} onChangeText={setImage} />
           </View>
 
-          <View style={{ marginTop: 40, alignItems: 'center' }}>
+          {/* SINOPSE */}
+          <View style={{ width: '90%', alignSelf: 'center', marginBottom: 20 }}>
+            <SynopsisInput value={synopsis} onChangeText={setSynopsis} />
+          </View>
+
+          {/* BOTÃO CONFIRMAR */}
+          <View style={{ alignItems: 'center', width: '100%' }}>
             <ButtonY title={loading ? "Salvando..." : "Confirmar"} onPress={handleConfirmar} />
           </View>
+          
         </View>
       </ScrollView>
       

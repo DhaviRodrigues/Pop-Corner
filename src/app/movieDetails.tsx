@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, Image } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { MOVIES } from '@/data/mockFilmes';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/config/firebase';
 import { REVIEWS } from '@/data/mockReviews';
 import { COLORS } from '@/constants/colors';
 import BottomNavbar from '@/components/Navbar';
@@ -20,8 +21,31 @@ export default function MovieDetailsScreen() {
   const [myReview, setMyReview] = useState('');
   const [visibleCount, setVisibleCount] = useState(5);
 
-  const movie = useMemo(() => MOVIES.find(m => m.id.toString() === id), [id]);
-  
+  // Estados do Firebase
+  const [movie, setMovie] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Busca do Firebase
+  useEffect(() => {
+    const fetchMovie = async () => {
+      if (!id) return;
+      try {
+        const docRef = doc(db, "filmes", id as string);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          setMovie({ id: docSnap.id, ...docSnap.data() });
+        }
+      } catch (error) {
+        console.error("Erro ao buscar detalhes do filme:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMovie();
+  }, [id]);
+
   const currentMovieReviews = useMemo(() => {
     return REVIEWS.filter(rev => String(rev.movieId) === String(id));
   }, [id]);
@@ -29,6 +53,20 @@ export default function MovieDetailsScreen() {
   const paginatedReviews = useMemo(() => {
     return currentMovieReviews.slice(0, visibleCount);
   }, [currentMovieReviews, visibleCount]);
+
+  const renderRatingCount = (count: any) => {
+    if (typeof count === 'number') return `${count} avaliações`;
+    if (typeof count === 'string') return count.replace(/[()]/g, ''); // 
+    return '0 avaliações';
+  };
+
+  if (loading) {
+    return (
+      <View style={[movieStyle.detailsMainContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#E50914" />
+      </View>
+    );
+  }
 
   if (!movie) {
     return (
@@ -72,11 +110,11 @@ export default function MovieDetailsScreen() {
             <View style={movieStyle.detailsRatingCard}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={textStyle.detailsRatingScore}>
-                  {movie.rating.toFixed(1).replace('.', ',')}
+                  {(movie.rating || 0).toFixed(1).replace('.', ',')}
                 </Text>
                 
                 <DynamicStars 
-                  rating={movie.rating} 
+                  rating={movie.rating || 0} 
                   starSize={26} 
                   colorBackground="#D9D9D9" 
                   colorForeground="#FFFEB2" 
@@ -84,7 +122,7 @@ export default function MovieDetailsScreen() {
               </View>
 
               <Text style={textStyle.detailsRatingCount}>
-                ({movie.ratingCount})
+                ({renderRatingCount(movie.ratingCount)})
               </Text>
             </View>
 
@@ -107,8 +145,8 @@ export default function MovieDetailsScreen() {
                 <InfoRow 
                   icon="film-outline" 
                   label="Gêneros" 
-                  value={movie.tags}   // Passamos o array direto, SEM o .join(', ')
-                  isTag={true}         // Ativamos a renderização das tags vermelhas
+                  value={movie.tags} 
+                  isTag={true} 
                 />
 
                 <InfoRow 
@@ -127,7 +165,7 @@ export default function MovieDetailsScreen() {
                 <InfoRow 
                   icon="calendar-outline" 
                   label="Ano de lançamento" 
-                  value={String(movie.year)} 
+                  value={String(movie.year || '')} 
                 />
             </View>
 

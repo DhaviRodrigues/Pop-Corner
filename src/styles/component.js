@@ -268,3 +268,26 @@ export const componentStyle = StyleSheet.create({
   },
 });
 
+export const synopsisStyle = StyleSheet.create({
+  container: {
+    backgroundColor: '#D9D9D9',
+    borderRadius: 16,
+    padding: 15,
+    marginTop: 20,
+  },
+  label: {
+    fontWeight: 'bold',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 10,
+    fontSize: 16,
+  },
+  input: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 15,
+    textAlignVertical: 'top',
+    minHeight: 120,
+    fontSize: 14,
+  }
+});
