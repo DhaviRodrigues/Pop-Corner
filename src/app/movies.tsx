@@ -1,15 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, Image, FlatList, TouchableOpacity, ListRenderItem } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { View, Text, Image, FlatList, TouchableOpacity, ListRenderItem, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MOVIES, Movie } from '@/data/mockFilmes';
 import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY';
 import SearchBar from '@/components/SearchBar';
 import SortFilterBar from '@/components/SortFilterBar';
 import GenreFilter from '@/components/GenreFilter';
-
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/config/firebase";
 import { movieStyle } from '@/styles/movie';
 import { textStyle } from '@/styles/text';
+import { COLORS } from '@/constants/colors';
 
 function DynamicStars({ rating }: { rating: number }) {
   const fill1 = Math.max(0, Math.min(1, rating - 0));
@@ -34,7 +35,8 @@ function DynamicStars({ rating }: { rating: number }) {
 
 export default function MoviesScreen() {
   const router = useRouter();
-
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [moviesList, setMoviesList] = useState<any[]>([]);
   const [searchText, setSearchText] = useState('');
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [sortType, setSortType] = useState('alphabetical');
@@ -44,48 +46,79 @@ export default function MoviesScreen() {
   // --- LÓGICA DE PAGINAÇÃO ---
   const [visibleCount, setVisibleCount] = useState(10); // Começa com 10
 
-  const availableGenres = useMemo(() => {
-    const allTags = MOVIES.flatMap(movie => movie.tags);
-    return Array.from(new Set(allTags));
+  useEffect(() => {
+    const fetchMovies = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "filmes"));
+        const data = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setMoviesList(data);
+      } catch (error) {
+        console.error("Erro ao carregar filmes:", error);
+      }
+    };
+
+    const checkAdminStatus = async () => {
+      if (auth.currentUser) {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          if (userData.isAdm || userData.isAdmin) setIsAdmin(true);
+        }
+      }
+    };
+
+    fetchMovies();
+    checkAdminStatus();
   }, []);
+
+  const availableGenres = useMemo(() => {
+    const allTags = moviesList.flatMap(movie => movie.tags || []);
+    return Array.from(new Set(allTags));
+  }, [moviesList]);
 
   const movieSortOptions = [
     { label: 'Alfabético', value: 'alphabetical' },
     { label: 'Nota', value: 'rating' },
   ];
 
-  // Filtra e ordena a lista completa primeiro
   const filteredAndSortedMovies = useMemo(() => {
-    let result = MOVIES;
+    let result = moviesList;
 
     if (searchText) {
-      result = result.filter(m => 
-        m.title.toLowerCase().includes(searchText.toLowerCase())
-      );
+      result = result.filter(m => {
+        const titulo = m.titulo || m.title || '';
+        return titulo.toLowerCase().includes(searchText.toLowerCase());
+      });
     }
 
     if (selectedGenres.length > 0) {
-      result = result.filter(m => 
-        m.tags.some(tag => selectedGenres.includes(tag))
-      );
+      result = result.filter(m => {
+        const tags = m.tags || [];
+        return tags.some((tag: string) => selectedGenres.includes(tag));
+      });
     }
 
     result = [...result].sort((a, b) => {
       let comp = 0;
       if (sortType === 'alphabetical') {
-        comp = a.title.localeCompare(b.title);
+        const tituloA = a.titulo || a.title || '';
+        const tituloB = b.titulo || b.title || '';
+        comp = tituloA.localeCompare(tituloB);
       } else if (sortType === 'rating') {
-        comp = a.rating - b.rating;
+        const ratingA = a.rating || 0;
+        const ratingB = b.rating || 0;
+        comp = ratingA - ratingB;
       }
       return sortAscending ? comp : -comp;
     });
 
-    // Resetamos a paginação sempre que um filtro ou busca for alterado
-    // para o usuário não ficar perdido no meio da lista.
     return result;
-  }, [searchText, selectedGenres, sortType, sortAscending]);
+  }, [moviesList, searchText, selectedGenres, sortType, sortAscending]);
 
-  // Corta a lista para mostrar apenas o que a paginação permite
   const paginatedMovies = useMemo(() => {
     return filteredAndSortedMovies.slice(0, visibleCount);
   }, [filteredAndSortedMovies, visibleCount]);
@@ -98,44 +131,54 @@ export default function MoviesScreen() {
     setSelectedGenres(prev => 
       prev.includes(genre) ? prev.filter(g => g !== genre) : [...prev, genre]
     );
-    setVisibleCount(10); // Reset da página ao filtrar
+    setVisibleCount(10); 
   };
 
-  const renderMovie: ListRenderItem<Movie> = ({ item }) => (
-    <View style={movieStyle.filmesCard}>
-      <Image source={{ uri: item.image }} style={movieStyle.filmesPoster} resizeMode="cover" />
-      <Text style={textStyle.filmesMovieTitle} numberOfLines={1}>{item.title}</Text>
-      <View style={movieStyle.filmesRatingContainer}>
-        <Text style={movieStyle.filmesRatingLabel}>Avaliação: {item.rating.toFixed(1)}</Text>
-        <DynamicStars rating={item.rating} />
+  const renderMovie: ListRenderItem<any> = ({ item }) => {
+    const titulo = item.titulo || item.title || 'Sem Título';
+    const imagemUrl = item.url_imagem || item.image;
+    const rating = item.rating || 0;
+    const tags = item.tags || [];
+
+    return (
+      <View style={movieStyle.filmesCard}>
+        <Image source={{ uri: imagemUrl }} style={movieStyle.filmesPoster} resizeMode="cover" />
+        <Text style={textStyle.filmesMovieTitle} numberOfLines={1}>{titulo}</Text>
+        
+        <View style={movieStyle.filmesRatingContainer}>
+          <Text style={movieStyle.filmesRatingLabel}>Avaliação: {rating.toFixed(1)}</Text>
+          <DynamicStars rating={rating} />
+        </View>
+        
+        <View style={movieStyle.filmesTagRow}>
+          {tags.map((tag: string, index: number) => (
+            <View key={index} style={tag.toUpperCase() === 'AÇÃO' ? movieStyle.filmesTagYellow : movieStyle.filmesTagRed}>
+              <Text style={textStyle.filmesTagText}>{tag}</Text>
+            </View>
+          ))}
+        </View>
+        
+        <TouchableOpacity 
+          style={movieStyle.filmesDetailsButton}
+          onPress={() => router.push({
+            pathname: '/movieDetails' as any,
+            params: { id: item.id } 
+          })}
+        >
+          <Text style={textStyle.filmesDetailsButtonText}>Detalhes</Text>
+        </TouchableOpacity>
       </View>
-      <View style={movieStyle.filmesTagRow}>
-        {item.tags.map((tag, index) => (
-          <View key={index} style={tag === 'AÇÃO' ? movieStyle.filmesTagYellow : movieStyle.filmesTagRed}>
-            <Text style={textStyle.filmesTagText}>{tag}</Text>
-          </View>
-        ))}
-      </View>
-      <TouchableOpacity 
-        style={movieStyle.filmesDetailsButton}
-        onPress={() => router.push({
-          pathname: '/movieDetails' as any,
-          params: { id: item.id } 
-        })}
-      >
-        <Text style={textStyle.filmesDetailsButtonText}>Detalhes</Text>
-      </TouchableOpacity>
-    </View>
-  );
+    );
+  };
 
   return (
-    <View style={movieStyle.filmesContainer}>
-      <View style={movieStyle.filmesHeader}>
+    <View style={[movieStyle.filmesContainer, { flex: 1, backgroundColor: COLORS.primary }]}>
+      <View style={[movieStyle.filmesHeader, { position: 'relative' }]}>
         <Image 
           source={require('@/screenAssets/logo/full-logo.png')}
           style={movieStyle.filmesLogo} 
         />
-        
+      
         <View style={movieStyle.filmesSearchContainer}>
            <SearchBar 
              value={searchText} 
@@ -143,6 +186,8 @@ export default function MoviesScreen() {
              placeholder="Buscar um filme" 
              onToggleFilters={() => setShowFilters(!showFilters)}
              filtersVisible={showFilters}
+             showAddButton={isAdmin} 
+             onAddPress={() => router.push("/addMovie")}
            />
         </View>
       </View>
@@ -165,25 +210,25 @@ export default function MoviesScreen() {
       )}
 
       <FlatList
-        data={paginatedMovies} // Usamos a lista cortada aqui
+        data={paginatedMovies} 
         renderItem={renderMovie}
         keyExtractor={item => item.id.toString()}
         numColumns={2}
         columnWrapperStyle={movieStyle.filmesRow}
-        contentContainerStyle={movieStyle.filmesListContent}
+        contentContainerStyle={[movieStyle.filmesListContent, { paddingBottom: 100 }]}
         bounces={false}
         overScrollMode="never"
         ListFooterComponent={
-          // O botão só aparece se ainda houver filmes para carregar
           visibleCount < filteredAndSortedMovies.length ? (
             <View style={movieStyle.filmesFooterBtn}>
               <ButtonY title="Ver mais" onPress={handleLoadMore} />
             </View>
           ) : (
-            <View style={{ height: 40 }} /> // Espaço final se não houver mais filmes
+            <View style={{ height: 40 }} /> 
           )
         }
       />
+      
       <BottomNavbar />
     </View>
   );

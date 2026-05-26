@@ -1,9 +1,7 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, Dimensions, Image, TouchableOpacity } from 'react-native';
+import { View, TextInput, Text, Image, TouchableOpacity } from 'react-native';
 import { COLORS } from '@/constants/colors';
 import { searchBarStyles as styles } from '@/styles/searchbar';
-
-const { height } = Dimensions.get('window');
 
 interface SearchBarProps {
   value: string;
@@ -11,6 +9,8 @@ interface SearchBarProps {
   placeholder?: string;
   onToggleFilters?: () => void;
   filtersVisible?: boolean;
+  showAddButton?: boolean;
+  onAddPress?: () => void;
 }
 
 export default function SearchBar({ 
@@ -18,12 +18,14 @@ export default function SearchBar({
   onChangeText, 
   placeholder = "Buscar...",
   onToggleFilters,
-  filtersVisible = false 
+  filtersVisible = false,
+  showAddButton = false,
+  onAddPress
 }: SearchBarProps) {
   return (
     <View style={styles.container}>
       
-      <View style={styles.inputWrapper}>
+      <View style={[styles.inputWrapper, showAddButton && { paddingRight: 60 }]}>
         <Image 
           source={require('@/screenAssets/icons/search.png')} 
           style={styles.searchIcon} 
@@ -38,26 +40,38 @@ export default function SearchBar({
           autoCorrect={false}
           clearButtonMode="while-editing"
         />
+
+        {showAddButton && (
+          <TouchableOpacity 
+            onPress={onAddPress}
+            style={styles.addButton}
+          >
+            <Text style={styles.addButtonText}>+</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {onToggleFilters && (
-        <TouchableOpacity 
-          onPress={onToggleFilters} 
-          style={[
-            styles.filterTrigger, 
-            filtersVisible && styles.filterTriggerActive 
-          ]}
-        >
-          <Image 
-            source={require('@/screenAssets/filter.svg')} 
+      {/* Container do Filtro (lado de fora) */}
+      <View style={styles.actionsContainer}>
+        {onToggleFilters && (
+          <TouchableOpacity 
+            onPress={onToggleFilters} 
             style={[
-              styles.filterIcon,
-              { tintColor: filtersVisible ? COLORS.gold : '#A0A0A0' } 
-            ]} 
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-      )}
+              styles.filterTrigger, 
+              filtersVisible && styles.filterTriggerActive 
+            ]}
+          >
+            <Image 
+              source={require('@/screenAssets/filter.svg')} 
+              style={[
+                styles.filterIcon,
+                { tintColor: filtersVisible ? COLORS.gold : '#A0A0A0' } 
+              ]} 
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        )}
+      </View>
 
     </View>
   );
