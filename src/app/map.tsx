@@ -210,7 +210,7 @@ export default function MapaWeb() {
                       Ver Detalhes
                     </button>
                   </div>
-                  <img src={cinema.imagem} alt={cinema.nome} style={popupStyles.image as React.CSSProperties} />
+                  <img src={cinema.url_imagem} alt={cinema.nome} style={popupStyles.image as React.CSSProperties} />
                 </div>
               </Popup>
             </Marker>

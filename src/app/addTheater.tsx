@@ -6,8 +6,6 @@ import { COLORS } from "@/constants/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, Image, StyleSheet, Text, useWindowDimensions, View, ScrollView, TouchableOpacity, TextInput } from "react-native";
-import { uploadUserPhoto } from "@/services/storage";
-import * as ImagePicker from 'expo-image-picker';
 import { Cinema } from "@/types/cinema"; 
 import { Sessao } from "@/types/sessao"; 
 import { registerCinema } from "@/services/cinemaService";
@@ -42,7 +40,6 @@ export default function CreateCinema() {
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [urlImagem, setUrlImagem] = useState("");
-  const [imageUri, setImageUri] = useState<string | null>(null);
   const [idFilme, setIdFilme] = useState("");
   const [filmeSessao, setFilmeSessao] = useState("");
   const [dataSessao, setDataSessao] = useState("");
@@ -53,6 +50,7 @@ export default function CreateCinema() {
   const [erroSessao, setErroSessao] = useState("");
   const [erroCinema, setErroCinema] = useState("");
 
+  // Validação: todos os campos devem estar preenchidos
   const isCinemaPronto = !!(nome.trim() && cidade.trim() && endereco.trim() && latitude.trim() && longitude.trim() && urlImagem.trim());
 
   useEffect(() => {
@@ -72,7 +70,6 @@ export default function CreateCinema() {
             }
             const imagemUrl = data.url_imagem || data.imagem || "";
             setUrlImagem(imagemUrl);
-            setImageUri(imagemUrl);
             setFilmesEmCartaz(data.filmesEmCartaz || []);
           }
         } catch (error) {
@@ -82,20 +79,6 @@ export default function CreateCinema() {
       loadCinema();
     }
   }, [editId]);
-
-  const handlePickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'], 
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.7,
-    });
-    if (!result.canceled) {
-      const selectedUri = result.assets[0].uri;
-      setImageUri(selectedUri);
-      setUrlImagem(selectedUri); 
-    }
-  };
 
   const handleAdicionarFilme = () => {
     if (!idFilme.trim()) {
@@ -122,7 +105,7 @@ export default function CreateCinema() {
     }
   };
 
-const handleConfirmar = async () => {
+  const handleConfirmar = async () => {
     setErroCinema(""); 
     if (!isCinemaPronto) {
       setErroCinema("Preencha todos os dados.");
@@ -130,24 +113,17 @@ const handleConfirmar = async () => {
     }
 
     try {
-      let urlFinal = urlImagem; 
-      if (imageUri && !imageUri.startsWith('http')) {
-        const res = await uploadUserPhoto(imageUri, 'cinema_foto', `${nome.replace(/\s+/g, '_')}_${Date.now()}`);
-        if (!res.success) return setErroCinema("Erro na imagem.");
-        urlFinal = res.signedUrl!;
-      }
-
       const sessoesInstanciadas = sessoes.map(s => Sessao.createSessao({ idFilme: s.idFilme, data: s.data, horario: s.horario }));
       
-      // Cria a instância base
+      // Cria a instância base com a URL diretamente
       const cinemaInstancia = Cinema.createCinema({ 
-          nome, cidade, endereco, latitude, longitude, urlImagem: urlFinal, filmesEmCartaz, sessoes: sessoesInstanciadas 
+          nome, cidade, endereco, latitude, longitude, urlImagem, filmesEmCartaz, sessoes: sessoesInstanciadas 
       });
 
       const dadosParaSalvar = cinemaInstancia.toFirestore();
 
       if (editId) {
-        // --- AQUI ESTÁ A CHAVE: BUSCAR DADOS ATUAIS ANTES DE ATUALIZAR ---
+        // --- BUSCAR DADOS ATUAIS ANTES DE ATUALIZAR ---
         const docRef = doc(db, 'cinemas', editId as string);
         const docSnap = await getDoc(docRef);
         
@@ -177,12 +153,12 @@ const handleConfirmar = async () => {
   return (
     <View style={miscStyle.background}>
       <TouchableOpacity style={styles.backButtonContainer} onPress={() => {
-      if (router.canGoBack()) {
-          router.back();
-      } else {
-          router.replace('/cinemas'); 
-      }
-  }}>
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/cinemas'); 
+        }
+      }}>
          <Image 
            source={require("../screenAssets/back-icon-buttom.svg")} 
            style={styles.backIcon} 
@@ -229,26 +205,13 @@ const handleConfirmar = async () => {
           </View>
 
           <View style={styles.fullInput}>
-            <TouchableOpacity 
-              style={[
-                componentStyle.inputContainer, 
-                { 
-                  width: '100%', 
-                  paddingVertical: 15, 
-                  alignItems: 'center', 
-                  justifyContent: 'center' 
-                }
-              ]} 
-              onPress={handlePickImage}
-            >
-              <Text style={{ color: "#A9A9A9", fontSize: width * 0.035 }}>
-                {imageUri ? "Imagem Selecionada (Clique para trocar)" : "Selecionar Imagem da Galeria"}
-              </Text>
-            </TouchableOpacity>
-
-            {imageUri && (
+            {/* Input para colocar a URL da imagem */}
+            <LocalInput text="URL da Imagem (Link HTTP)" value={urlImagem} onChangeText={setUrlImagem} />
+            
+            {/* Pré-visualização da imagem caso haja uma URL inserida */}
+            {urlImagem ? (
               <Image 
-                source={{ uri: imageUri }} 
+                source={{ uri: urlImagem }} 
                 style={{ 
                   width: '100%', 
                   height: 180, 
@@ -257,7 +220,7 @@ const handleConfirmar = async () => {
                 }} 
                 resizeMode="cover"
               />
-            )}
+            ) : null}
           </View>
 
           <View 

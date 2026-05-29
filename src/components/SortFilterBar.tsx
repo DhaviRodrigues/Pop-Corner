@@ -1,8 +1,6 @@
 import React from 'react';
-import { ScrollView, TouchableOpacity, Text, StyleSheet, View, Dimensions } from 'react-native';
+import { ScrollView, TouchableOpacity, Text, View } from 'react-native';
 import { sortFilterStyles as styles } from '@/styles/searchbar';
-
-const { height } = Dimensions.get('window');
 
 export interface SortOption {
   label: string;
@@ -24,7 +22,12 @@ export default function SortFilterBar({
   
   return (
     <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         
         {options.map((option) => {
           const isActive = activeSort === option.value;

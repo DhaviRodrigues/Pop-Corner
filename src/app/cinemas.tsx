@@ -13,9 +13,9 @@ import { COLORS } from "@/constants/colors";
 import { useRouter } from "expo-router";
 import { useUser } from "@/contexts/UserContext";
 
-// Importações do Firebase: agora incluindo 'doc' e 'getDoc' para consultar o usuário
+// Importações do Firebase:
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/config/firebase"; // <-- Certifique-se de importar o auth
+import { auth, db } from "@/config/firebase"; 
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; 
@@ -44,6 +44,7 @@ export default function Cinemas() {
   const cinemaSortOptions = [
     { label: "Alfabético", value: "alphabetical" },
     { label: "Avaliação", value: "rating" },
+    { label: "Distância", value: "distance" },
   ];
 
   useEffect(() => {
@@ -111,12 +112,30 @@ export default function Cinemas() {
         comp = (a.nome || "").localeCompare(b.nome || "");
       } else if (sortType === "rating") {
         comp = (a.avaliacao || 0) - (b.avaliacao || 0);
+      } else if (sortType === "distance") {
+        if (userLocation) {
+          const latA = a.coordinates?.latitude ?? a.latitude;
+          const lngA = a.coordinates?.longitude ?? a.longitude;
+          const latB = b.coordinates?.latitude ?? b.latitude;
+          const lngB = b.coordinates?.longitude ?? b.longitude;
+
+          const distA = (latA !== undefined && lngA !== undefined) 
+            ? calculateDistance(userLocation[0], userLocation[1], latA, lngA) 
+            : Infinity;
+          const distB = (latB !== undefined && lngB !== undefined) 
+            ? calculateDistance(userLocation[0], userLocation[1], latB, lngB) 
+            : Infinity;
+
+          comp = distA - distB;
+        } else {
+          comp = 0; 
+        }
       }
       return sortAscending ? comp : -comp;
     });
 
     return result;
-  }, [cinemasList, searchText, onlyPartners, sortType, sortAscending]);
+  }, [cinemasList, searchText, onlyPartners, sortType, sortAscending, userLocation]); 
 
   const renderCinema = ({ item }: { item: any }) => {
     let dist = "N/A"; 
@@ -152,7 +171,7 @@ export default function Cinemas() {
         { flex: 1, backgroundColor: COLORS.primary },
       ]}
     >
-      <View style={[movieStyle.filmesHeader, { position: 'relative' }]}>
+      <View style={[movieStyle.filmesHeader, { position: 'relative', zIndex: 50 }]}>
         <Image
           source={require("@/screenAssets/logo/full-logo.png")}
           style={movieStyle.filmesLogo}
@@ -205,8 +224,9 @@ export default function Cinemas() {
         </View>
       </View>
 
+      {/* --- CORREÇÃO DO Z-INDEX AQUI PARA PERMITIR SCROLL --- */}
       {showFilters && (
-        <View style={styles.filterMenuContainer}>
+        <View style={[styles.filterMenuContainer, { width: '100%', zIndex: 999, elevation: 15 }]}>
           <SortFilterBar
             options={cinemaSortOptions}
             activeSort={sortType}
