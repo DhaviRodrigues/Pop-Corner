@@ -13,9 +13,8 @@ import { COLORS } from "@/constants/colors";
 import { useRouter } from "expo-router";
 import { useUser } from "@/contexts/UserContext";
 
-// Importações do Firebase: agora incluindo 'doc' e 'getDoc' para consultar o usuário
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/config/firebase"; // <-- Certifique-se de importar o auth
+import { auth, db } from "@/config/firebase"; 
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; 
@@ -47,7 +46,6 @@ export default function Cinemas() {
   ];
 
   useEffect(() => {
-   
     const fetchCinemas = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "cinemas"));
@@ -64,7 +62,6 @@ export default function Cinemas() {
 
     const checkAdminStatus = async () => {
       try {
-    
         if (auth.currentUser) {
           const userRef = doc(db, "users", auth.currentUser.uid);
           const userSnap = await getDoc(userRef);
@@ -85,7 +82,7 @@ export default function Cinemas() {
     if (typeof window !== "undefined" && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
-        (err) => console.warn("Não foi possível obter a localização do usuário na aba de cinemas.", err),
+        (err) => console.warn("Não foi possível obter a localização do usuário.", err),
         { enableHighAccuracy: false, timeout: 10000, maximumAge: Infinity }
       );
     }
@@ -102,7 +99,8 @@ export default function Cinemas() {
     }
 
     if (onlyPartners) {
-      result = result.filter((c) => c.isParceiro === true);
+      // CORREÇÃO: Busca por is_parceiro (formato do Firebase)
+      result = result.filter((c) => c.is_parceiro === true || c.isParceiro === true);
     }
 
     result = [...result].sort((a, b) => {
@@ -132,31 +130,19 @@ export default function Cinemas() {
     }
 
     return (
+
       <CinemaCard
         id={item.id} 
-        nome={item.nome}
-        endereco={item.endereco}
-        isParceiro={item.isParceiro}
-        avaliacao={item.avaliacao}
+        cinemaData={item}
         distancia={dist}
-        imagem={item.url_imagem || item.imagem} 
-        filmes={item.filmesEmCartaz || item.filmes || []} 
       />
     );
   };
 
   return (
-    <SafeAreaView
-      style={[
-        movieStyle.filmesContainer,
-        { flex: 1, backgroundColor: COLORS.primary },
-      ]}
-    >
+    <SafeAreaView style={[movieStyle.filmesContainer, { flex: 1, backgroundColor: COLORS.primary }]}>
       <View style={[movieStyle.filmesHeader, { position: 'relative' }]}>
-        <Image
-          source={require("@/screenAssets/logo/full-logo.png")}
-          style={movieStyle.filmesLogo}
-        />
+        <Image source={require("@/screenAssets/logo/full-logo.png")} style={movieStyle.filmesLogo} />
 
         {isAdmin && (
           <TouchableOpacity
@@ -181,16 +167,7 @@ export default function Cinemas() {
               zIndex: 100,
             }}
           >
-            <Text 
-              style={{ 
-                color: COLORS.gold, 
-                fontSize: 30, 
-                fontFamily: "Poppins-Bold", 
-                lineHeight: 30,
-              }}
-            >
-              +
-            </Text>
+            <Text style={{ color: COLORS.gold, fontSize: 30, fontFamily: "Poppins-Bold", lineHeight: 30 }}>+</Text>
           </TouchableOpacity>
         )}
 
@@ -213,23 +190,12 @@ export default function Cinemas() {
             onSelectSort={setSortType}
             sortAscending={sortAscending}
             onToggleAscending={() => setSortAscending(!sortAscending)}
-            
             extraFilters={
               <TouchableOpacity
                 onPress={() => setOnlyPartners(!onlyPartners)}
-                style={[
-                  styles.partnerBtn,
-                  onlyPartners && styles.partnerBtnActive,
-                ]}
+                style={[styles.partnerBtn, onlyPartners && styles.partnerBtnActive]}
               >
-                <Text
-                  style={[
-                    styles.partnerText,
-                    onlyPartners && styles.partnerTextActive,
-                  ]}
-                >
-                 Parceiros
-                </Text>
+                <Text style={[styles.partnerText, onlyPartners && styles.partnerTextActive]}>Parceiros</Text>
               </TouchableOpacity>
             }
           />
@@ -246,36 +212,14 @@ export default function Cinemas() {
         overScrollMode="never"
         contentContainerStyle={{ paddingBottom: 200 }}
         ListFooterComponent={
-          <View
-            style={{
-              alignItems: "center",
-              marginTop: 40,
-              marginBottom: 60,
-            }}
-          >
+          <View style={{ alignItems: "center", marginTop: 40, marginBottom: 60 }}>
             <View style={movieStyle.filmesFooterBtn}>
               <ButtonY title="Ver mais" />
             </View>
             
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{ marginTop: 40, alignItems: "center" }}
-              onPress={() => router.push("/map")}
-            >
-              <Image
-                source={require("@/screenAssets/Map-Buttom.svg")}
-                style={cinemaStyle.mapButtom}
-              />
-              <Text
-                style={{
-                  color: COLORS.gold,
-                  fontSize: 12,
-                  fontFamily: "Poppins-Bold",
-                  marginTop: 10,
-                }}
-              >
-                Ver Cinemas no Mapa
-              </Text>
+            <TouchableOpacity activeOpacity={0.7} style={{ marginTop: 40, alignItems: "center" }} onPress={() => router.push("/map")}>
+              <Image source={require("@/screenAssets/Map-Buttom.svg")} style={cinemaStyle.mapButtom} />
+              <Text style={{ color: COLORS.gold, fontSize: 12, fontFamily: "Poppins-Bold", marginTop: 10 }}>Ver Cinemas no Mapa</Text>
             </TouchableOpacity>
           </View>
         }

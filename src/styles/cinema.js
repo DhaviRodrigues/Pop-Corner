@@ -1,6 +1,7 @@
 import { StyleSheet } from "react-native";
 import { Dimensions } from "react-native";
 import { Platform } from "react-native";
+import { COLORS } from "../constants/colors";
 const { height } = Dimensions.get("window");
 
 export const style = StyleSheet.create({
@@ -80,13 +81,14 @@ export const style = StyleSheet.create({
   },
   cinemaSingleStarContainer: {
     position: 'relative',
-    width: 14,
-    height: 14,
+    width: 18,
+    height: 25,
   },
   cinemaStarBackground: {
     color: '#0c0000', 
-    fontSize: 14,
-    position: 'absolute',
+    fontSize: 18,
+    bottom: 3,
+    left: 3,
   },
   cinemaStarOverlay: {
     position: 'absolute',
@@ -95,8 +97,10 @@ export const style = StyleSheet.create({
     overflow: 'hidden',
   },
   cinemaStarForeground: {
-    color: '#FF0000', 
-    fontSize: 14,
+    color: COLORS.primary, 
+    fontSize: 18,
+    bottom: 3,
+    left: 3,
   },
 
   moviesRowBottom: {

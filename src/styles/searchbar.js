@@ -82,12 +82,17 @@ export const searchBarStyles = StyleSheet.create({
 export const sortFilterStyles = StyleSheet.create({
   container: {
     bottom: height * 0.02, 
-    alignItems: 'flex-end', 
+    alignItems: 'flex-start', 
+    width: '100%',
+    left:10,
   },
   scrollContent: {
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
     flexGrow: 1, 
-    paddingHorizontal: 8,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    
   },
   filterBtn: { 
     paddingVertical: height * 0.008, 
@@ -111,7 +116,7 @@ export const sortFilterStyles = StyleSheet.create({
   },
   sortDirectionBtn: { 
     paddingVertical: height * 0.008, 
-    paddingHorizontal: 12,
+    paddingHorizontal: 20,
     borderRadius: 20,
     borderWidth: 3,
     borderColor: COLORS.gold ,

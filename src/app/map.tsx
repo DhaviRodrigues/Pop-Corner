@@ -11,7 +11,7 @@ import BottomNavbar from "@/components/Navbar";
 import { style, popupStyles } from "@/styles/cinema";
 import { useUser } from "@/contexts/UserContext";
 
-// IMPORTAÇÕES EXCLUSIVAS DO FIREBASE (Sem Mock)
+// IMPORTAÇÕES EXCLUSIVAS DO FIREBASE 
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/config/firebase";
 
@@ -74,7 +74,7 @@ export default function MapaWeb() {
 
   useEffect(() => {
     if (Platform.OS === "web") {
-      // Injetando CSS do mapa para não ficar tela preta
+      
       if (!document.getElementById("leaflet-css")) {
         const link = document.createElement("link");
         link.id = "leaflet-css";
@@ -91,7 +91,6 @@ export default function MapaWeb() {
       );
     }
 
-    // BUSCA REAL DO FIREBASE
     const fetchCinemasFromFirebase = async () => {
       try {
         console.log("Buscando dados na coleção 'cinemas' do Firebase...");
@@ -102,7 +101,6 @@ export default function MapaWeb() {
           ...doc.data()
         }));
         
-        // ESSE CONSOLE VAI PROVAR O QUE ESTÁ VINDO DO BANCO DE DADOS
         console.log("CINEMAS RECEBIDOS DO FIREBASE:", cinemasData);
         
         setCinemas(cinemasData);
@@ -171,22 +169,18 @@ export default function MapaWeb() {
           </>
         )}
 
-        {/* MAP EM CIMA DOS CINEMAS EXCLUSIVOS DO FIREBASE */}
         {cinemas.map((cinema) => {
           let lat: number | undefined;
           let lng: number | undefined;
 
-          // 1. TENTA LER COMO CAMPOS SEPARADOS (caso existam)
           if (cinema.latitude !== undefined && cinema.longitude !== undefined) {
             lat = parseFloat(String(cinema.latitude));
             lng = parseFloat(String(cinema.longitude));
           }
-          // 2. TENTA LER COMO GEOPOINT (Formato que o seu Firebase está salvando: 'coordinates')
           else if (cinema.coordinates && typeof cinema.coordinates.latitude === 'number') {
             lat = cinema.coordinates.latitude;
             lng = cinema.coordinates.longitude;
           }
-          // 3. TENTA LER COMO ARRAY (caso tenha algum cinema antigo assim)
           else if (Array.isArray(cinema.coordinates) && cinema.coordinates.length >= 2) {
             lat = parseFloat(String(cinema.coordinates[0]));
             lng = parseFloat(String(cinema.coordinates[1]));
@@ -197,8 +191,7 @@ export default function MapaWeb() {
             console.warn(`Cinema "${cinema.nome}" ignorado: coordenadas inválidas.`);
             return null;
           }
-
-          // Agora o TypeScript sabe que lat e lng são 'number' (não undefined)
+          
           return (
             <Marker key={cinema.id} position={[lat, lng]} icon={customIcon}>
               <Popup className="custom-popup">
@@ -206,11 +199,17 @@ export default function MapaWeb() {
                   <div style={popupStyles.textSection as React.CSSProperties}>
                     <h3 style={popupStyles.title as React.CSSProperties}>{cinema.nome}</h3>
                     <DynamicStarsPopup rating={cinema.avaliacao || 0} />
-                    <button style={popupStyles.button as React.CSSProperties} onClick={() => alert("Detalhes de " + cinema.nome)}>
+                    
+                    {/* AQUI ESTÁ A MUDANÇA: Redireciona para cinemaDetails passando o ID */}
+                    <button 
+                      style={popupStyles.button as React.CSSProperties} 
+                      onClick={() => router.push({ pathname: '/cinemaDetails', params: { id: cinema.id } })}
+                    >
                       Ver Detalhes
                     </button>
+                    
                   </div>
-                  <img src={cinema.imagem} alt={cinema.nome} style={popupStyles.image as React.CSSProperties} />
+                  <img src={cinema.url_imagem} alt={cinema.nome} style={popupStyles.image as React.CSSProperties} />
                 </div>
               </Popup>
             </Marker>
