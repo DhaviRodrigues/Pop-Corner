@@ -13,7 +13,6 @@ import { COLORS } from "@/constants/colors";
 import { useRouter } from "expo-router";
 import { useUser } from "@/contexts/UserContext";
 
-// Importações do Firebase:
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebase"; 
 
@@ -44,11 +43,9 @@ export default function Cinemas() {
   const cinemaSortOptions = [
     { label: "Alfabético", value: "alphabetical" },
     { label: "Avaliação", value: "rating" },
-    { label: "Distância", value: "distance" },
   ];
 
   useEffect(() => {
-   
     const fetchCinemas = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "cinemas"));
@@ -65,7 +62,6 @@ export default function Cinemas() {
 
     const checkAdminStatus = async () => {
       try {
-    
         if (auth.currentUser) {
           const userRef = doc(db, "users", auth.currentUser.uid);
           const userSnap = await getDoc(userRef);
@@ -86,7 +82,7 @@ export default function Cinemas() {
     if (typeof window !== "undefined" && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
-        (err) => console.warn("Não foi possível obter a localização do usuário na aba de cinemas.", err),
+        (err) => console.warn("Não foi possível obter a localização do usuário.", err),
         { enableHighAccuracy: false, timeout: 10000, maximumAge: Infinity }
       );
     }
@@ -103,7 +99,8 @@ export default function Cinemas() {
     }
 
     if (onlyPartners) {
-      result = result.filter((c) => c.isParceiro === true);
+      // CORREÇÃO: Busca por is_parceiro (formato do Firebase)
+      result = result.filter((c) => c.is_parceiro === true || c.isParceiro === true);
     }
 
     result = [...result].sort((a, b) => {
@@ -112,30 +109,12 @@ export default function Cinemas() {
         comp = (a.nome || "").localeCompare(b.nome || "");
       } else if (sortType === "rating") {
         comp = (a.avaliacao || 0) - (b.avaliacao || 0);
-      } else if (sortType === "distance") {
-        if (userLocation) {
-          const latA = a.coordinates?.latitude ?? a.latitude;
-          const lngA = a.coordinates?.longitude ?? a.longitude;
-          const latB = b.coordinates?.latitude ?? b.latitude;
-          const lngB = b.coordinates?.longitude ?? b.longitude;
-
-          const distA = (latA !== undefined && lngA !== undefined) 
-            ? calculateDistance(userLocation[0], userLocation[1], latA, lngA) 
-            : Infinity;
-          const distB = (latB !== undefined && lngB !== undefined) 
-            ? calculateDistance(userLocation[0], userLocation[1], latB, lngB) 
-            : Infinity;
-
-          comp = distA - distB;
-        } else {
-          comp = 0; 
-        }
       }
       return sortAscending ? comp : -comp;
     });
 
     return result;
-  }, [cinemasList, searchText, onlyPartners, sortType, sortAscending, userLocation]); 
+  }, [cinemasList, searchText, onlyPartners, sortType, sortAscending]);
 
   const renderCinema = ({ item }: { item: any }) => {
     let dist = "N/A"; 
@@ -151,31 +130,19 @@ export default function Cinemas() {
     }
 
     return (
+
       <CinemaCard
         id={item.id} 
-        nome={item.nome}
-        endereco={item.endereco}
-        isParceiro={item.isParceiro}
-        avaliacao={item.avaliacao}
+        cinemaData={item}
         distancia={dist}
-        imagem={item.url_imagem || item.imagem} 
-        filmes={item.filmesEmCartaz || item.filmes || []} 
       />
     );
   };
 
   return (
-    <SafeAreaView
-      style={[
-        movieStyle.filmesContainer,
-        { flex: 1, backgroundColor: COLORS.primary },
-      ]}
-    >
-      <View style={[movieStyle.filmesHeader, { position: 'relative', zIndex: 50 }]}>
-        <Image
-          source={require("@/screenAssets/logo/full-logo.png")}
-          style={movieStyle.filmesLogo}
-        />
+    <SafeAreaView style={[movieStyle.filmesContainer, { flex: 1, backgroundColor: COLORS.primary }]}>
+      <View style={[movieStyle.filmesHeader, { position: 'relative' }]}>
+        <Image source={require("@/screenAssets/logo/full-logo.png")} style={movieStyle.filmesLogo} />
 
         {isAdmin && (
           <TouchableOpacity
@@ -200,16 +167,7 @@ export default function Cinemas() {
               zIndex: 100,
             }}
           >
-            <Text 
-              style={{ 
-                color: COLORS.gold, 
-                fontSize: 30, 
-                fontFamily: "Poppins-Bold", 
-                lineHeight: 30,
-              }}
-            >
-              +
-            </Text>
+            <Text style={{ color: COLORS.gold, fontSize: 30, fontFamily: "Poppins-Bold", lineHeight: 30 }}>+</Text>
           </TouchableOpacity>
         )}
 
@@ -224,32 +182,20 @@ export default function Cinemas() {
         </View>
       </View>
 
-      {/* --- CORREÇÃO DO Z-INDEX AQUI PARA PERMITIR SCROLL --- */}
       {showFilters && (
-        <View style={[styles.filterMenuContainer, { width: '100%', zIndex: 999, elevation: 15 }]}>
+        <View style={styles.filterMenuContainer}>
           <SortFilterBar
             options={cinemaSortOptions}
             activeSort={sortType}
             onSelectSort={setSortType}
             sortAscending={sortAscending}
             onToggleAscending={() => setSortAscending(!sortAscending)}
-            
             extraFilters={
               <TouchableOpacity
                 onPress={() => setOnlyPartners(!onlyPartners)}
-                style={[
-                  styles.partnerBtn,
-                  onlyPartners && styles.partnerBtnActive,
-                ]}
+                style={[styles.partnerBtn, onlyPartners && styles.partnerBtnActive]}
               >
-                <Text
-                  style={[
-                    styles.partnerText,
-                    onlyPartners && styles.partnerTextActive,
-                  ]}
-                >
-                 Parceiros
-                </Text>
+                <Text style={[styles.partnerText, onlyPartners && styles.partnerTextActive]}>Parceiros</Text>
               </TouchableOpacity>
             }
           />
@@ -266,36 +212,14 @@ export default function Cinemas() {
         overScrollMode="never"
         contentContainerStyle={{ paddingBottom: 200 }}
         ListFooterComponent={
-          <View
-            style={{
-              alignItems: "center",
-              marginTop: 40,
-              marginBottom: 60,
-            }}
-          >
+          <View style={{ alignItems: "center", marginTop: 40, marginBottom: 60 }}>
             <View style={movieStyle.filmesFooterBtn}>
               <ButtonY title="Ver mais" />
             </View>
             
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{ marginTop: 40, alignItems: "center" }}
-              onPress={() => router.push("/map")}
-            >
-              <Image
-                source={require("@/screenAssets/Map-Buttom.svg")}
-                style={cinemaStyle.mapButtom}
-              />
-              <Text
-                style={{
-                  color: COLORS.gold,
-                  fontSize: 12,
-                  fontFamily: "Poppins-Bold",
-                  marginTop: 10,
-                }}
-              >
-                Ver Cinemas no Mapa
-              </Text>
+            <TouchableOpacity activeOpacity={0.7} style={{ marginTop: 40, alignItems: "center" }} onPress={() => router.push("/map")}>
+              <Image source={require("@/screenAssets/Map-Buttom.svg")} style={cinemaStyle.mapButtom} />
+              <Text style={{ color: COLORS.gold, fontSize: 12, fontFamily: "Poppins-Bold", marginTop: 10 }}>Ver Cinemas no Mapa</Text>
             </TouchableOpacity>
           </View>
         }

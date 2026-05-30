@@ -12,7 +12,8 @@ export class Cinema {
     private filmesEmCartaz: string[], 
     private sessoes: Sessao[],
     private avaliacao: number = 0,
-    private comentarios: any[] = []         
+    private comentarios: any[] = [],
+    private isParceiro: boolean = false 
   ) {}
 
   getNome() { return this.nome; }
@@ -23,6 +24,7 @@ export class Cinema {
   getUrlImagem() { return this.urlImagem; }
   getAvaliacao() { return this.avaliacao; }
   getComentarios() { return this.comentarios; }
+  getIsParceiro() { return this.isParceiro; }
 
   static createCinema(payload: {
     nome: string;
@@ -35,6 +37,7 @@ export class Cinema {
     sessoes?: Sessao[];  
     avaliacao?: number;
     comentarios?: any[];      
+    isParceiro?: boolean;
   }): Cinema {
 
     const nomeLimpo = payload.nome.trim();
@@ -79,7 +82,8 @@ export class Cinema {
       listaFilmes, 
       listaSessoes,
       payload.avaliacao || 0,
-      payload.comentarios || []               
+      payload.comentarios || [],
+      payload.isParceiro || false
     );
   }
 
@@ -95,7 +99,8 @@ export class Cinema {
       filmesEmCartaz: this.filmesEmCartaz,
       sessoes: this.sessoes.map(sessao => sessao.toFirestore()),
       avaliacao: this.avaliacao,
-      comentarios: this.comentarios
+      comentarios: this.comentarios,
+      is_parceiro: this.isParceiro
     };
   }
 }
