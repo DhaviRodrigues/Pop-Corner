@@ -86,7 +86,7 @@ export const componentStyle = StyleSheet.create({
       backgroundColor: COLORS.primary,
       marginTop: 0,
       marginBottom: height * 0.03,
-      boxShadow: "0px 4px 40px 40px rgba(0, 0, 0, 0.20)",
+      boxShadow: "0px 4px 40px 10px rgba(0, 0, 0, 0.20)",
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 6 },
       shadowOpacity: 0.3,
@@ -101,13 +101,13 @@ export const componentStyle = StyleSheet.create({
       bottom: 0,
       zIndex: -1,
   },
-    welcomeTitle: {
+  welcomeTitle: {
       fontSize: height * 0.035,
       fontFamily: 'Poppins-SemiBold',
       color: COLORS.gold,
       textAlign: 'center',
       zIndex: 1,
-      paddingBottom: 10,
+      paddingTop: 10,
   },
     codeInputContainer: {
     flexDirection: "row",
@@ -133,7 +133,7 @@ export const componentStyle = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderRadius: 30,
     alignSelf: "center",
-    boxShadow: "0px 4px 40px 40px rgba(0, 0, 0, 0.20)",
+    boxShadow: "0px 4px 40px 40px rgba(0, 0, 0, 0.2)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,

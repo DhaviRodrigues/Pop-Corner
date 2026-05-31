@@ -42,6 +42,8 @@ export default function MoviesScreen() {
   const [sortType, setSortType] = useState('alphabetical');
   const [sortAscending, setSortAscending] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  
+  const isYellow = (tagName: string) => ['AÇÃO', 'FANTASIA', 'FICÇÃO'].includes(tagName.toUpperCase());
 
   // --- LÓGICA DE PAGINAÇÃO ---
   const [visibleCount, setVisibleCount] = useState(10); // Começa com 10
@@ -152,8 +154,16 @@ export default function MoviesScreen() {
         
         <View style={movieStyle.filmesTagRow}>
           {tags.map((tag: string, index: number) => (
-            <View key={index} style={tag.toUpperCase() === 'AÇÃO' ? movieStyle.filmesTagYellow : movieStyle.filmesTagRed}>
-              <Text style={textStyle.filmesTagText}>{tag}</Text>
+            <View 
+              key={index} 
+              style={isYellow(tag) ? movieStyle.filmesTagYellow : movieStyle.filmesTagRed}
+            >
+              <Text style={[
+                movieStyle.filmesTagText, 
+                isYellow(tag) ? movieStyle.filmesTagYellowText : movieStyle.filmesTagRedText
+              ]}>
+                {tag}
+              </Text>
             </View>
           ))}
         </View>

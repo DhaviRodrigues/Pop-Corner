@@ -149,7 +149,7 @@ export const style = StyleSheet.create({
   },
   seeMoreBtnText: {
     color: COLORS.gold,
-    fontSize: 14,
+    fontSize: height * 0.020,
     fontFamily: 'Poppins-Bold',
   },
   mapButtom:{

@@ -71,6 +71,7 @@ export const movieStyle = StyleSheet.create({
     borderRadius: height * 0.02,
     paddingHorizontal: "4%",
     paddingVertical: "1%",
+    color: "#000",
   },
   filmesTagRed: {
     backgroundColor: COLORS.primary,
@@ -81,7 +82,12 @@ export const movieStyle = StyleSheet.create({
   filmesTagText: {
     fontSize: height * 0.01,
     fontWeight: "bold",
-    color: "#000",
+  },
+  filmesTagYellowText: {
+    color: COLORS.black,
+  },
+  filmesTagRedText: {
+    color: COLORS.gold,
   },
   filmesDetailsButton: {
     backgroundColor: COLORS.primary,

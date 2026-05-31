@@ -59,7 +59,9 @@ export const searchBarStyles = StyleSheet.create({
     fontWeight: '400',           
     textAlign: 'center', 
     includeFontPadding: false,   
-    textAlignVertical: 'center',  
+    textAlignVertical: 'center',
+    lineHeight: height * 0.045,
+    marginTop: -height * 0.005,
   },
   searchIcon: {
     width: 20,
