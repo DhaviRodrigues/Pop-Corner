@@ -56,7 +56,7 @@ export const style = StyleSheet.create({
   redDividerLine: {
     height: 2,
     width: '90%', 
-    backgroundColor: '#FF0000',
+    backgroundColor: COLORS.red,
     marginVertical: 1,
   },
   cinemaAddressText: {
@@ -85,7 +85,7 @@ export const style = StyleSheet.create({
     height: 25,
   },
   cinemaStarBackground: {
-    color: '#0c0000', 
+    color: COLORS.black, 
     fontSize: 18,
     bottom: 3,
     left: 3,
@@ -114,7 +114,7 @@ export const style = StyleSheet.create({
     width: 45,
     height: 60,
     borderRadius: 4,
-    backgroundColor: '#000',
+    backgroundColor: COLORS.black,
   },
 
   cinemaRightActionContainer: {
@@ -134,12 +134,12 @@ export const style = StyleSheet.create({
     width: "100%",
     height: "100%", 
     borderRadius: 6,
-    backgroundColor: '#000',
+    backgroundColor: COLORS.black,
   },
   seeMoreBtnOverlay: {
     position: 'absolute',
     bottom: -15,           
-    backgroundColor: '#B22300',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 16,
     paddingVertical: 4,
     borderRadius: 8,
@@ -148,7 +148,7 @@ export const style = StyleSheet.create({
     left: 16,    
   },
   seeMoreBtnText: {
-    color: '#FFFEB2',
+    color: COLORS.gold,
     fontSize: 14,
     fontFamily: 'Poppins-Bold',
   },
@@ -158,7 +158,7 @@ export const style = StyleSheet.create({
     resizeMode: 'contain' 
   },
 
-  mapContainer: { flex: 1, backgroundColor: "#000" },
+  mapContainer: { flex: 1, backgroundColor: COLORS.black },
   backButtonMap: {
     position: "absolute",
     top: 20,
@@ -198,13 +198,13 @@ export const style = StyleSheet.create({
     fontSize: 14,
   },
   retryButton: {
-    backgroundColor: "#FFFEB2",
+    backgroundColor: COLORS.gold,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: "#000",
+    color: COLORS.black,
     fontFamily: "Poppins-Bold",
     fontSize: 14,
   },
@@ -216,7 +216,7 @@ export const style = StyleSheet.create({
     width: 65,
     height: 65,
     borderRadius: 35,
-    backgroundColor: "#B22300", 
+    backgroundColor: COLORS.primary, 
     justifyContent: "center",
     alignItems: "center",
     zIndex: 2000,
@@ -236,7 +236,7 @@ export const style = StyleSheet.create({
 
 export const popupStyles = {
   container: {
-    backgroundColor: "#B22300", // Cor Primária
+    backgroundColor: COLORS.primary,
     padding: "12px",
     borderRadius: "12px",
     display: "flex",
@@ -268,8 +268,8 @@ export const popupStyles = {
     marginBottom: "8px",
   },
   button: {
-    backgroundColor: "#FFFEB2",
-    color: "#000",
+    backgroundColor: COLORS.gold,
+    color: COLORS.black,
     border: "none",
     padding: "8px",
     borderRadius: "6px",

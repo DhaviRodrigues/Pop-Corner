@@ -1,5 +1,5 @@
 import { StyleSheet, Dimensions } from 'react-native';
-
+import { COLORS } from "@/constants/colors";
 const { height, width } = Dimensions.get('window');
 
 export const commentModerationStyle = StyleSheet.create({
@@ -15,7 +15,7 @@ export const commentModerationStyle = StyleSheet.create({
   // ─── Título ────────────────────────────────────────────────────────────────
 
   pageTitle: {
-    color: '#FFFEB2',
+    color: COLORS.gold,
     fontFamily: 'Poppins-SemiBold',
     fontSize: height * 0.03,
     textAlign: 'center',
@@ -49,7 +49,7 @@ export const commentModerationStyle = StyleSheet.create({
   },
   backEmoji: {
     fontSize: 20,
-    color: '#FFFEB2',
+    color: COLORS.gold,
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -90,7 +90,7 @@ export const commentModerationStyle = StyleSheet.create({
   searchEmoji: {
     fontSize: 16,
     marginRight: 8,
-    color: '#FFFEB2',
+    color: COLORS.gold,
   },
 
   // ─── FilterTabs ────────────────────────────────────────────────────────────
@@ -120,8 +120,8 @@ export const commentModerationStyle = StyleSheet.create({
     gap: 10,
   },
   filterTabActive: {
-    backgroundColor: '#FFFEB2',
-    borderColor: '#FFFEB2',
+    backgroundColor: COLORS.gold,
+    borderColor: COLORS.gold,
   },
   filterTabText: {
     fontSize: height * 0.015,
@@ -132,7 +132,7 @@ export const commentModerationStyle = StyleSheet.create({
     color: '#8B0000',
   },
   filterTabBadge: {
-    backgroundColor: '#B22300',
+    backgroundColor: COLORS.primary,
     borderRadius: 10,
     paddingHorizontal: 2,
     paddingVertical: 2,
@@ -143,12 +143,12 @@ export const commentModerationStyle = StyleSheet.create({
     backgroundColor: '#8B0000',
   },
   filterTabBadgeText: {
-    color: '#FFFEB2',
+    color: COLORS.gold,
     fontSize: height * 0.012,
     fontFamily: 'Poppins-SemiBold',
   },
   filterTabBadgeTextActive: {
-    color: '#FFFEB2',
+    color: COLORS.gold,
   },
 
   // ─── SelectAllBar ──────────────────────────────────────────────────────────
@@ -201,25 +201,25 @@ export const commentModerationStyle = StyleSheet.create({
     width: 20,
     height: 20,
     borderWidth: 2,
-    borderColor: '#FFFEB2',
+    borderColor: COLORS.gold,
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
   checkboxTick: {
-    color: '#FFFEB2',
+    color: COLORS.gold,
     fontSize: 14,
     fontWeight: 'bold',
     lineHeight: 16,
   },
   selectAllText: {
-    color: '#FFFEB2',
+    color: COLORS.gold,
     fontFamily: 'Poppins-SemiBold',
     fontSize: height * 0.015,
   },
   orderText: {
-    color: '#FFFEB2',
+    color: COLORS.gold,
     fontFamily: 'Poppins-SemiBold',
     fontSize: height * 0.015,
   },
@@ -238,7 +238,7 @@ export const commentModerationStyle = StyleSheet.create({
     height: 20,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: '#FFFEB2',
+    borderColor: COLORS.gold,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -247,7 +247,7 @@ export const commentModerationStyle = StyleSheet.create({
     borderColor: '#6C3483',
   },
   cardCircleSelectTick: {
-    color: '#FFFEB2',
+    color: COLORS.gold,
     fontSize: 14,
     fontWeight: 'bold',
     lineHeight: 16,
@@ -258,7 +258,7 @@ export const commentModerationStyle = StyleSheet.create({
   },
   card: {
     flex: 1,
-    backgroundColor: '#FFFEB2',
+    backgroundColor: COLORS.gold,
     borderRadius: 12,
     padding: 10,
     shadowColor: '#000',
@@ -283,13 +283,13 @@ export const commentModerationStyle = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#C0392B',
+    backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
   },
   avatarText: {
-    color: '#FFFEB2',
+    color: COLORS.gold,
     fontFamily: 'Poppins-SemiBold',
     fontSize: height * 0.018,
   },
@@ -393,7 +393,7 @@ export const commentModerationStyle = StyleSheet.create({
     elevation: 3,
   },
   approveBtnBg: {
-    backgroundColor: '#27AE60',
+    backgroundColor: COLORS.green,
   },
   rejectBtnBg: {
     backgroundColor: '#1A1A1A',

@@ -33,7 +33,7 @@ export const textStyle = StyleSheet.create({
     textAlign: "center",
   },
   filmesMovieTitle: {
-    color: "#FFFEB2",
+    color: COLORS.gold,
     fontSize: height * 0.015,
     fontWeight: "bold",
     marginTop: height * 0.01,
@@ -59,12 +59,12 @@ export const textStyle = StyleSheet.create({
     textAlign: "center",
   },
   detailsRatingScore: {
-    color: "#FFFEB2",
+    color: COLORS.gold,
     fontSize: 20,
     fontWeight: "bold",
   },
   detailsRatingCount: {
-    color: "#FFFEB2",
+    color: COLORS.gold,
     fontSize: 16,
   },
   detailsSectionTitle: {
@@ -77,7 +77,7 @@ export const textStyle = StyleSheet.create({
   },
   detailsUserStars: {
     fontSize: 28,
-    color: "#B22300",
+    color: COLORS.primary,
     fontFamily: "Poppins-Bold",
   },
   detailsReviewUser: {
@@ -87,7 +87,7 @@ export const textStyle = StyleSheet.create({
     fontFamily: "Poppins-Bold",
   },
   detailsReviewStars: {
-    color: "#B22300",
+    color: COLORS.primary,
     fontSize: 12,
     fontFamily: "Poppins-Regular",
   },
@@ -98,7 +98,7 @@ export const textStyle = StyleSheet.create({
     fontFamily: "Poppins-Regular",
   },
   detailsInfoLabel: {
-    color: "#FFFEB2",
+    color: COLORS.gold,
     fontWeight: "bold",
     fontSize: 14,
     fontFamily: "Poppins-SemiBold",
@@ -108,7 +108,7 @@ export const textStyle = StyleSheet.create({
     fontFamily: "Poppins-Regular",
   },
   detailsTitleText: {
-    color: "#FFFEB2",
+    color: COLORS.gold,
     fontSize: height * 0.022,
     fontWeight: "bold",
     textAlign: "center",
