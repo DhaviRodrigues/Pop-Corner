@@ -1,6 +1,8 @@
 import BottomNavbar from '@/components/Navbar';
 import { miscStyle } from '@/styles/misc';
 import { Dimensions, ScrollView, Text, View } from 'react-native';
+import { StoreCoupon } from '@/components/StoreCoupon';
+import { UserCoupon } from '@/components/UserCoupon';
 
 // Pegando a altura total da janela pra poder posicionar o texto provisório de forma responsiva mais embaixo
 const { height } = Dimensions.get('window');
@@ -13,15 +15,21 @@ export default function Coupons() {
         showsVerticalScrollIndicator={false} 
         style={{ width: '100%' }}
         >
-          <Text style={{
-            fontSize : 16, 
-            color: '#FFFEB2',
-            textAlign: 'center', 
-            fontFamily: 'Poppins-Semibold',
-            // Jogando o texto mais ou menos pro meio da tela usando a altura relativa (40%). Quando entrarem os cards dos cupons reais, a gente tira isso.
-            marginTop: height * 0.4}}>
-            Conteúdo da página de Cupons
-            </Text>
+        <StoreCoupon 
+          title="Cupom 1"
+          type="Promoção"
+          circleText="10"
+          pipokaCost={100}
+          description="Descrição do cupom 1"
+        />
+        <UserCoupon
+        title="20 Reais de Desconto em Ingressos"
+        discountAmount="20"
+        description="Promoção válida apenas para ingressos"
+        status="Ativo"
+        validity="dd/mm/aaaa"
+        onShowCode={() => {}}
+      />
         </ScrollView>
       <BottomNavbar />
     </View>
