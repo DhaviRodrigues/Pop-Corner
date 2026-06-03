@@ -31,7 +31,9 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 export default function Cinemas() {
   const router = useRouter();
   const { user } = useUser();
+  
   const [isAdmin, setIsAdmin] = useState(false);
+
   const [cinemasList, setCinemasList] = useState<any[]>([]);
   const [searchText, setSearchText] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -46,6 +48,7 @@ export default function Cinemas() {
   ];
 
   useEffect(() => {
+    // 1. Carrega os cinemas
     const fetchCinemas = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "cinemas"));
@@ -60,25 +63,26 @@ export default function Cinemas() {
     };
     fetchCinemas();
 
-    const checkAdminStatus = async () => {
-      try {
-        if (auth.currentUser) {
-          const userRef = doc(db, "users", auth.currentUser.uid);
-          const userSnap = await getDoc(userRef);
-          
-          if (userSnap.exists()) {
-            const userData = userSnap.data();
-            if (userData.isAdm === true || userData.isAdmin === true) {
-              setIsAdmin(true);
+    // 2. Verifica privilégios de Admin assim que a tela abre
+    const verifyAdmin = async () => {
+      if (auth.currentUser) {
+        try {
+          const userRef = doc(db, 'users', auth.currentUser.uid);
+          const snap = await getDoc(userRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.isAdm === true || data.isAdmin === true) {
+              setIsAdmin(true); // Isto faz os botões aparecerem magicamente!
             }
           }
+        } catch (error) {
+          console.error("Erro ao verificar admin:", error);
         }
-      } catch (error) {
-        console.error("Erro ao verificar status de admin:", error);
       }
     };
-    checkAdminStatus();
+    verifyAdmin();
 
+    // 3. Localização
     if (typeof window !== "undefined" && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
@@ -99,7 +103,6 @@ export default function Cinemas() {
     }
 
     if (onlyPartners) {
-      // CORREÇÃO: Busca por is_parceiro (formato do Firebase)
       result = result.filter((c) => c.is_parceiro === true || c.isParceiro === true);
     }
 
@@ -130,7 +133,6 @@ export default function Cinemas() {
     }
 
     return (
-
       <CinemaCard
         id={item.id} 
         cinemaData={item}
