@@ -16,8 +16,10 @@ export class Cupom {
     private tipoCupom: TipoCupom,
     private valorBeneficio: number | string | null,
     private descricaoProduto: string,
-    private dataExpiracaoResgate: Date,
-    private validadePosResgate: number
+    private validadePosResgate: number,
+    private isTempoLimitado: boolean,       // NOVO: Define se some da loja por tempo
+    private dataExpiracaoResgate: Date | null, // Modificado: Pode ser null se for infinito
+    private quantidadeDisponivel: number | null // NOVO: Define o limite de compras (null = infinito)
   ) {}
 
   getIdCupom() { return this.idCupom; }
@@ -27,13 +29,26 @@ export class Cupom {
   getTipoCupom() { return this.tipoCupom; }
   getValorBeneficio() { return this.valorBeneficio; }
   getDescricaoProduto() { return this.descricaoProduto; }
-  getDataExpiracaoResgate() { return this.dataExpiracaoResgate; }
   getValidadePosResgate() { return this.validadePosResgate; }
+  getIsTempoLimitado() { return this.isTempoLimitado; }
+  getDataExpiracaoResgate() { return this.dataExpiracaoResgate; }
+  getQuantidadeDisponivel() { return this.quantidadeDisponivel; }
 
-  // Verifica se o cupom ainda pode ser comprado na loja
+
   isDisponivelParaResgate(): boolean {
-    const hoje = new Date();
-    return hoje <= this.dataExpiracaoResgate;
+   
+    if (this.quantidadeDisponivel !== null && this.quantidadeDisponivel <= 0) {
+      return false; 
+    }
+
+    if (this.isTempoLimitado && this.dataExpiracaoResgate) {
+      const hoje = new Date();
+      if (hoje > this.dataExpiracaoResgate) {
+        return false; 
+      }
+    }
+
+    return true; 
   }
 
   // Calcula a data limite de uso baseado no dia em que o usuário resgatou
@@ -67,14 +82,27 @@ export class Cupom {
     tipoCupom: TipoCupom;
     valorBeneficio: number | string | null;
     descricaoProduto: string;
-    dataExpiracaoResgate: Date;
     validadePosResgate: number;
+    isTempoLimitado?: boolean;
+    dataExpiracaoResgate?: Date | null;
+    quantidadeDisponivel?: number | null;
   }): Cupom {
     
     // Validações estritas baseadas nos limites definidos
     if (payload.nomeCupom.length > 100) throw new Error("O nome do cupom excedeu 100 caracteres.");
     if (payload.descricaoProduto.length > 255) throw new Error("A descrição excedeu 255 caracteres.");
     if (payload.valorPipokas < 0) throw new Error("O valor em Pipokas não pode ser negativo.");
+
+    // Validação da nova Regra de Tempo Limitado
+    const tempoLimitado = payload.isTempoLimitado || false;
+    if (tempoLimitado && !payload.dataExpiracaoResgate) {
+        throw new Error("Cupons por tempo limitado precisam ter uma data de expiração definida.");
+    }
+
+    // Validação da nova Regra de Quantidade Limitada
+    if (payload.quantidadeDisponivel !== undefined && payload.quantidadeDisponivel !== null && payload.quantidadeDisponivel < 0) {
+        throw new Error("A quantidade disponível não pode ser menor que zero.");
+    }
 
     // Validações da Regra de Negócio do valorBeneficio
     let beneficioFinal = payload.valorBeneficio;
@@ -91,8 +119,10 @@ export class Cupom {
       payload.tipoCupom,
       beneficioFinal,
       payload.descricaoProduto,
-      payload.dataExpiracaoResgate,
-      payload.validadePosResgate
+      payload.validadePosResgate,
+      tempoLimitado,
+      payload.dataExpiracaoResgate || null,
+      payload.quantidadeDisponivel !== undefined ? payload.quantidadeDisponivel : null
     );
   }
 
@@ -105,8 +135,10 @@ export class Cupom {
       tipo_cupom: this.tipoCupom,
       valor_beneficio: this.valorBeneficio,
       descricao_produto: this.descricaoProduto,
-      data_expiracao_resgate: Timestamp.fromDate(this.dataExpiracaoResgate),
-      validade_pos_resgate: this.validadePosResgate
+      validade_pos_resgate: this.validadePosResgate,
+      is_tempo_limitado: this.isTempoLimitado,
+      data_expiracao_resgate: this.dataExpiracaoResgate ? Timestamp.fromDate(this.dataExpiracaoResgate) : null,
+      quantidade_disponivel: this.quantidadeDisponivel
     };
   }
 
@@ -119,9 +151,10 @@ export class Cupom {
       data.tipo_cupom as TipoCupom,
       data.valor_beneficio ?? null,
       data.descricao_produto || "",
-      
-      data.data_expiracao_resgate ? data.data_expiracao_resgate.toDate() : new Date(),
-      data.validade_pos_resgate || 0
+      data.validade_pos_resgate || 0,
+      data.is_tempo_limitado || false,
+      data.data_expiracao_resgate ? data.data_expiracao_resgate.toDate() : null,
+      data.quantidade_disponivel !== undefined ? data.quantidade_disponivel : null
     );
   }
 }
