@@ -12,15 +12,15 @@ import { profileStyle } from "@/styles/profile";
 import { textStyle } from "@/styles/text";
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
-import { Dimensions, ScrollView, Text, View} from "react-native";
+import { Dimensions, ScrollView, Text, View, FlatList } from "react-native";
+import { MovieCard } from '@/components/MovieCard';
+import { MOVIES } from '@/data/mockFilmes';
+import { ButtonY } from '@/components/ButtonY';
 
-// Pega a altura da tela pra garantir que os espaçamentos (tipo o padTop da BoxDark lá embaixo) fiquem proporcionais em qualquer celular.
-const { height } = Dimensions.get('window');
+const { height, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function Profile(){
-    // Traz o hook do contexto global. É daqui que a gente puxa os dados do usuário logado (nome, email) sem precisar bater na API do BCB inteligencia toda vez que abrir a tela.
     const { user, setUser, logout } = useUser();
-    // Hook padrão do Expo Router pra fazer a navegação entre as telas.
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
 
@@ -35,12 +35,11 @@ export default function Profile(){
                         setUser(null);
                     }
                 } catch (error) {
-                    console.error("Erro ao sincronizar perfil com User.fetchUserData:", error);
+                    console.error("Erro ao sincronizar perfil:", error);
                 } finally {
                     setIsLoading(false);
                 }
             };
-
             syncProfile();
         }, [])
     );
@@ -56,34 +55,37 @@ export default function Profile(){
         });
     };
 
-    // Faz logout através da classe User, reseta contexts e redireciona para a tela inicial
     const handleLogout = async () => {
         try {
-            if (user) {
-                await user.logout();
-            }
+            if (user) await user.logout();
         } catch (error) {
             console.warn('Erro ao deslogar do Firebase:', error);
         } finally {
-            // Reseta os estados do app que guardam dados de usuário
             try {
                 if (logout) logout();
                 setUser(null);
             } catch (e) {
-                console.warn('Erro ao resetar contextos de usuário:', e);
+                console.warn('Erro ao resetar contextos:', e);
             }
-
-            // Navega para a tela inicial e substitui o histórico para evitar voltar à sessão anterior
             router.replace('/');
         }
     };
 
+    // Lista linear simples com apenas os 7 filmes mockados originais
+    const movies = MOVIES.slice(0, 7).map(m => ({ id: String(m.id), image: m.image }));
+    const cardSpacing = height * 0.015;
+
+    const renderMovieCard = ({ item }: { item: { id: string; image: string } }) => (
+        <View style={{ marginRight: cardSpacing }}>
+            <MovieCard movie={item} />
+        </View>
+    );
+
     return(
         <View style={miscStyle.background}>
-        {/* O ScrollView é essencial aqui porque as configurações podem crescer ou a tela do celular pode ser pequena, evitando que o botão de logout fique inacessível. */}
         <ScrollView showsVerticalScrollIndicator={false} 
-        style={{ width: '100%' }}
-        contentContainerStyle={{ paddingBottom: height * 0.30 }}
+            style={{ width: '100%' }}
+            contentContainerStyle={{ paddingBottom: height * 0.30 }}
         >
             <View style={{ alignItems: 'center', width: '100%' }}> 
                 <Text style={textStyle.profileText}>Perfil de Usuário</Text>
@@ -92,6 +94,7 @@ export default function Profile(){
                 <Text style={textStyle.profileName}>{user?.getName()}</Text>
                 <Text style={[textStyle.message, { fontFamily: 'Poppins-Light' }]}>{user?.getEmail()}</Text>
                 <MyCoupons/>
+                
                 <BoxDark vw={0.75} padTop={height * 0.02}>
                     <Text style={profileStyle.configTitle}>Configurações</Text>
                     <BoxDarkSelection
@@ -108,12 +111,40 @@ export default function Profile(){
                         onPress={handleChangePassword}
                     />
 
-                    {/* Componente isolado de logout recebendo a função vazia temporariamente */}
                     <LogoutButton onPress={handleLogout} />
                 </BoxDark>
+
+                <View style={{ marginTop: height * 0.04, width: '100%', alignItems: 'center' }}>
+                    <BoxDark vw={1.20} padTop={0}>
+                        <Text style={[textStyle.profileName, { fontSize: height * 0.024, marginBottom: height * 0.015 }]}>
+                            Watchlist
+                        </Text>
+
+                        <View style={{ width: SCREEN_WIDTH, alignSelf: 'center' }}>
+                            <FlatList
+                                data={movies}
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                keyExtractor={(item) => item.id}
+                                renderItem={renderMovieCard}
+                                ItemSeparatorComponent={() => <View style={{ width: height * 0.025 }} />}
+                                contentContainerStyle={{
+                                    paddingHorizontal: cardSpacing * 2,
+                                    alignItems: 'center',
+                                }}
+                                style={{ width: '100%' }}
+                            />
+                        </View>
+                        <View style={{ height: height * 0.030 }} />
+                    </BoxDark>
+                    <View style={{ marginTop: -30, alignItems: 'center', zIndex: 10 }}>
+                        <ButtonY title="Ver mais" onPress={() => {}} w={160} h={height * 0.055} />
+                    </View>
+
+                </View>
             </View>
-            </ScrollView>
-                <BottomNavbar />
-            </View>
-    )
+        </ScrollView>
+        <BottomNavbar />
+    </View>
+    );
 }
