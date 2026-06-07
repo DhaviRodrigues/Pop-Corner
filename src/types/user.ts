@@ -1,5 +1,5 @@
 import { auth, db } from "@/config/firebase";
-import { AuthError, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { AuthError, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { WatchlistEntry } from '@/types/watchlist';
 import { createUserProfile, updateUserName, deleteUserProfile } from '@/services/userservice';
@@ -16,6 +16,11 @@ export interface LoginValidationResult {
 }
 
 export interface RegisterValidationResult {
+  valid: boolean;
+  error: string;
+}
+
+export interface PasswordRecoveryValidationResult {
   valid: boolean;
   error: string;
 }
@@ -303,5 +308,57 @@ export class User {
       payload.favorite_genres,
       payload.pipoka
     );
+  }
+
+  static validatePasswordRecovery(email: string): PasswordRecoveryValidationResult {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email || email.trim() === "") {
+      return {
+        valid: false,
+        error: "Por favor, insira um email",
+      };
+    }
+
+    if (!emailRegex.test(email.trim())) {
+      return {
+        valid: false,
+        error: "Email inválido. Use um endereço com domínio válido",
+      };
+    }
+
+    return {
+      valid: true,
+      error: "",
+    };
+  }
+
+  static getPasswordRecoveryErrorMessage(errorCode: string): string {
+    switch (errorCode) {
+      case "auth/user-not-found":
+        return "Usuário com este email não encontrado";
+      case "auth/invalid-email":
+        return "Email inválido";
+      case "auth/too-many-requests":
+        return "Muitas tentativas. Tente novamente mais tarde";
+      default:
+        return "Erro ao enviar email de recuperação. Tente novamente";
+    }
+  }
+
+  static async sendPasswordResetEmail(email: string): Promise<AuthResult> {
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      return {
+        valid: true,
+        error: "",
+      };
+    } catch (error) {
+      const authError = error as AuthError;
+      return {
+        valid: false,
+        error: User.getPasswordRecoveryErrorMessage(authError.code),
+      };
+    }
   }
 }
