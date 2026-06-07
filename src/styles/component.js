@@ -479,6 +479,20 @@ export const componentStyle = StyleSheet.create({
     color: COLORS.red,
     fontFamily: "Poppins-SemiBold",
   },
+  dropdownContainer: {
+    backgroundColor: COLORS.gold,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: height * 0.02,
+    paddingVertical: height * 0.007,
+    borderRadius: height * 0.012,
+    gap: height * 0.008,
+  },
+  dropdownText: {
+    color: COLORS.red,
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: height * 0.021,
+  },
 });
 
 export const synopsisStyle = StyleSheet.create({

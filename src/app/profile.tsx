@@ -114,7 +114,7 @@ export default function Profile(){
                     <LogoutButton onPress={handleLogout} />
                 </BoxDark>
 
-                <View style={{ marginTop: height * 0.04, width: '100%', alignItems: 'center' }}>
+                <View style={{ marginTop: height * 0.042, width: '100%', alignItems: 'center' }}>
                     <BoxDark vw={1.20} padTop={0}>
                         <Text style={[textStyle.profileName, { fontSize: height * 0.024, marginBottom: height * 0.015 }]}>
                             Watchlist
@@ -138,7 +138,7 @@ export default function Profile(){
                         <View style={{ height: height * 0.030 }} />
                     </BoxDark>
                     <View style={{ marginTop: -30, alignItems: 'center', zIndex: 10 }}>
-                        <ButtonY title="Ver mais" onPress={() => {}} w={160} h={height * 0.055} />
+                        <ButtonY title="Ver mais" onPress={() => {router.push('/watchlist');}} w={160} h={height * 0.055} />
                     </View>
 
                 </View>
