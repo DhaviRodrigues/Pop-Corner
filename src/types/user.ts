@@ -1,6 +1,7 @@
 import { auth, db } from "@/config/firebase";
 import { AuthError, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
+import { WatchlistEntry } from '@/types/watchlist';
 
 export interface AuthResult {
   valid: boolean;
@@ -25,7 +26,8 @@ export class User {
     private email: string,
     private profile_picture: string,
     private favorite_genres: string[],
-    private pipoka: number
+    private pipoka: number,
+    private watchlist: WatchlistEntry[] = []
   ) {}
 
   getName(): string {
@@ -46,6 +48,36 @@ export class User {
 
   getPipoka(): number {
     return this.pipoka;
+  }
+
+  getWatchlist(): WatchlistEntry[] {
+    return this.watchlist;
+  }
+
+  addMovieWatchlist(idFilme: string): void {
+    const idLimpo = (idFilme || '').toString().trim();
+
+    const jaExiste = this.watchlist.some(w => w.getIdFilme() === idLimpo);
+    if (jaExiste) {
+      throw new Error(`O filme com ID "${idLimpo}" já está na watchlist.`);
+    }
+
+    const novoItem = WatchlistEntry.createEntry({ idFilme: idLimpo });
+    this.watchlist.push(novoItem);
+  }
+
+  removeMovieWatchlist(idFilme: string): void {
+    const idLimpo = (idFilme || '').toString().trim();
+    if (!idLimpo) {
+      throw new Error('O ID do filme é obrigatório para remover da watchlist.');
+    }
+
+    const indice = this.watchlist.findIndex(w => w.getIdFilme() === idLimpo);
+    if (indice === -1) {
+      throw new Error(`O filme com ID "${idLimpo}" não está na watchlist.`);
+    }
+
+    this.watchlist.splice(indice, 1);
   }
 
   async logout(): Promise<void> {
@@ -214,13 +246,28 @@ export class User {
 
       if (userSnapshot.exists()) {
         const userData = userSnapshot.data();
+        let watchlistArr: WatchlistEntry[] = [];
+        try {
+          if (Array.isArray(userData.watchlist)) {
+            watchlistArr = userData.watchlist.map((w: any) => {
+              const idFilme = w.id_filme || w.idFilme || w.id || '';
+              const added = w.added_at || w.addedAt || w.dataAdicionado || w.added || '';
+              return WatchlistEntry.createEntry({ idFilme: String(idFilme), dataAdicionado: String(added) });
+            }).filter(Boolean);
+          }
+        } catch (e) {
+          console.warn('Erro ao converter watchlist do Firestore:', e);
+          watchlistArr = [];
+        }
+
         return new User(
           0,
           userData.name,
           userData.email,
           userData.profile_picture,
           userData.favorite_genres,
-          userData.pipoka
+          userData.pipoka,
+          watchlistArr
         );
       }
 
