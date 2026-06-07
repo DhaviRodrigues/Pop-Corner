@@ -1,6 +1,7 @@
 import { auth, db } from "@/config/firebase";
 import { AuthError, deleteUser, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { WatchlistEntry } from '@/types/userWatchlist';
 
 export interface UpdateResult {
   valid: boolean;
@@ -27,6 +28,18 @@ export async function createUserProfile(
   } catch (error) {
     console.error('Erro ao criar documento do usuário:', error);
     return { valid: false, error: 'Erro ao criar perfil do usuário.' };
+  }
+}
+
+export async function updateUserWatchlist(userId: string, watchlist: WatchlistEntry[]): Promise<UpdateResult> {
+  try {
+    const userDocRef = doc(db, 'users', userId);
+    const watchlistData = watchlist.map(item => item.toFirestore());
+    await setDoc(userDocRef, { watchlist: watchlistData }, { merge: true });
+    return { valid: true, error: '' };
+  } catch (error) {
+    console.error('Erro ao atualizar watchlist do usuário:', error);
+    return { valid: false, error: 'Erro ao atualizar watchlist do usuário.' };
   }
 }
 

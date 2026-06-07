@@ -1,8 +1,8 @@
 import { auth, db } from "@/config/firebase";
 import { AuthError, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { WatchlistEntry } from '@/types/watchlist';
-import { createUserProfile, updateUserName, deleteUserProfile } from '@/services/userservice';
+import { WatchlistEntry } from '@/types/userWatchlist';
+import { createUserProfile, updateUserName, deleteUserProfile, updateUserWatchlist, UpdateResult } from '@/services/userservice';
 
 export interface AuthResult {
   valid: boolean;
@@ -63,30 +63,44 @@ export class User {
     return deleteUserProfile();
   }
 
-  addMovieWatchlist(idFilme: string): void {
+  async addMovieWatchlist(idFilme: string): Promise<UpdateResult> {
     const idLimpo = (idFilme || '').toString().trim();
 
     const jaExiste = this.watchlist.some(w => w.getIdFilme() === idLimpo);
     if (jaExiste) {
-      throw new Error(`O filme com ID "${idLimpo}" já está na watchlist.`);
+      return { valid: false, error: `O filme com ID "${idLimpo}" já está na watchlist.` };
     }
 
     const novoItem = WatchlistEntry.createEntry({ idFilme: idLimpo });
     this.watchlist.push(novoItem);
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return { valid: false, error: 'Usuário não autenticado.' };
+    }
+
+    return updateUserWatchlist(currentUser.uid, this.watchlist);
   }
 
-  removeMovieWatchlist(idFilme: string): void {
+  async removeMovieWatchlist(idFilme: string): Promise<UpdateResult> {
     const idLimpo = (idFilme || '').toString().trim();
     if (!idLimpo) {
-      throw new Error('O ID do filme é obrigatório para remover da watchlist.');
+      return { valid: false, error: 'O ID do filme é obrigatório para remover da watchlist.' };
     }
 
     const indice = this.watchlist.findIndex(w => w.getIdFilme() === idLimpo);
     if (indice === -1) {
-      throw new Error(`O filme com ID "${idLimpo}" não está na watchlist.`);
+      return { valid: false, error: `O filme com ID "${idLimpo}" não está na watchlist.` };
     }
 
     this.watchlist.splice(indice, 1);
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return { valid: false, error: 'Usuário não autenticado.' };
+    }
+
+    return updateUserWatchlist(currentUser.uid, this.watchlist);
   }
 
   async logout(): Promise<void> {
