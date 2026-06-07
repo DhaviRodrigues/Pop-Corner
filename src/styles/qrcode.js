@@ -1,0 +1,106 @@
+import { StyleSheet } from 'react-native';
+import { COLORS } from '@/constants/colors';
+
+export const qrCodeStyle = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: COLORS.primary,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 200, 
+    flexGrow: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 40,
+    marginBottom: 30,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    color: COLORS.gold,
+    fontFamily: 'Poppins-Bold',
+    fontSize: 24,
+    marginRight: 40, 
+  },
+  infoCard: {
+    backgroundColor: COLORS.primaryDark,
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: COLORS.red,
+    marginBottom: 25,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
+  couponIcon: {
+    width: 70,
+    height: 70,
+    marginBottom: 15,
+  },
+  couponTitle: {
+    color: COLORS.gold,
+    fontFamily: 'Poppins-Bold',
+    fontSize: 20,
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  couponDesc: {
+    color: COLORS.white,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  validationTitle: {
+    color: COLORS.gold,
+    fontFamily: 'Poppins-Bold',
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 15,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  qrCardWrapper: {
+    backgroundColor: COLORS.primaryDark, 
+    borderRadius: 15,
+    paddingTop: 30,
+    paddingBottom: 20,
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: COLORS.red,
+    marginBottom: 20,
+  },
+  qrBackground: {
+    padding: 10,
+    backgroundColor: COLORS.white,
+    marginBottom: 20,
+    borderRadius: 15,
+  },
+  codeLabel: {
+    color: COLORS.gold,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    marginBottom: 5,
+  },
+  codeValue: {
+    color: COLORS.gold,
+    fontFamily: 'Poppins-Bold',
+    fontSize: 26,
+    letterSpacing: 3,
+  },
+  instructionText: {
+    color: COLORS.gold,
+    fontFamily: 'Poppins-Light',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 10,
+  }
+});
