@@ -6,7 +6,7 @@ import { ValidationPopup } from "@/components/ValidationPopup";
 import { User } from "@/types/user";
 import { auth } from "@/config/firebase";
 import { useUser } from '@/contexts/UserContext';
-import { deleteUserProfile } from '@/services/userupdate';
+import { deleteUserProfile } from '@/services/userservice';
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";

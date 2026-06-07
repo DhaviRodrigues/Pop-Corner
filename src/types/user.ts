@@ -1,7 +1,8 @@
 import { auth, db } from "@/config/firebase";
 import { AuthError, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { WatchlistEntry } from '@/types/watchlist';
+import { createUserProfile, updateUserName, deleteUserProfile } from '@/services/userservice';
 
 export interface AuthResult {
   valid: boolean;
@@ -52,6 +53,14 @@ export class User {
 
   getWatchlist(): WatchlistEntry[] {
     return this.watchlist;
+  }
+
+  async updateName(newName: string) {
+    return updateUserName(newName);
+  }
+
+  async deleteProfile() {
+    return deleteUserProfile();
   }
 
   addMovieWatchlist(idFilme: string): void {
@@ -211,14 +220,13 @@ export class User {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      await setDoc(doc(db, 'users', user.uid), {
-        name: name,
-        email: email,
-        favorite_genres: favoriteGenres,
-        profile_picture: '',
-        pipoka: 0,
-        uid: user.uid,
-      });
+      const createResult = await createUserProfile(user.uid, name, email, favoriteGenres);
+      if (!createResult.valid) {
+        return {
+          valid: false,
+          error: createResult.error
+        };
+      }
 
       return {
         valid: true,

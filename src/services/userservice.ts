@@ -7,6 +7,29 @@ export interface UpdateResult {
   error: string;
 }
 
+export async function createUserProfile(
+  userId: string,
+  name: string,
+  email: string,
+  favoriteGenres: string[]
+): Promise<UpdateResult> {
+  try {
+    await setDoc(doc(db, 'users', userId), {
+      name: name.trim(),
+      email: email.trim(),
+      favorite_genres: favoriteGenres,
+      profile_picture: '',
+      pipoka: 0,
+      uid: userId,
+    });
+
+    return { valid: true, error: '' };
+  } catch (error) {
+    console.error('Erro ao criar documento do usuário:', error);
+    return { valid: false, error: 'Erro ao criar perfil do usuário.' };
+  }
+}
+
 export async function updateUserName(newName: string): Promise<UpdateResult> {
   try {
     const currentUser = auth.currentUser;
