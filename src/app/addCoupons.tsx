@@ -32,6 +32,7 @@ export default function CouponFormScreen() {
   const [observacoes, setObservacoes] = useState('');
   const [limitada, setLimitada] = useState(false);
   const [temporaria, setTemporaria] = useState(false);
+  const [qtdCupons, setQtdCupons] = useState('');
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusType, setStatusType] = useState<'success' | 'error'>('success');
@@ -43,11 +44,16 @@ export default function CouponFormScreen() {
       !valorPipokas.trim() ||
       !valorBeneficios.trim() ||
       !urlIcone.trim() ||
-      !dataExpiracao.trim() ||
       !tempoValidade.trim()
     ) {
       setStatusType('error');
       setStatusMessage('Preencha todos os campos obrigatórios.');
+      return false;
+    }
+
+    if (temporaria && !dataExpiracao.trim()) {
+      setStatusType('error');
+      setStatusMessage('Informe a data de expiração quando a oferta for temporária.');
       return false;
     }
 
@@ -71,10 +77,23 @@ export default function CouponFormScreen() {
       return true;
     };
 
-    if (!isValidDateDMY(dataExpiracao)) {
+    if (temporaria && dataExpiracao && !isValidDateDMY(dataExpiracao)) {
       setStatusType('error');
       setStatusMessage('Data de Expiração inválida. Use o formato dd/mm/aaaa.');
       return false;
+    }
+
+    if (limitada) {
+      if (!qtdCupons.trim()) {
+        setStatusType('error');
+        setStatusMessage('Informe a quantidade de cupons quando a oferta for limitada.');
+        return false;
+      }
+      if (Number.isNaN(Number(qtdCupons)) || Number(qtdCupons) <= 0) {
+        setStatusType('error');
+        setStatusMessage('Quantidade de cupons deve ser um número maior que zero.');
+        return false;
+      }
     }
 
     return true;
@@ -88,9 +107,12 @@ export default function CouponFormScreen() {
     setLoading(true);
     setStatusMessage('');
 
-    // converter dataExpiracao dd/mm/aaaa para Date (para armazenar como Timestamp no Firestore)
-    const [dStr, mStr, yStr] = dataExpiracao.trim().split('/');
-    const expDateObj = new Date(Number(yStr), Number(mStr) - 1, Number(dStr));
+    // converter dataExpiracao dd/mm/aaaa para Date apenas se temporaria for true
+    let expDateObj: Date | null = null;
+    if (temporaria && dataExpiracao) {
+      const [dStr, mStr, yStr] = dataExpiracao.trim().split('/');
+      expDateObj = new Date(Number(yStr), Number(mStr) - 1, Number(dStr));
+    }
 
     const couponData = {
       nome: nome.trim(),
@@ -98,12 +120,12 @@ export default function CouponFormScreen() {
       valorPipokas: Number(valorPipokas),
       valorBeneficios: valorBeneficios.trim(),
       urlIcone: urlIcone.trim(),
-      // passamos um objeto Date — Firestore vai armazenar como Timestamp
-      dataExpiracao: expDateObj,
       tempoValidade: tempoValidade.trim(),
       limitada,
       temporaria,
       observacoes: observacoes.trim(),
+      ...(temporaria && expDateObj ? { dataExpiracao: expDateObj } : {}),
+      ...(limitada ? { qtdCupons: Number(qtdCupons) } : {}),
     };
 
     const result = await createCoupon(couponData);
@@ -127,6 +149,7 @@ export default function CouponFormScreen() {
     setObservacoes('');
     setLimitada(false);
     setTemporaria(false);
+    setQtdCupons('');
   };
 
   return (
@@ -191,7 +214,14 @@ export default function CouponFormScreen() {
             onChangeText={setValorBeneficios}
             keyboardType="numeric"
           />
-
+          {/* Quantidade de cupons (condicional a limitada) — full width */}
+          <FormInput
+            placeholder="Quantidade de cupons"
+            value={qtdCupons}
+            onChangeText={setQtdCupons}
+            keyboardType="numeric"
+            disabled={!limitada}
+          />
           {/* Data de Expiração + Tempo de Validade — metade cada */}
           <View style={S.inputRow}>
             <DateInput
@@ -199,6 +229,7 @@ export default function CouponFormScreen() {
               value={dataExpiracao}
               onChangeText={setDataExpiracao}
               style={S.inputHalf}
+              disabled={!temporaria}
             />
             <FormInput
               placeholder="Tempo de Validade"
@@ -213,12 +244,28 @@ export default function CouponFormScreen() {
             <CouponFormSlider
               label="Limitada"
               active={limitada}
-              onToggle={() => setLimitada((v) => !v)}
+              onToggle={() => {
+                setLimitada((v) => {
+                  const next = !v;
+                  if (!next) {
+                    setQtdCupons('');
+                  }
+                  return next;
+                });
+              }}
             />
             <CouponFormSlider
               label="Temporária"
               active={temporaria}
-              onToggle={() => setTemporaria((v) => !v)}
+              onToggle={() => {
+                setTemporaria((v) => {
+                  const next = !v;
+                  if (!next) {
+                    setDataExpiracao('');
+                  }
+                  return next;
+                });
+              }}
             />
           </View>
 
