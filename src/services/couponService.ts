@@ -7,12 +7,13 @@ export interface CouponPayload {
   valorPipokas: number;
   valorBeneficios: string;
   urlIcone: string;
-  // pode ser string no formato dd/mm/yyyy ou um objeto Date (preferível para consultas)
-  dataExpiracao: string | Date;
+  // opcional: pode ser string no formato dd/mm/yyyy ou um objeto Date (preferível para consultas)
+  dataExpiracao?: string | Date;
   tempoValidade: string;
   limitada: boolean;
   temporaria: boolean;
   observacoes: string;
+  qtdCupons?: number;
 }
 
 export interface CouponCreateResult {

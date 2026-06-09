@@ -7,10 +7,13 @@ interface DateInputProps {
   value: string;
   onChangeText: (text: string) => void;
   style?: StyleProp<ViewStyle>;
+  disabled?: boolean;
 }
 
-export function DateInput({ placeholder, value, onChangeText, style }: DateInputProps) {
+export function DateInput({ placeholder, value, onChangeText, style, disabled = false }: DateInputProps) {
   const handleDateChange = (text: string) => {
+    if (disabled) return;
+
     // remove tudo que não é número
     const cleaned = text.replace(/\D/g, '');
 
@@ -32,15 +35,16 @@ export function DateInput({ placeholder, value, onChangeText, style }: DateInput
   };
 
   return (
-    <View style={[S.inputWrapper, style]}>
+    <View style={[S.inputWrapper, disabled && { backgroundColor: '#D3D3D3', opacity: 0.6 }, style]}>
       <TextInput
         style={S.inputText}
         placeholder={placeholder}
-        placeholderTextColor={placeholderColor}
+        placeholderTextColor={disabled ? '#999999' : placeholderColor}
         value={value}
         onChangeText={handleDateChange}
         keyboardType="numeric"
         maxLength={10} // dd/mm/aaaa = 10 caracteres
+        editable={!disabled}
       />
     </View>
   );
