@@ -22,6 +22,7 @@ import { Sessao } from "@/types/sessao";
 import { registerCinema } from "@/services/cinemaService";
 import { ButtonY } from "../components/ButtonY";
 import BottomNavbar from "../components/Navbar";
+import { BackButton } from "@/components/BackButton";
 import {
   collection,
   getDocs,
@@ -250,19 +251,13 @@ export default function CreateCinema() {
 
   return (
     <View style={miscStyle.background}>
-      <TouchableOpacity
+      <BackButton 
         style={styles.backButtonContainer}
         onPress={() => {
           if (router.canGoBack()) router.back();
           else router.replace("/cinemas");
         }}
-      >
-        <Image
-          source={require("../screenAssets/back-icon-buttom.svg")}
-          style={styles.backIcon}
-          resizeMode="contain"
-        />
-      </TouchableOpacity>
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

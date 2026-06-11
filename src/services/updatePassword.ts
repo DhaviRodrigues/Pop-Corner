@@ -1,5 +1,3 @@
-import { Alert } from 'react-native';
-
 const SCRIPT_URL_PASSWORD_RESET = process.env.EXPO_PUBLIC_UPDATE_PASSWORD_URL;
 
 export const sendPasswordResetEmail = async (email: string) => {
@@ -34,7 +32,6 @@ export const sendPasswordResetEmail = async (email: string) => {
     }
   } catch (error: any) {
     console.error("Erro ao enviar solicitação de redefinição de senha:", error);
-    Alert.alert("Erro de Rede", "Não foi possível conectar ao servidor. Verifique sua conexão com a internet.");
     return { success: false, message: "Erro de conexão de rede." };
   }
 };

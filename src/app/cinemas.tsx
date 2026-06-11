@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNavbar from "@/components/Navbar";
 import CinemaCard from "@/components/CinemaCard";
 import { ButtonY } from "@/components/ButtonY";
+import { AdminAddButton } from "@/components/AdminAddButton";
 import { filterMenuStyles as styles } from '@/styles/searchbar';
 import SearchBar from "@/components/SearchBar";
 import SortFilterBar from "@/components/SortFilterBar";
@@ -147,30 +148,7 @@ export default function Cinemas() {
         <Image source={require("@/screenAssets/logo/full-logo.png")} style={movieStyle.filmesLogo} />
 
         {isAdmin && (
-          <TouchableOpacity
-            onPress={() => router.push("/addTheater")}
-            style={{
-              position: "absolute",
-              top: Platform.OS === 'web' ? 20 : 40,
-              right: 20,
-              backgroundColor: COLORS.primary,
-              width: 55,
-              height: 55,
-              borderColor: COLORS.primaryDark,
-              borderWidth: 4,
-              borderRadius: 45, 
-              justifyContent: "center",
-              alignItems: "center",
-              elevation: 4, 
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
-              shadowRadius: 3,
-              zIndex: 100,
-            }}
-          >
-            <Text style={{ color: COLORS.gold, fontSize: 30, fontFamily: "Poppins-Bold", lineHeight: 30 }}>+</Text>
-          </TouchableOpacity>
+          <AdminAddButton onPress={() => router.push("/addTheater")} />
         )}
 
         <View style={{ width: "100%", paddingHorizontal: 5, marginTop: 10 }}>

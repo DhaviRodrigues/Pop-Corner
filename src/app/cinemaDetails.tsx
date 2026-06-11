@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, FlatList, Modal, ActivityIndicator, TextInput, Platform, Alert } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, FlatList, ActivityIndicator, Platform, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons'; 
 import BottomNavbar from '@/components/Navbar';
-import { ButtonY } from '@/components/ButtonY'; 
+import { ButtonY } from '@/components/ButtonY';
+import { AdminEditButton } from '@/components/AdminEditButton';
+import { AdminDeleteButton } from '@/components/AdminDeleteButton';
+import { BackButton } from '@/components/BackButton';
 import { useUser } from '@/contexts/UserContext';
 import { db, auth } from '@/config/firebase';
 import { doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-
 import { movieStyle } from '@/styles/movie'; 
 import { textStyle } from '@/styles/text';
 import { cinemaDetailsStyle } from '@/styles/cinemadetails';
@@ -52,8 +54,6 @@ export default function CinemaDetailsScreen() {
   const [userRating, setUserRating] = useState(0); 
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
   
   // ESTADO QUE FORÇA O REDESENHO DOS BOTÕES DE ADMIN
   const [isAdmin, setIsAdmin] = useState(false);
@@ -140,30 +140,24 @@ export default function CinemaDetailsScreen() {
     fetchFilmesDetalhados();
   }, [cinema]);
 
-  const handleDeleteCinema = async () => {
-    if (!adminPassword) {
-      Alert.alert("Aviso", "Digite a senha para confirmar.");
-      return;
+  const handleDeleteCinema = async (password: string) => {
+    if (!isAdmin) {
+      throw new Error("Not admin");
     }
 
-    if (isAdmin) {
-      try {
-        await deleteDoc(doc(db, 'cinemas', id as string));
-        setShowDeleteModal(false);
-        router.replace('/cinemas');
-      } catch (error) {
-        console.error("Erro ao deletar:", error);
-        Alert.alert("Erro", "Falha ao deletar cinema. Verifique sua permissão.");
-      }
-    } else {
-      Alert.alert("Acesso Negado", "Você não tem permissão para deletar este cinema.");
+    try {
+      await deleteDoc(doc(db, 'cinemas', id as string));
+      router.replace('/cinemas');
+    } catch (error) {
+      console.error("Erro ao deletar:", error);
+      throw error;
     }
   };
 
   const handleSubmitReview = async () => {
-    if (userRating === 0) return alert("Por favor, selecione uma nota de 1 a 5 estrelas.");
-    if (!myReview.trim()) return alert("Por favor, escreva um comentário.");
-    if (!user && !auth.currentUser) return alert("Você precisa estar logado para avaliar.");
+    if (userRating === 0) return;
+    if (!myReview.trim()) return;
+    if (!user && !auth.currentUser) return;
 
     try {
         setIsSubmittingReview(true);
@@ -184,13 +178,9 @@ export default function CinemaDetailsScreen() {
         setCinema({ ...cinema, comentarios: updatedComments, avaliacao: newAverage });
         setMyReview('');
         setUserRating(0);
-        
-        if (Platform.OS === 'web') window.alert("Avaliação enviada com sucesso!");
-        else Alert.alert("Sucesso", "Sua avaliação foi enviada!");
 
     } catch (error) {
         console.error("Erro ao enviar avaliação:", error);
-        alert("Erro ao enviar avaliação. Tente novamente.");
     } finally {
         setIsSubmittingReview(false);
     }
@@ -214,9 +204,7 @@ export default function CinemaDetailsScreen() {
     <View style={cinemaDetailsStyle.mainContainer}> 
       
       <View style={[movieStyle.filmesHeader, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 50 : 20, paddingBottom: 15 }]}>
-          <TouchableOpacity onPress={() => router.back()} style={{ width: 90, alignItems: 'flex-start' }}>
-              <Image source={require("@/screenAssets/back-icon-buttom.svg")} style={{ width: 50, height: 50 }} resizeMode="contain" />
-          </TouchableOpacity>
+          <BackButton style={{ width: 90, alignItems: 'flex-start' }} />
 
           <View style={{ flex: 1, alignItems: 'center' }}>
               <Image source={require('@/screenAssets/logo/full-logo.png')} style={{ width: 140, height: 70, resizeMode: 'contain' }} />
@@ -225,12 +213,8 @@ export default function CinemaDetailsScreen() {
           <View style={{ width: 90, flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
               {isAdmin && (
                   <>
-                    <TouchableOpacity onPress={() => router.push({ pathname: '/addTheater', params: { editId: id } })} style={{ width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: COLORS.gold, justifyContent: 'center', alignItems: 'center' }}>
-                        <Feather name="edit" size={18} color={COLORS.gold} />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setShowDeleteModal(true)} style={{ width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: COLORS.gold, justifyContent: 'center', alignItems: 'center' }}>
-                        <Feather name="trash-2" size={18} color={COLORS.gold} />
-                    </TouchableOpacity>
+                    <AdminEditButton onPress={() => router.push({ pathname: '/addTheater', params: { editId: id } })} />
+                    <AdminDeleteButton itemName="cinema" onConfirmDelete={handleDeleteCinema} />
                   </>
               )}
           </View>
@@ -292,7 +276,7 @@ export default function CinemaDetailsScreen() {
                 </View>
                 
                 <View style={{ width: '100%', alignItems: 'center' }}>
-                    <TextInput placeholder="Escreva sua avaliação..." placeholderTextColor="#999" value={myReview} onChangeText={(text) => { if (text.length <= 300) setMyReview(text); }} multiline={true} textAlignVertical="top" style={{ width: '100%', maxWidth: 350, height: 100, backgroundColor: '#FFF', borderRadius: 8, padding: 12, color: '#000', fontFamily: 'Poppins-Regular' }} />
+                    <TextInput placeholder="Escreva sua avaliação..." placeholderTextColor="#999" value={myReview} onChangeText={(text: string) => { if (text.length <= 300) setMyReview(text); }} multiline={true} textAlignVertical="top" style={{ width: '100%', maxWidth: 350, height: 100, backgroundColor: '#FFF', borderRadius: 8, padding: 12, color: '#000', fontFamily: 'Poppins-Regular' }} />
                     <View style={{ width: '100%', maxWidth: 350, alignItems: 'flex-end' }}>
                         <Text style={{color: '#999', fontSize: 10, marginTop: 5, marginBottom: 15}}>{myReview.length}/300</Text>
                     </View>
@@ -320,20 +304,6 @@ export default function CinemaDetailsScreen() {
         </View>
       </ScrollView>
 
-      <Modal visible={showDeleteModal} transparent={true} animationType="fade">
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.7)' }}>
-            <View style={{ width: '90%', maxWidth: 320, backgroundColor: COLORS.primaryDark, padding: 20, borderRadius: 15, alignItems: 'center' }}>
-                <Text style={{ color: '#FFF', fontSize: 18, fontFamily: 'Poppins-Bold', marginBottom: 10 }}>Confirmar Exclusão</Text>
-                <Text style={{ color: '#CCC', fontSize: 14, fontFamily: 'Poppins-Bold', textAlign: 'center', marginBottom: 20 }}>Digite a senha de administrador:</Text>
-                <TextInput secureTextEntry value={adminPassword} onChangeText={setAdminPassword} style={{ width: '100%', backgroundColor: '#FFF', padding: 10, fontFamily: 'Poppins-Bold', borderRadius: 5, marginBottom: 20 }} />
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                    <TouchableOpacity onPress={() => setShowDeleteModal(false)} style={{ padding: 10, backgroundColor: '#444', borderRadius: 5 }}><Text style={{color: '#FFF', fontFamily: 'Poppins-Bold'}}>Cancelar</Text></TouchableOpacity>
-                    <TouchableOpacity onPress={handleDeleteCinema} style={{ padding: 10, backgroundColor: '#B22300', borderRadius: 5 }}><Text style={{color: '#FFF', fontFamily: 'Poppins-Bold'}}>Confirmar</Text></TouchableOpacity>
-                </View>
-            </View>
-        </View>
-      </Modal>
-      
       <BottomNavbar />
     </View>
   );
