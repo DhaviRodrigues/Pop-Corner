@@ -161,6 +161,7 @@ export default function WatchlistScreen() {
               <FlatList
                 data={moviesWithAdd}
                 numColumns={2}
+                key={2}
                 keyExtractor={(item) => item.id}
                 renderItem={renderMovieCard}
                 scrollEnabled={false}
