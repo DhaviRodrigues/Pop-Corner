@@ -20,8 +20,7 @@ export function MyCoupons({ onPress }: MyCouponsProps) {
         <View style={componentStyle.coupomContentContainer}>
           <View style={componentStyle.coupomTextContainer}>
             <Text style={componentStyle.coupomTitles}>MEUS CUPONS</Text>
-            {/* Uso de quebra de linha manual para assegurar que a hierarquia visual do texto seja mantida em diferentes larguras de tela. */}
-            <Text style={componentStyle.coupomSubtitle}>Veja seus benefícios e descontos {"\n"}resgatados</Text>
+            <Text style={componentStyle.coupomSubtitle}>Veja seus benefícios e descontos resgatados</Text>
           </View>
           <View style={componentStyle.coupomIconContainer}>
             <Image style={componentStyle.coupomIcon} source={require('@/screenAssets/icons/ticket.svg')} />

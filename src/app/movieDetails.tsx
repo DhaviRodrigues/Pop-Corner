@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, ScrollView, Image, ActivityIndicator, TouchableOpacity, Modal, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, Image, ActivityIndicator, TouchableOpacity, Modal, TextInput, Alert, Platform, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore'; // Importei o updateDoc
 import { db, auth } from '@/config/firebase';
@@ -12,7 +12,9 @@ import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY'; 
 import { ButtonB } from '@/components/ButtonB'; 
 import { ButtonAddWatchlist } from '@/components/ButtonAddWatchlist';
+import { ValidationPopup } from '@/components/ValidationPopup';
 import { Input } from '@/components/Input';
+import { User } from '@/types/user';
 import { InfoRow } from '@/components/InfoRow';
 import { ReviewItem } from '@/components/ReviewItem';
 import { movieStyle } from '@/styles/movie'; 
@@ -23,7 +25,7 @@ import { BackButton } from '@/components/BackButton';
 export default function MovieDetailsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { user } = useUser();
+  const { user, setUser } = useUser();
 
   const [movie, setMovie] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -38,11 +40,94 @@ export default function MovieDetailsScreen() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [isAdminState, setIsAdminState] = useState(false);
+  const [isSavingWatchlist, setIsSavingWatchlist] = useState(false);
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
+  const [popupOnClose, setPopupOnClose] = useState<(() => void) | null>(null);
 
   const isContextAdmin = user 
     ? ((user as any).isAdmin === true || (user as any).isAdm === true)
     : false;
   const isAdmin = isContextAdmin || isAdminState;
+
+  const { height, width: screenWidth } = Dimensions.get('window');
+
+  const handleAddToWatchlist = async () => {
+    if (!user) {
+      setPopupMessage('Faça login para adicionar filmes à watchlist.');
+      setPopupVisible(true);
+      return;
+    }
+
+    if (!movie?.id) {
+      setPopupMessage('Não foi possível identificar o filme.');
+      setPopupVisible(true);
+      return;
+    }
+
+    try {
+      setIsSavingWatchlist(true);
+      const result = await (user as any).addMovieWatchlist(movie.id);
+      if (!result.valid) {
+        setPopupMessage(result.error || 'Erro ao adicionar à watchlist.');
+        setPopupVisible(true);
+        return;
+      }
+
+      const updatedUser = await User.fetchUserData();
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+
+      setPopupMessage('Filme adicionado à watchlist!');
+      setPopupVisible(true);
+      // on close we'll navigate to watchlist
+      setPopupOnClose(() => () => router.push('/watchlist'));
+    } catch (error) {
+      console.error('Erro ao adicionar à watchlist:', error);
+        setPopupMessage('Erro ao adicionar à watchlist. Tente novamente.');
+        setPopupVisible(true);
+    } finally {
+      setIsSavingWatchlist(false);
+    }
+  };
+
+    const handleRemoveFromWatchlist = async () => {
+      if (!user) {
+        setPopupMessage('Faça login para remover filmes da watchlist.');
+        setPopupVisible(true);
+        return;
+      }
+
+      if (!movie?.id) {
+        setPopupMessage('Não foi possível identificar o filme.');
+        setPopupVisible(true);
+        return;
+      }
+
+      try {
+        setIsSavingWatchlist(true);
+        const result = await (user as any).removeMovieWatchlist(movie.id);
+        if (!result.valid) {
+          setPopupMessage(result.error || 'Erro ao remover da watchlist.');
+          setPopupVisible(true);
+          return;
+        }
+
+        const updatedUser = await User.fetchUserData();
+        if (updatedUser) setUser(updatedUser);
+
+        setPopupMessage('Filme removido da watchlist.');
+        setPopupVisible(true);
+        setPopupOnClose(() => () => setPopupOnClose(null));
+      } catch (error) {
+        console.error('Erro ao remover da watchlist:', error);
+        setPopupMessage('Erro ao remover da watchlist. Tente novamente.');
+        setPopupVisible(true);
+      } finally {
+        setIsSavingWatchlist(false);
+      }
+    };
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -172,6 +257,14 @@ export default function MovieDetailsScreen() {
     return movie?.comentarios || [];
   }, [movie?.comentarios]);
 
+  const isInWatchlist = useMemo(() => {
+    try {
+      return !!user?.getWatchlist?.().some((w: any) => String(w.getIdFilme()) === String(movie?.id));
+    } catch (e) {
+      return false;
+    }
+  }, [user, movie?.id]);
+
   const paginatedReviews = useMemo(() => {
     return currentMovieReviews.slice(0, visibleCount);
   }, [currentMovieReviews, visibleCount]);
@@ -265,7 +358,11 @@ export default function MovieDetailsScreen() {
 
           <View style={movieStyle.detailsInfoGroup}>
             <View style={movieStyle.detailsWatchlistBtnWrapper}>
-              <ButtonAddWatchlist onPress={() => console.log('Adicionou!')} />
+              {isInWatchlist ? (
+                <ButtonB title="Remover da Watchlist" h={height * 0.065} w={screenWidth * 0.65} textSize={height * 0.02} onPress={handleRemoveFromWatchlist} />
+              ) : (
+                <ButtonAddWatchlist onPress={handleAddToWatchlist} />
+              )}
             </View>
 
             <View style={movieStyle.detailsSynopsisCard}>
@@ -367,6 +464,19 @@ export default function MovieDetailsScreen() {
         </View>
       </Modal>
       
+      <ValidationPopup
+        visible={popupVisible}
+        message={popupMessage}
+        onClose={() => {
+          setPopupVisible(false);
+          if (popupOnClose) {
+            const cb = popupOnClose;
+            setPopupOnClose(null);
+            cb();
+          }
+        }}
+      />
+
       <BottomNavbar />
     </View>
   );

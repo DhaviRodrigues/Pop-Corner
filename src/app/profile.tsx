@@ -1,3 +1,9 @@
+import React, { useState, useCallback } from 'react';
+import { Dimensions, ScrollView, Text, View, FlatList, TouchableOpacity, Image, ActivityIndicator } from "react-native";
+import { useRouter, useFocusEffect } from 'expo-router';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/config/firebase';
+
 import { BoxDark } from "@/components/BoxDark";
 import { BoxDarkSelection } from "@/components/BoxDarkSelection";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -10,29 +16,66 @@ import { User } from '@/types/user';
 import { miscStyle } from "@/styles/misc";
 import { profileStyle } from "@/styles/profile";
 import { textStyle } from "@/styles/text";
-import { useRouter, useFocusEffect } from 'expo-router';
-import { useState, useCallback } from 'react';
-import { Dimensions, ScrollView, Text, View, FlatList } from "react-native";
 import { MovieCard } from '@/components/MovieCard';
-import { MOVIES } from '@/data/mockFilmes';
 import { ButtonY } from '@/components/ButtonY';
+import { COLORS } from '@/constants/colors';
 
 const { height, width: SCREEN_WIDTH } = Dimensions.get('window');
+const cardWidth = SCREEN_WIDTH * 0.42;
+const cardHeight = cardWidth * 1.5;
+
+interface ProfileMovie {
+  id: string;
+  image: string;
+}
 
 export default function Profile(){
-    const { user, setUser, logout } = useUser();
+    const { user, setUser, logout, isLoading: authLoading } = useUser();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
-
+    const [recentMovies, setRecentMovies] = useState<ProfileMovie[]>([]);
+    
     useFocusEffect(
         useCallback(() => {
-            const syncProfile = async () => {
+            if (authLoading) return;
+            
+            const syncProfileAndWatchlist = async () => {
                 try {
                     const updatedUser = await User.fetchUserData();
                     if (updatedUser) {
                         setUser(updatedUser);
+                        const userWatchlist = updatedUser.getWatchlist() ?? [];
+
+                        const sortedWatchlist = [...userWatchlist].sort((a, b) => {
+                            const dateA = new Date(a.getDataAdicionado()).getTime();
+                            const dateB = new Date(b.getDataAdicionado()).getTime();
+                            return dateB - dateA; 
+                        });
+
+                        const top10Entries = sortedWatchlist.slice(0, 10);
+                        const fetchedMovies = await Promise.all(
+                            top10Entries.map(async (watchlistItem) => {
+                                const movieId = watchlistItem.getIdFilme();
+                                try {
+                                    const movieSnap = await getDoc(doc(db, 'filmes', movieId));
+                                    if (movieSnap.exists()) {
+                                        const data = movieSnap.data();
+                                        return {
+                                            id: movieId,
+                                            image: data.image ?? null,
+                                        };
+                                    }
+                                } catch (error) {
+                                    console.warn(`Erro ao buscar dados do filme ${movieId} para o perfil:`, error);
+                                }
+                                return { id: movieId, image: null };
+                            })
+                        );
+                        const validMovies = fetchedMovies.filter(m => m.image !== null) as ProfileMovie[];
+                        setRecentMovies(validMovies);
                     } else {
                         setUser(null);
+                        setRecentMovies([]);
                     }
                 } catch (error) {
                     console.error("Erro ao sincronizar perfil:", error);
@@ -40,8 +83,8 @@ export default function Profile(){
                     setIsLoading(false);
                 }
             };
-            syncProfile();
-        }, [])
+            syncProfileAndWatchlist();
+        }, [authLoading])
     );
 
     const handleEditProfile = () => {
@@ -71,14 +114,10 @@ export default function Profile(){
         }
     };
 
-    // Lista linear simples com apenas os 7 filmes mockados originais
-    const movies = MOVIES.slice(0, 7).map(m => ({ id: String(m.id), image: m.image }));
     const cardSpacing = height * 0.015;
 
-    const renderMovieCard = ({ item }: { item: { id: string; image: string } }) => (
-        <View style={{ marginRight: cardSpacing }}>
-            <MovieCard movie={item} />
-        </View>
+    const renderMovieCard = ({ item }: { item: ProfileMovie }) => (
+    <MovieCard movie={item} />
     );
 
     return(
@@ -120,28 +159,69 @@ export default function Profile(){
                             Watchlist
                         </Text>
 
-                        <View style={{ width: SCREEN_WIDTH, alignSelf: 'center' }}>
-                            <FlatList
-                                data={movies}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                keyExtractor={(item) => item.id}
-                                renderItem={renderMovieCard}
-                                ItemSeparatorComponent={() => <View style={{ width: height * 0.025 }} />}
-                                contentContainerStyle={{
-                                    paddingHorizontal: cardSpacing * 2,
-                                    alignItems: 'center',
-                                }}
-                                style={{ width: '100%' }}
-                            />
+                        <View style={{ width: SCREEN_WIDTH, alignSelf: 'center', minHeight: height * 0.15, justifyContent: 'center', alignItems: 'center' }}>
+                            {isLoading ? (
+                                <ActivityIndicator size="small" color={COLORS.gold} />
+                            ) : recentMovies.length === 0 ? (
+                                <View style={{ alignItems: 'center', paddingHorizontal: height * 0.02 }}>
+                                    <Text style={[textStyle.profileName, { 
+                                        fontSize: height * 0.018, 
+                                        marginBottom: height * 0.02, 
+                                        textAlign: 'center',
+                                        width: SCREEN_WIDTH * 0.75 
+                                    }]}>
+                                        Descubra e salve novos filmes na sua watchlist
+                                    </Text>
+                                    
+                                    <TouchableOpacity 
+                                        style={{
+                                            width: cardWidth,
+                                            height: cardHeight,
+                                            borderWidth: height * 0.006,
+                                            borderColor: COLORS.gold,
+                                            borderRadius: height * 0.012,
+                                            backgroundColor: 'transparent',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            overflow: 'hidden',
+                                        }}
+                                        activeOpacity={0.8}
+                                        onPress={() => router.push('/movies')}
+                                    >
+                                        <Image
+                                            source={require('@/screenAssets/icons/button-add.svg')}
+                                            style={{ width: height * 0.06, height: height * 0.06 }}
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                <FlatList
+                                    data={recentMovies}
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    keyExtractor={(item) => item.id}
+                                    renderItem={renderMovieCard}
+                                    ItemSeparatorComponent={() => <View style={{ width: height * 0.035 }} />}
+                                    contentContainerStyle={{
+                                        paddingHorizontal: cardSpacing * 2,
+                                        alignItems: 'center',
+                                        flexGrow: 1,
+                                        justifyContent: recentMovies.length === 1 ? 'center' : 'flex-start',
+                                    }}
+                                    style={{ width: '100%' }}
+                                />
+                            )}
                         </View>
                         <View style={{ height: height * 0.030 }} />
                     </BoxDark>
-                    <View style={{ marginTop: -30, alignItems: 'center', zIndex: 10 }}>
-                        <ButtonY title="Ver mais" onPress={() => {router.push('/watchlist');}} w={160} h={height * 0.055} />
-                    </View>
-
+                    
+                    {recentMovies.length > 0 && (
+                        <View style={{ marginTop: -30, alignItems: 'center', zIndex: 10 }}>
+                            <ButtonY title="Ver mais" onPress={() => {router.push('/watchlist');}} w={160} h={height * 0.055} />
+                        </View>
+                    )}
                 </View>
+
             </View>
         </ScrollView>
         <BottomNavbar />
