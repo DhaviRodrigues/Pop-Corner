@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,20 +8,28 @@ import {
   TouchableOpacity,
   StatusBar,
   Dimensions,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { miscStyle } from '@/styles/misc';
-import { couponFormStyle as S } from '@/styles/couponForm';
+import { couponFormStyle } from '@/styles/couponForm';
 import { FormInput } from '@/components/CouponFormInput';
 import { CouponFormSlider } from '@/components/CouponFormSlider';
 import { CouponTypeDropdown } from '@/components/CouponTypeDropdown';
 import BottomNavbar from '@/components/Navbar';
 import { DateInput } from '@/components/DateInput';
-import { createCoupon } from '@/services/couponService';
+import { createCoupon, getCoupon, updateCoupon } from '@/services/couponService';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { BackButton } from '@/components/BackButton';
 
 const { height } = Dimensions.get('window');
 
 export default function CouponFormScreen() {
+  const { couponId } = useLocalSearchParams();
+  const router = useRouter();
+  const isEditing = !!couponId;
+
   const [nome, setNome] = useState('');
   const [valorPipokas, setValorPipokas] = useState('');
   const [urlIcone, setUrlIcone] = useState('');
@@ -33,9 +41,55 @@ export default function CouponFormScreen() {
   const [limitada, setLimitada] = useState(false);
   const [temporaria, setTemporaria] = useState(false);
   const [qtdCupons, setQtdCupons] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(isEditing);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusType, setStatusType] = useState<'success' | 'error'>('success');
+
+  useEffect(() => {
+    if (isEditing && couponId) {
+      loadCouponData();
+    }
+  }, [couponId]);
+
+  const loadCouponData = async () => {
+    try {
+      const result = await getCoupon(couponId as string);
+      
+      if (!result.valid || !result.data) {
+        setStatusType('error');
+        setStatusMessage('Cupom não encontrado.');
+        setLoading(false);
+        return;
+      }
+
+      const data = result.data;
+      setNome(data.nome || data.nome_cupom || '');
+      setValorPipokas(String(data.valorPipokas || data.valor_pipokas || ''));
+      setUrlIcone(data.urlIcone || data.url_icone || '');
+      setTipo(data.tipo || data.tipo_cupom || '');
+      setValorBeneficios(String(data.valorBeneficios || data.valor_beneficio || ''));
+      setTempoValidade(String(data.tempoValidade || data.validade_pos_resgate || ''));
+      setObservacoes(data.observacoes || '');
+      setLimitada(data.limitada || data.is_limitada || false);
+      setTemporaria(data.temporaria || data.is_tempo_limitado || false);
+      setQtdCupons(String(data.qtdCupons || data.quantidade_disponivel || ''));
+      
+      if (data.dataExpiracao || data.data_expiracao_resgate) {
+        const dateField = data.dataExpiracao || data.data_expiracao_resgate;
+        const date = dateField.toDate?.() || new Date(dateField);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        setDataExpiracao(`${day}/${month}/${year}`);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar cupom:", error);
+      setStatusType('error');
+      setStatusMessage('Erro ao carregar cupom.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const validateForm = () => {
     if (
@@ -128,28 +182,60 @@ export default function CouponFormScreen() {
       ...(limitada ? { qtdCupons: Number(qtdCupons) } : {}),
     };
 
-    const result = await createCoupon(couponData);
-    setLoading(false);
+    try {
+      if (isEditing && couponId) {
+        // Atualizar cupom existente
+        const result = await updateCoupon(couponId as string, couponData);
+        
+        if (!result.valid) {
+          setStatusType('error');
+          setStatusMessage(result.error || 'Erro ao atualizar o cupom.');
+          setLoading(false);
+          return;
+        }
+        
+        setStatusType('success');
+        setStatusMessage('Cupom atualizado com sucesso!');
+        
+        setTimeout(() => {
+          router.back();
+        }, 1500);
+      } else {
+        // Criar novo cupom
+        const result = await createCoupon(couponData);
+        
+        if (!result.valid) {
+          setStatusType('error');
+          setStatusMessage(result.error || 'Erro ao salvar o cupom.');
+          setLoading(false);
+          return;
+        }
 
-    if (!result.valid) {
+        setStatusType('success');
+        setStatusMessage('Cupom criado com sucesso!');
+        setNome('');
+        setValorPipokas('');
+        setUrlIcone('');
+        setTipo('');
+        setValorBeneficios('');
+        setDataExpiracao('');
+        setTempoValidade('');
+        setObservacoes('');
+        setLimitada(false);
+        setTemporaria(false);
+        setQtdCupons('');
+        
+        setTimeout(() => {
+          router.back();
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Erro ao salvar cupom:", error);
       setStatusType('error');
-      setStatusMessage(result.error || 'Erro ao salvar o cupom.');
-      return;
+      setStatusMessage('Erro ao salvar o cupom. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
-
-    setStatusType('success');
-    setStatusMessage('Cupom enviado com sucesso!');
-    setNome('');
-    setValorPipokas('');
-    setUrlIcone('');
-    setTipo('');
-    setValorBeneficios('');
-    setDataExpiracao('');
-    setTempoValidade('');
-    setObservacoes('');
-    setLimitada(false);
-    setTemporaria(false);
-    setQtdCupons('');
   };
 
   return (
@@ -157,24 +243,29 @@ export default function CouponFormScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#922B21" />
 
       {/* Header: mesmo padrão da commentsModeration */}
-      <View style={S.headerContainer}>
-        <TouchableOpacity style={S.backButton}>
-          <Text style={S.backEmoji}>←</Text>
-        </TouchableOpacity>
+      <View style={couponFormStyle.headerContainer}>
+        <BackButton style={couponFormStyle.backButton} />
         {/* SUBSTITUIR: use caminho relativo para o arquivo de imagem */}
         <Image
           source={require('../../assets/images/Logo.png')}
-          style={S.logoImage}
+          style={couponFormStyle.logoImage}
         />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={S.scrollContentInner}
-      >
-        <Text style={S.pageTitle}>Escreva as Informações do Cupom</Text>
+      {loading && isEditing ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#FFFEB2" />
+        </View>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={couponFormStyle.scrollContentInner}
+        >
+          <Text style={couponFormStyle.pageTitle}>
+            {isEditing ? 'Editar Cupom' : 'Escreva as Informações do Cupom'}
+          </Text>
 
-        <View style={S.formContainer}>
+        <View style={couponFormStyle.formContainer}>
 
           {/* Nome — full width */}
           <FormInput
@@ -184,20 +275,20 @@ export default function CouponFormScreen() {
           />
 
           {/* Valor em Pipokas + URL do Ícone — metade cada */}
-          <View style={S.inputRow}>
+          <View style={couponFormStyle.inputRow}>
             <FormInput
               placeholder="Valor em Pipokas"
               value={valorPipokas}
               onChangeText={setValorPipokas}
               keyboardType="numeric"
-              style={S.inputHalf}
+              style={couponFormStyle.inputHalf}
             />
             <FormInput
               placeholder="URL do Ícone"
               value={urlIcone}
               onChangeText={setUrlIcone}
               keyboardType="url"
-              style={S.inputHalf}
+              style={couponFormStyle.inputHalf}
             />
           </View>
 
@@ -223,24 +314,24 @@ export default function CouponFormScreen() {
             disabled={!limitada}
           />
           {/* Data de Expiração + Tempo de Validade — metade cada */}
-          <View style={S.inputRow}>
+          <View style={couponFormStyle.inputRow}>
             <DateInput
               placeholder="Data de Expiração (dd/mm/aaaa)"
               value={dataExpiracao}
               onChangeText={setDataExpiracao}
-              style={S.inputHalf}
+              style={couponFormStyle.inputHalf}
               disabled={!temporaria}
             />
             <FormInput
               placeholder="Tempo de Validade"
               value={tempoValidade}
               onChangeText={setTempoValidade}
-              style={S.inputHalf}
+              style={couponFormStyle.inputHalf}
             />
           </View>
 
           {/* Checkboxes — Limitada e Temporária lado a lado */}
-          <View style={S.sliderRow}>
+          <View style={couponFormStyle.sliderRow}>
             <CouponFormSlider
               label="Limitada"
               active={limitada}
@@ -270,12 +361,12 @@ export default function CouponFormScreen() {
           </View>
 
           {/* Observações — textarea com header cinza */}
-          <View style={S.textAreaWrapper}>
-            <View style={S.textAreaHeader}>
-              <Text style={S.textAreaHeaderText}>Observações</Text>
+          <View style={couponFormStyle.textAreaWrapper}>
+            <View style={couponFormStyle.textAreaHeader}>
+              <Text style={couponFormStyle.textAreaHeaderText}>Observações</Text>
             </View>
             <TextInput
-              style={S.textAreaInput}
+              style={couponFormStyle.textAreaInput}
               value={observacoes}
               onChangeText={setObservacoes}
               multiline
@@ -287,8 +378,8 @@ export default function CouponFormScreen() {
         </View>
 
         {/* Botão Confirmar */}
-        <TouchableOpacity style={S.confirmButton} onPress={handleConfirmar} activeOpacity={0.85}>
-          <Text style={S.confirmButtonText}>{loading ? 'Enviando...' : 'Confirmar'}</Text>
+        <TouchableOpacity style={couponFormStyle.confirmButton} onPress={handleConfirmar} activeOpacity={0.85} disabled={loading}>
+          <Text style={couponFormStyle.confirmButtonText}>{loading ? 'Enviando...' : isEditing ? 'Atualizar' : 'Confirmar'}</Text>
         </TouchableOpacity>
 
         {statusMessage ? (
@@ -307,7 +398,8 @@ export default function CouponFormScreen() {
         ) : null}
 
         <View style={{ height: height * 0.05 }} />
-      </ScrollView>
+        </ScrollView>
+      )}
 
       <BottomNavbar />
     </SafeAreaView>

@@ -17,9 +17,9 @@ export class Cupom {
     private valorBeneficio: number | string | null,
     private descricaoProduto: string,
     private validadePosResgate: number,
-    private isTempoLimitado: boolean,       // NOVO: Define se some da loja por tempo
-    private dataExpiracaoResgate: Date | null, // Modificado: Pode ser null se for infinito
-    private quantidadeDisponivel: number | null // NOVO: Define o limite de compras (null = infinito)
+    private isTempoLimitado: boolean,
+    private dataExpiracaoResgate: Date | null,
+    private quantidadeDisponivel: number | null 
   ) {}
 
   getIdCupom() { return this.idCupom; }

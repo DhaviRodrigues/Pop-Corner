@@ -226,9 +226,7 @@ export default function MapaWeb() {
         </View>
       )}
 
-      <TouchableOpacity style={style.backButtonMap as any} onPress={() => router.back()}>
-        <Image source={require("@/screenAssets/back-icon-buttom.svg")} style={style.backIconMap as any} />
-      </TouchableOpacity>
+      <BackButton style={style.backButtonMap as any} />
 
       <View style={style.navbarWrapperMap as any}>
         <BottomNavbar />

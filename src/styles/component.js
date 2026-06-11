@@ -206,7 +206,7 @@ export const componentStyle = StyleSheet.create({
     justifyContent: 'center',
     marginRight: width * 0.05,
   },
-  coupomTitle: {
+  coupomTitles: {
     fontSize: height * 0.030,
     paddingBottom: height * 0.004,
     fontWeight: '900',
@@ -493,6 +493,42 @@ export const componentStyle = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     fontSize: height * 0.021,
   },
+badgeWrapper: {
+    position: 'absolute',
+    top: -(height * 0.018), 
+    left: 0,
+    right: 0,
+    justifyContent: 'center',
+    zIndex: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  badgePill: {
+    backgroundColor: COLORS.red,
+    borderColor: COLORS.gold,
+    borderWidth: height * 0.003,
+    borderRadius: height * 0.025,
+    paddingVertical: height * 0.005,
+    paddingHorizontal: height * 0.015,
+    marginRight: -(height * 0.018),
+    paddingRight: height * 0.025,
+  },
+  badgeText: {
+    color: COLORS.white,
+    fontFamily: 'Poppins-Bold',
+    fontSize: height * 0.012, 
+  },
+  badgeCircle: {
+    width: height * 0.04,
+    height: height * 0.04,
+    borderRadius: (height * 0.04) / 2,
+    backgroundColor: COLORS.red,
+    borderColor: COLORS.gold,
+    borderWidth: height * 0.003,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2, 
+  },
 });
 
 export const synopsisStyle = StyleSheet.create({
@@ -516,5 +552,5 @@ export const synopsisStyle = StyleSheet.create({
     textAlignVertical: 'top',
     minHeight: 120,
     fontSize: 14,
-  }
+  },
 });

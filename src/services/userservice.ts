@@ -7,6 +7,50 @@ export interface UpdateResult {
   error: string;
 }
 
+export interface AdminVerificationResult {
+  valid: boolean;
+  isAdmin: boolean;
+  error?: string;
+}
+
+export async function verifyAdmin(): Promise<AdminVerificationResult> {
+  try {
+    if (!auth.currentUser) {
+      return {
+        valid: false,
+        isAdmin: false,
+        error: "Usuário não autenticado"
+      };
+    }
+
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const snap = await getDoc(userRef);
+
+    if (!snap.exists()) {
+      return {
+        valid: false,
+        isAdmin: false,
+        error: "Perfil do usuário não encontrado"
+      };
+    }
+
+    const data = snap.data();
+    const isAdmin = data.isAdm === true || data.isAdmin === true;
+
+    return {
+      valid: true,
+      isAdmin
+    };
+  } catch (error) {
+    console.error("Erro ao verificar admin:", error);
+    return {
+      valid: false,
+      isAdmin: false,
+      error: "Erro ao verificar permissões de administrador"
+    };
+  }
+}
+
 export async function createUserProfile(
   userId: string,
   name: string,
