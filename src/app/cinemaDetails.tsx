@@ -32,7 +32,7 @@ const DynamicStarsDisplay = ({ rating }: { rating: number }) => {
                 <View key={index} style={{ position: 'relative', width: 22, height: 22, marginRight: 2 }}>
                     <Text style={{ position: 'absolute', color: '#666', fontSize: 20 }}>★</Text>
                     <View style={{ width: `${fill * 100}%`, overflow: 'hidden' }}>
-                        <Text style={{ color: '#FFFEB2', fontSize: 20 }}>★</Text>
+                        <Text style={{ color: COLORS.gold, fontSize: 20 }}>★</Text>
                     </View>
                 </View>
             ))}
@@ -270,7 +270,7 @@ export default function CinemaDetailsScreen() {
                 <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 20 }}>
                     {[1, 2, 3, 4, 5].map((star) => (
                         <TouchableOpacity key={star} onPress={() => setUserRating(star)} style={{ paddingHorizontal: 5 }}>
-                            <Text style={{ fontSize: 36, color: star <= userRating ? '#FFFEB2' : '#666' }}>★</Text>
+                            <Text style={{ fontSize: 36, color: star <= userRating ? COLORS.red : '#666' }}>★</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -283,7 +283,7 @@ export default function CinemaDetailsScreen() {
                 </View>
                 
                 <View style={movieStyle.detailsButtonWrapper}>
-                    {isSubmittingReview ? <ActivityIndicator size="small" color="#FFFEB2" /> : <ButtonY title="Avaliar" onPress={handleSubmitReview} />}
+                    {isSubmittingReview ? <ActivityIndicator size="small" color={COLORS.gold} /> : <ButtonY title="Avaliar" onPress={handleSubmitReview} />}
                 </View>
             </View>
 
