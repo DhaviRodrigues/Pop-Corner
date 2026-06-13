@@ -1,4 +1,13 @@
 import { User } from './user';
+import { auth } from '@/config/firebase';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { 
+  verifyAdmin, 
+  fetchAllAdminsService, 
+  addAdminService, 
+  removeAdminService,
+  AdminUserResult 
+} from '@/services/userservice';
 
 export class UserAdmin extends User {
   constructor(
@@ -38,44 +47,58 @@ export class UserAdmin extends User {
   }
 
   static async loginUserAdmin(email: string, password: string) {
-    const { auth, db } = await import('@/config/firebase');
-    const { signInWithEmailAndPassword, signOut } = await import('firebase/auth');
-    const { doc, getDoc } = await import('firebase/firestore');
-
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      const userDocRef = doc(db, 'users', user.uid);
-      const userSnapshot = await getDoc(userDocRef);
+      await signInWithEmailAndPassword(auth, email, password);
+      
+      const adminVerification = await verifyAdmin();
 
-      if (!userSnapshot.exists()) {
+      if (!adminVerification.valid || !adminVerification.isAdmin) {
         await signOut(auth);
-        return {
-          valid: false,
-          error: 'Conta de administrador não encontrada.'
+        return { 
+          valid: false, 
+          error: adminVerification.error || 'Acesso negado. Esta conta não possui privilégios de administrador.' 
         };
       }
 
-      const userData = userSnapshot.data();
-
-      if (!userData?.isAdmin) {
-        await signOut(auth);
-        return {
-          valid: false,
-          error: 'Acesso negado. Esta conta não possui privilégios de administrador.'
-        };
-      }
-
-      return {
-        valid: true,
-        error: ""
-      };
-    } catch (error) {
-      const authError = error as any;
-      return {
-        valid: false,
-        error: User.getLoginErrorMessage(authError.code)
-      };
+      return { valid: true, error: "" };
+    } catch (error: any) {
+      return { valid: false, error: User.getLoginErrorMessage(error.code) };
     }
+  }
+
+  static async checkIsAdmin(): Promise<boolean> {
+    const result = await verifyAdmin();
+    return result.isAdmin;
+  }
+
+  static async fetchAllAdmins(): Promise<AdminUserResult[]> {
+    return await fetchAllAdminsService();
+  }
+
+  static async addAdmin(email: string): Promise<void> {
+    const cleanEmail = email?.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!cleanEmail) {
+      throw new Error("Por favor, insira um e-mail.");
+    }
+
+    if (!emailRegex.test(cleanEmail)) {
+      throw new Error("O formato do e-mail é inválido.");
+    }
+    await addAdminService(cleanEmail);
+  }
+
+  static async removeAdmin(targetUserId: string, targetUserEmail: string, currentUserEmail?: string): Promise<void> {
+    
+    if (targetUserEmail === currentUserEmail) {
+      throw new Error("Ação bloqueada: Você não pode remover seus próprios privilégios de administrador.");
+    }
+
+    if (!targetUserId) {
+      throw new Error("ID do usuário é obrigatório para remoção.");
+    }
+    
+    await removeAdminService(targetUserId);
   }
 }
