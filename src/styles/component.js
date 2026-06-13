@@ -268,14 +268,14 @@ export const componentStyle = StyleSheet.create({
   },
   coupomContainer: {
     alignItems: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: 1,
   },
   coupomTitle: {
     color: COLORS.gold,
-    fontSize: height * 0.02,
+    fontSize: height * 0.015,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 16,
+    marginBottom: 8,
   },
   coupomGlowContainer: {
     shadowColor: COLORS.gold,
@@ -287,15 +287,15 @@ export const componentStyle = StyleSheet.create({
     marginBottom: 4,
   },
   coupomCircle: {
-    width: height * 0.13,
-    height: height * 0.13,
+    width: height * 0.10,
+    height: height * 0.10,
     borderRadius: height * 0.15 / 2,
     backgroundColor: COLORS.gold,
     justifyContent: "center",
     alignItems: "center",
   },
   coupomCircleValue: {
-    fontSize: height * 0.065,
+    fontSize: height * 0.045,
     fontWeight: "900",
     color: "COLORS.black",
     textAlign: "center",
@@ -309,11 +309,13 @@ export const componentStyle = StyleSheet.create({
   coupomPipokaText: {
     color: COLORS.gold,
     fontSize: height * 0.01,
+    textAlign: "center",
     fontFamily: "Poppins-SemiBold",
   },
   coupomPipokaCost: {
     fontFamily: "Poppins-SemiBold",
     color: COLORS.gold,
+    textAlign: "center",
     fontSize: height * 0.024,
   },
   coupomDivider: {
@@ -325,7 +327,7 @@ export const componentStyle = StyleSheet.create({
   },
   coupomDescription: {
     color: COLORS.gold,
-    fontSize: height * 0.011,
+    fontSize: height * 0.009,
     fontWeight: "bold",
     textAlign: "center",
     marginBottom: 1,

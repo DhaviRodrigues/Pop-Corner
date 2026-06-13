@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, useWindowDimensions } from "react-native";
+import { View, Text, Image, useWindowDimensions } from "react-native"; // <-- Image importado aqui
 import { BoxDark } from "@/components/BoxDark";
 import { ButtonY } from "@/components/ButtonY";
 import { COLORS } from "@/constants/colors";
@@ -18,6 +18,7 @@ type StoreCouponProps = {
   timer?: Date;
   amount?: number;
   isAdmin?: boolean;
+  urlIcone?: string; // <-- Propriedade do ícone adicionada aqui
   onEdit?: (id: string) => void;
   onDelete?: (id: string, password: string) => Promise<void>;
 };
@@ -32,6 +33,7 @@ export function StoreCoupon({
   timer, 
   amount,
   isAdmin,
+  urlIcone,
   onEdit,
   onDelete
 }: StoreCouponProps) {
@@ -69,10 +71,10 @@ export function StoreCoupon({
   }, [timer]);
 
   const renderCurrencySymbol = () => {
-    if (type === 'PORCENTAGEM') {
+    if (type === 'PORCENTAGEM' || type.toLowerCase() === 'percentual') {
       return <Text style={componentStyle.coupomCircleCurrency}>%</Text>;
     }
-    if (type === 'VALOR_FIXO') {
+    if (type === 'VALOR_FIXO' || type.toLowerCase() === 'valor fixo') {
       return <Text style={componentStyle.coupomCircleCurrency}> R$</Text>;
     }
     return null;
@@ -112,6 +114,9 @@ export function StoreCoupon({
     return null;
   };
 
+  // Verifica se o cupom é de um tipo que deve renderizar a imagem
+  const isImageCoupon = type.toLowerCase() === 'dois por um' || type.toLowerCase() === 'produto grátis' || type === 'DOIS_POR_UM' || type === 'PRODUTO_GRATIS';
+
  return (
     <View style={{ position: 'relative', marginTop: 15 }}>
       {renderTopBadge()}
@@ -138,10 +143,18 @@ export function StoreCoupon({
             <Text style={componentStyle.coupomTitle}>{title}</Text>
           <View style={componentStyle.coupomGlowContainer}>
             <View style={componentStyle.coupomCircle}>
-              <Text style={componentStyle.coupomCircleValue}>
-                {circleText}
-                {renderCurrencySymbol()}
-              </Text>
+              {/* LÓGICA DE RENDERIZAÇÃO DA IMAGEM ADICIONADA AQUI */}
+              {isImageCoupon && urlIcone ? (
+                <Image 
+                  source={{ uri: urlIcone }} 
+                  style={{ width: '65%', height: '65%', resizeMode: 'contain' }} 
+                />
+              ) : (
+                <Text style={componentStyle.coupomCircleValue}>
+                  {circleText}
+                  {renderCurrencySymbol()}
+                </Text>
+              )}
             </View>
           </View>
           <Text style={componentStyle.coupomPipokaText}>
@@ -152,9 +165,9 @@ export function StoreCoupon({
           <Text style={componentStyle.coupomDescription}>{description}</Text>
             <ButtonY
               title="TROQUE AGORA!"
-              w={height * 0.16}
-              h={height * 0.08}
-              textSize={height * 0.022}
+              w={height * 0.13}
+              h={height * 0.06}
+              textSize={height * 0.016}
             />
         </View>
       </BoxDark>

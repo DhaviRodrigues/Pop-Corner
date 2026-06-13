@@ -82,6 +82,7 @@ export default function Coupons() {
         isAdmin={isAdmin}
         onEdit={handleEditCoupon}
         onDelete={handleDeleteCoupon}
+        urlIcone={item.urlIcone}
       />
     );
   };
