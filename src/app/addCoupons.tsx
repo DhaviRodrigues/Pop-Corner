@@ -5,29 +5,59 @@ import {
   Image,
   TextInput,
   ScrollView,
-  TouchableOpacity,
   StatusBar,
-  Dimensions,
-  Alert,
   ActivityIndicator,
+  Switch,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { miscStyle } from '@/styles/misc';
-import { couponFormStyle } from '@/styles/couponForm';
-import { FormInput } from '@/components/CouponFormInput';
-import { CouponFormSlider } from '@/components/CouponFormSlider';
+import { textStyle } from '@/styles/text';
+import { COLORS } from '@/constants/colors';
+
+import { couponFormStyle, placeholderColor } from '@/styles/couponForm';
+
 import { CouponTypeDropdown } from '@/components/CouponTypeDropdown';
 import BottomNavbar from '@/components/Navbar';
-import { DateInput } from '@/components/DateInput';
 import { createCoupon, getCoupon, updateCoupon } from '@/services/couponService';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BackButton } from '@/components/BackButton';
+import { ButtonY } from '@/components/ButtonY';
 
-const { height } = Dimensions.get('window');
+function LocalInput({
+  text,
+  value,
+  onChangeText,
+  keyboardType = "default",
+  editable = true,
+}: {
+  text: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  keyboardType?: any;
+  editable?: boolean;
+}) {
+  return (
+    <View 
+      style={[
+        couponFormStyle.inputWrapper, 
+        !editable ? couponFormStyle.inputDisabled : null
+      ]}
+    >
+      <TextInput
+        placeholder={text}
+        placeholderTextColor={placeholderColor}
+        keyboardType={keyboardType}
+        editable={editable}
+        style={couponFormStyle.inputText}
+        value={value}
+        onChangeText={onChangeText}
+      />
+    </View>
+  );
+}
 
 export default function CouponFormScreen() {
-  const { couponId } = useLocalSearchParams();
   const router = useRouter();
+  const { couponId } = useLocalSearchParams();
   const isEditing = !!couponId;
 
   const [nome, setNome] = useState('');
@@ -43,7 +73,6 @@ export default function CouponFormScreen() {
   const [qtdCupons, setQtdCupons] = useState('');
   const [loading, setLoading] = useState(isEditing);
   const [statusMessage, setStatusMessage] = useState('');
-  const [statusType, setStatusType] = useState<'success' | 'error'>('success');
 
   useEffect(() => {
     if (isEditing && couponId) {
@@ -56,7 +85,6 @@ export default function CouponFormScreen() {
       const result = await getCoupon(couponId as string);
       
       if (!result.valid || !result.data) {
-        setStatusType('error');
         setStatusMessage('Cupom não encontrado.');
         setLoading(false);
         return;
@@ -84,7 +112,6 @@ export default function CouponFormScreen() {
       }
     } catch (error) {
       console.error("Erro ao carregar cupom:", error);
-      setStatusType('error');
       setStatusMessage('Erro ao carregar cupom.');
     } finally {
       setLoading(false);
@@ -92,32 +119,37 @@ export default function CouponFormScreen() {
   };
 
   const validateForm = () => {
+    // 1. Verifica os campos que são SEMPRE obrigatórios (sem a URL)
     if (
       !nome.trim() ||
       !tipo.trim() ||
       !valorPipokas.trim() ||
       !valorBeneficios.trim() ||
-      !urlIcone.trim() ||
       !tempoValidade.trim()
     ) {
-      setStatusType('error');
       setStatusMessage('Preencha todos os campos obrigatórios.');
       return false;
     }
 
+    // 2. Regra condicional da URL
+    const tipoNormalizado = tipo.trim().toLowerCase();
+    const exigeUrl = tipoNormalizado === 'dois por um' || tipoNormalizado === 'produto grátis';
+    
+    if (exigeUrl && !urlIcone.trim()) {
+      setStatusMessage('A URL do Ícone é obrigatória para cupons do tipo Dois por Um ou Produto Grátis.');
+      return false;
+    }
+
     if (temporaria && !dataExpiracao.trim()) {
-      setStatusType('error');
       setStatusMessage('Informe a data de expiração quando a oferta for temporária.');
       return false;
     }
 
     if (Number.isNaN(Number(valorPipokas))) {
-      setStatusType('error');
       setStatusMessage('Valor em Pipokas deve ser um número válido.');
       return false;
     }
 
-    // validação da data no formato dd/mm/aaaa
     const isValidDateDMY = (s: string) => {
       const trimmed = s.trim();
       const match = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -132,19 +164,16 @@ export default function CouponFormScreen() {
     };
 
     if (temporaria && dataExpiracao && !isValidDateDMY(dataExpiracao)) {
-      setStatusType('error');
       setStatusMessage('Data de Expiração inválida. Use o formato dd/mm/aaaa.');
       return false;
     }
 
     if (limitada) {
       if (!qtdCupons.trim()) {
-        setStatusType('error');
         setStatusMessage('Informe a quantidade de cupons quando a oferta for limitada.');
         return false;
       }
       if (Number.isNaN(Number(qtdCupons)) || Number(qtdCupons) <= 0) {
-        setStatusType('error');
         setStatusMessage('Quantidade de cupons deve ser um número maior que zero.');
         return false;
       }
@@ -161,7 +190,6 @@ export default function CouponFormScreen() {
     setLoading(true);
     setStatusMessage('');
 
-    // converter dataExpiracao dd/mm/aaaa para Date apenas se temporaria for true
     let expDateObj: Date | null = null;
     if (temporaria && dataExpiracao) {
       const [dStr, mStr, yStr] = dataExpiracao.trim().split('/');
@@ -184,34 +212,28 @@ export default function CouponFormScreen() {
 
     try {
       if (isEditing && couponId) {
-        // Atualizar cupom existente
         const result = await updateCoupon(couponId as string, couponData);
         
         if (!result.valid) {
-          setStatusType('error');
           setStatusMessage(result.error || 'Erro ao atualizar o cupom.');
           setLoading(false);
           return;
         }
         
-        setStatusType('success');
         setStatusMessage('Cupom atualizado com sucesso!');
         
         setTimeout(() => {
-          router.back();
+          if (router.canGoBack()) router.back();
         }, 1500);
       } else {
-        // Criar novo cupom
         const result = await createCoupon(couponData);
         
         if (!result.valid) {
-          setStatusType('error');
           setStatusMessage(result.error || 'Erro ao salvar o cupom.');
           setLoading(false);
           return;
         }
 
-        setStatusType('success');
         setStatusMessage('Cupom criado com sucesso!');
         setNome('');
         setValorPipokas('');
@@ -226,12 +248,11 @@ export default function CouponFormScreen() {
         setQtdCupons('');
         
         setTimeout(() => {
-          router.back();
+          if (router.canGoBack()) router.back();
         }, 1500);
       }
     } catch (error) {
       console.error("Erro ao salvar cupom:", error);
-      setStatusType('error');
       setStatusMessage('Erro ao salvar o cupom. Tente novamente.');
     } finally {
       setLoading(false);
@@ -239,169 +260,170 @@ export default function CouponFormScreen() {
   };
 
   return (
-    <SafeAreaView style={miscStyle.background} edges={['top']}>
+    <View style={miscStyle.background}>
       <StatusBar barStyle="light-content" backgroundColor="#922B21" />
 
-      {/* Header: mesmo padrão da commentsModeration */}
-      <View style={couponFormStyle.headerContainer}>
-        <BackButton style={couponFormStyle.backButton} />
-        {/* SUBSTITUIR: use caminho relativo para o arquivo de imagem */}
-        <Image
-          source={require('../../assets/images/Logo.png')}
-          style={couponFormStyle.logoImage}
-        />
-      </View>
-
       {loading && isEditing ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={miscStyle.center}>
           <ActivityIndicator size="large" color="#FFFEB2" />
         </View>
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={couponFormStyle.scrollContentInner}
+          contentContainerStyle={couponFormStyle.scrollContent}
         >
-          <Text style={couponFormStyle.pageTitle}>
-            {isEditing ? 'Editar Cupom' : 'Escreva as Informações do Cupom'}
-          </Text>
-
-        <View style={couponFormStyle.formContainer}>
-
-          {/* Nome — full width */}
-          <FormInput
-            placeholder="Nome"
-            value={nome}
-            onChangeText={setNome}
-          />
-
-          {/* Valor em Pipokas + URL do Ícone — metade cada */}
-          <View style={couponFormStyle.inputRow}>
-            <FormInput
-              placeholder="Valor em Pipokas"
-              value={valorPipokas}
-              onChangeText={setValorPipokas}
-              keyboardType="numeric"
-              style={couponFormStyle.inputHalf}
-            />
-            <FormInput
-              placeholder="URL do Ícone"
-              value={urlIcone}
-              onChangeText={setUrlIcone}
-              keyboardType="url"
-              style={couponFormStyle.inputHalf}
+          <View style={couponFormStyle.headerContainer}>
+            <Image
+              source={require('../../assets/images/Logo.png')}
+              style={couponFormStyle.logoImage}
             />
           </View>
 
-          {/* Tipo — full width */}
-          <CouponTypeDropdown
-            value={tipo}
-            onSelect={setTipo}
-          />
+          <View style={couponFormStyle.formContainer}>
+            <Text style={[textStyle.outBoxMessage, couponFormStyle.titleText]}>
+              {isEditing ? 'Editar Cupom' : 'Escreva as Informações do Cupom'}
+            </Text>
 
-          {/* Valor dos benefícios — full width */}
-          <FormInput
-            placeholder="Valor dos benefícios"
-            value={valorBeneficios}
-            onChangeText={setValorBeneficios}
-            keyboardType="numeric"
-          />
-          {/* Quantidade de cupons (condicional a limitada) — full width */}
-          <FormInput
-            placeholder="Quantidade de cupons"
-            value={qtdCupons}
-            onChangeText={setQtdCupons}
-            keyboardType="numeric"
-            disabled={!limitada}
-          />
-          {/* Data de Expiração + Tempo de Validade — metade cada */}
-          <View style={couponFormStyle.inputRow}>
-            <DateInput
-              placeholder="Data de Expiração (dd/mm/aaaa)"
-              value={dataExpiracao}
-              onChangeText={setDataExpiracao}
-              style={couponFormStyle.inputHalf}
-              disabled={!temporaria}
-            />
-            <FormInput
-              placeholder="Tempo de Validade"
-              value={tempoValidade}
-              onChangeText={setTempoValidade}
-              style={couponFormStyle.inputHalf}
-            />
-          </View>
-
-          {/* Checkboxes — Limitada e Temporária lado a lado */}
-          <View style={couponFormStyle.sliderRow}>
-            <CouponFormSlider
-              label="Limitada"
-              active={limitada}
-              onToggle={() => {
-                setLimitada((v) => {
-                  const next = !v;
-                  if (!next) {
-                    setQtdCupons('');
-                  }
-                  return next;
-                });
-              }}
-            />
-            <CouponFormSlider
-              label="Temporária"
-              active={temporaria}
-              onToggle={() => {
-                setTemporaria((v) => {
-                  const next = !v;
-                  if (!next) {
-                    setDataExpiracao('');
-                  }
-                  return next;
-                });
-              }}
-            />
-          </View>
-
-          {/* Observações — textarea com header cinza */}
-          <View style={couponFormStyle.textAreaWrapper}>
-            <View style={couponFormStyle.textAreaHeader}>
-              <Text style={couponFormStyle.textAreaHeaderText}>Observações</Text>
+            <View style={couponFormStyle.fullInput}>
+              <LocalInput
+                text="Nome"
+                value={nome}
+                onChangeText={setNome}
+              />
             </View>
-            <TextInput
-              style={couponFormStyle.textAreaInput}
-              value={observacoes}
-              onChangeText={setObservacoes}
-              multiline
-              placeholder=""
-              placeholderTextColor="#AAAAAA"
+
+            <View style={couponFormStyle.row}>
+              <View style={couponFormStyle.halfInput}>
+                <LocalInput
+                  text="Valor em Pipokas"
+                  value={valorPipokas}
+                  onChangeText={setValorPipokas}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={couponFormStyle.halfInput}>
+                <LocalInput
+                  text="URL do Ícone"
+                  value={urlIcone}
+                  onChangeText={setUrlIcone}
+                  keyboardType="url"
+                />
+              </View>
+            </View>
+
+            <View style={couponFormStyle.dropdownWrapper}>
+              <CouponTypeDropdown
+                value={tipo}
+                onSelect={setTipo}
+              />
+            </View>
+
+            <View style={couponFormStyle.fullInput}>
+              <LocalInput
+                text="Valor dos benefícios"
+                value={valorBeneficios}
+                onChangeText={setValorBeneficios}
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={couponFormStyle.fullInput}>
+              <LocalInput
+                text="Quantidade de cupons"
+                value={qtdCupons}
+                onChangeText={setQtdCupons}
+                keyboardType="numeric"
+                editable={limitada}
+              />
+            </View>
+
+            <View style={couponFormStyle.row}>
+              <View style={couponFormStyle.halfInput}>
+                <LocalInput
+                  text="Data Exp. (dd/mm/aaaa)"
+                  value={dataExpiracao}
+                  onChangeText={setDataExpiracao}
+                  editable={temporaria}
+                />
+              </View>
+              <View style={couponFormStyle.halfInput}>
+                <LocalInput
+                  text="Tempo de Validade"
+                  value={tempoValidade}
+                  onChangeText={setTempoValidade}
+                />
+              </View>
+            </View>
+
+            <View style={couponFormStyle.sliderRow}>
+              <View style={couponFormStyle.sliderItem}>
+                <Text style={couponFormStyle.sliderLabel}>Limitada</Text>
+                <Switch
+                  value={limitada}
+                  onValueChange={(v) => {
+                    setLimitada(v);
+                    if (!v) setQtdCupons('');
+                  }}
+                  trackColor={{ false: "#555", true: COLORS.gold }}
+                  thumbColor={limitada ? COLORS.primary : "#f4f3f4"}
+                />
+              </View>
+              <View style={couponFormStyle.sliderItem}>
+                <Text style={couponFormStyle.sliderLabel}>Temporária</Text>
+                <Switch
+                  value={temporaria}
+                  onValueChange={(v) => {
+                    setTemporaria(v);
+                    if (!v) setDataExpiracao('');
+                  }}
+                  trackColor={{ false: "#555", true: COLORS.gold }}
+                  thumbColor={temporaria ? COLORS.primary : "#f4f3f4"}
+                />
+              </View>
+            </View>
+
+            <View style={couponFormStyle.grayBoxContainer}>
+              <Text style={couponFormStyle.grayBoxTitle}>Observações</Text>
+              <View style={couponFormStyle.textAreaWrapper}>
+                <TextInput
+                  style={couponFormStyle.textAreaInput}
+                  value={observacoes}
+                  onChangeText={setObservacoes}
+                  multiline
+                  placeholder="Digite as observações..."
+                  placeholderTextColor={placeholderColor}
+                />
+              </View>
+            </View>
+
+            {statusMessage ? (
+              <Text style={couponFormStyle.errorText}>
+                {statusMessage}
+              </Text>
+            ) : null}
+
+            <ButtonY 
+               title={loading ? 'Enviando...' : isEditing ? 'Atualizar' : 'Confirmar'} 
+               onPress={handleConfirmar} 
             />
+
           </View>
-
-        </View>
-
-        {/* Botão Confirmar */}
-        <TouchableOpacity style={couponFormStyle.confirmButton} onPress={handleConfirmar} activeOpacity={0.85} disabled={loading}>
-          <Text style={couponFormStyle.confirmButtonText}>{loading ? 'Enviando...' : isEditing ? 'Atualizar' : 'Confirmar'}</Text>
-        </TouchableOpacity>
-
-        {statusMessage ? (
-          <Text
-            style={{
-              color: statusType === 'success' ? '#B5E48C' : '#FFB4A2',
-              textAlign: 'center',
-              marginTop: 10,
-              marginHorizontal: 40,
-              fontSize: 14,
-              fontFamily: 'Poppins-SemiBold',
-            }}
-          >
-            {statusMessage}
-          </Text>
-        ) : null}
-
-        <View style={{ height: height * 0.05 }} />
         </ScrollView>
       )}
 
       <BottomNavbar />
-    </SafeAreaView>
+
+      {/* Mantive o BackButton aqui no final garantindo que ele não seja bloqueado */}
+      <BackButton 
+        style={couponFormStyle.backButtonContainer}
+        onPress={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace("/mycoupons"); 
+          }
+        }}
+      />
+    </View>
   );
 }
