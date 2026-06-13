@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 import BottomNavbar from "@/components/Navbar";
 import { style, popupStyles } from "@/styles/cinema";
 import { useUser } from "@/contexts/UserContext";
+import { BackButton } from "@/components/BackButton";
 
 // IMPORTAÇÕES EXCLUSIVAS DO FIREBASE 
 import { collection, getDocs } from "firebase/firestore";
