@@ -7,13 +7,13 @@ import { AdminAddButton } from "@/components/AdminAddButton";
 import { movieStyle } from "@/styles/movie";
 import { COLORS } from "@/constants/colors";
 import { useRouter } from "expo-router";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/contexts/UserContext";
 import { fetchCoupons, deleteCoupon } from "@/services/couponService";
 import { verifyAdmin } from "@/services/userservice";
 
 export default function Coupons() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user } = useAuth();
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [couponsList, setCouponsList] = useState<any[]>([]);

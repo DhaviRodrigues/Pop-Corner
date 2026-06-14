@@ -1,5 +1,5 @@
 import { db } from "@/config/firebase";
-import { collection, addDoc, doc, getDoc, updateDoc, GeoPoint, Timestamp } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, getDocs, deleteDoc, updateDoc, GeoPoint, Timestamp } from "firebase/firestore";
 import { Cinema } from "@/models/cinema";
 import { Session } from "@/models/session";
 
@@ -7,6 +7,11 @@ export interface CinemaResult {
   valid: boolean;
   error: string;
   id?: string;
+}
+
+export interface CinemaServiceResult {
+  valid: boolean;
+  error: string;
 }
 
 export async function registerCinema(cinema: Cinema): Promise<CinemaResult> {
@@ -94,6 +99,32 @@ export async function saveOrUpdateCinema(dadosCrus: any, editId?: string): Promi
   }
 }
 
+export async function getAllCinemas(): Promise<any[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, "cinemas"));
+    
+    return querySnapshot.docs.map(docSnap => {
+      const data = docSnap.data();
+      
+      // Mapeia os dados brutos estendendo fallbacks seguros para a listagem
+      return {
+        id: docSnap.id,
+        nome: data.nome || data.name || "Cinema sem nome",
+        latitude: data.latitude ?? data.coordinates?.latitude,
+        longitude: data.longitude ?? data.coordinates?.longitude,
+        imagem: data.imagem || data.url_imagem || data.urlImagem || null,
+        avaliacao: data.avaliacao || data.rating || 0,
+        isParceiro: data.isParceiro || data.is_parceiro || false,
+        comentarios: data.comentarios || data.comments || [],
+        filmesEmCartaz: data.filmesEmCartaz || data.moviesInTheaters || []
+      };
+    });
+  } catch (error) {
+    console.error("Erro na camada de serviço ao buscar todos os cinemas:", error);
+    return [];
+  }
+}
+
 export async function getCinemaById(id: string): Promise<any | null> {
   try {
     const docRef = doc(db, "cinemas", id);
@@ -118,5 +149,45 @@ export async function getCinemaById(id: string): Promise<any | null> {
   } catch (error) {
     console.error("Erro ao buscar cinema por ID no service:", error);
     return null;
+  }
+}
+
+export async function deleteCinema(id: string, adminPassword?: string): Promise<CinemaServiceResult> {
+  try {
+    // Caso precise validar a senha passada por parâmetro no futuro:
+    if (adminPassword && adminPassword.trim() === "") {
+      return { valid: false, error: "Senha de confirmação em branco." };
+    }
+
+    const docRef = doc(db, "cinemas", id);
+    await deleteDoc(docRef);
+
+    return { valid: true, error: "" };
+  } catch (error) {
+    console.error("Erro ao deletar cinema no service:", error);
+    return { valid: false, error: "Erro ao excluir o cinema da base de dados." };
+  }
+}
+
+/**
+ * Atualiza o array de comentários e recalcula a nota média de avaliação do cinema.
+ */
+export async function updateCinemaReviews(
+  id: string, 
+  updatedComments: any[], 
+  newAverage: number
+): Promise<CinemaServiceResult> {
+  try {
+    const docRef = doc(db, "cinemas", id);
+    
+    await updateDoc(docRef, {
+      comentarios: updatedComments,
+      avaliacao: newAverage
+    });
+
+    return { valid: true, error: "" };
+  } catch (error) {
+    console.error("Erro ao atualizar avaliações do cinema no service:", error);
+    return { valid: false, error: "Não foi possível salvar sua avaliação no banco de dados." };
   }
 }

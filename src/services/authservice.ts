@@ -5,7 +5,10 @@ import {
   AuthError, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
-  signOut 
+  signOut,
+  EmailAuthProvider, 
+  reauthenticateWithCredential,
+  updatePassword
 } from "firebase/auth";
 import { createUserProfile, verifyAdmin } from "@/services/userservice";
 import { uploadUserPhoto } from '@/services/storage'; // Centralizado aqui na camada de infraestrutura
@@ -181,6 +184,65 @@ export async function loginUserAdmin(email: string, password: string): Promise<A
   }
 }
 
+export function getCurrentUserEmail(): string | null {
+  return auth.currentUser?.email ?? null;
+}
+
+export async function validateLogin(email: string, password: string): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      return { valid: false, error: "Usuário não está autenticado no momento." };
+    }
+
+    if (!email || !password) {
+      return { valid: false, error: "E-mail e senha são obrigatórios para a validação." };
+    }
+
+    // Cria a credencial com os dados fornecidos
+    const credential = EmailAuthProvider.credential(email, password);
+
+    // Tenta reautenticar o usuário no Firebase
+    await reauthenticateWithCredential(user, credential);
+
+    return { valid: true };
+  } catch (error: any) {
+    console.error("Erro durante a validação de senha no authservice:", error);
+
+    // Tratamento de erros comuns do Firebase Auth
+    let errorMessage = "Ocorreu um erro ao validar sua senha. Tente novamente.";
+    if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      errorMessage = "Senha incorreta. Por favor, verifique os dados digitados.";
+    } else if (error.code === 'auth/too-many-requests') {
+      errorMessage = "Muitas tentativas malsucedidas. Tente novamente mais tarde.";
+    }
+
+    return { valid: false, error: errorMessage };
+  }
+}
+
+export async function changeCurrentUserPassword(password: string): Promise<ServiceResult> {
+  try {
+    const currentUser = auth.currentUser;
+    
+    if (!currentUser) {
+      return { valid: false, error: "Usuário não autenticado ou sessão expirada. Faça login novamente." };
+    }
+
+    await updatePassword(currentUser, password);
+    return { valid: true, error: "" };
+  } catch (error: any) {
+    console.error("Erro na camada de serviço ao atualizar senha:", error);
+    
+    // Tratamento de erro comum do Firebase para sessões antigas que exigem reautenticação
+    if (error.code === 'auth/requires-recent-login') {
+      return { valid: false, error: "Esta operação requer uma autenticação recente. Faça login novamente." };
+    }
+    
+    return { valid: false, error: "Não foi possível atualizar a senha na base de dados. Tente novamente." };
+  }
+}
+
 export async function resend2FACode(email: string): Promise<ServiceResult> {
   try {
     const newCode = Math.floor(10000 + Math.random() * 90000).toString(); 
@@ -232,6 +294,7 @@ export async function verify2FACode(email: string, typedCode: string): Promise<S
 }
 
 export async function sendPasswordResetEmail(email: string): Promise<AuthServiceResult> {
+
   if (!SCRIPT_URL_PASSWORD_RESET) {
     console.error("URL do Script de Redefinição de Senha não configurada no .env");
     return { success: false, message: "Configuração do aplicativo incompleta." };
@@ -243,7 +306,8 @@ export async function sendPasswordResetEmail(email: string): Promise<AuthService
       headers: {
         'Content-Type': 'text/plain',
       },
-      body: JSON.stringify({ email: email.trim() })
+      redirect: 'follow',
+      body: JSON.stringify({ email: email })
     });
 
     const result = await response.text(); 

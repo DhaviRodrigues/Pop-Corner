@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { View, ScrollView, Text, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { db } from "@/config/firebase";
-import { collection, addDoc } from "firebase/firestore";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
 import { movieStyle } from "@/styles/movie"; 
@@ -11,6 +9,7 @@ import { ButtonY } from "@/components/ButtonY";
 import BottomNavbar from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton"; 
 import { SynopsisInput } from "@/components/SynopsisInput";
+import { registerMovie } from "@/services/movieservice";
 
 export default function CreateMovie() {
   const router = useRouter();
@@ -33,25 +32,28 @@ export default function CreateMovie() {
 
     setLoading(true);
     try {
-      const tagsArray = tags.split(',').map(g => g.trim().toUpperCase());
-      await addDoc(collection(db, "filmes"), {
+      const moviePayload = {
         title,
         director,
-        year: Number(year) || new Date().getFullYear(),
+        year: year ? Number(year) : undefined,
         duration,
         classification,
-        tags: tagsArray,
+        tags,
         image,
         synopsis,
-        rating: 0, 
-        ratingCount: 0,
-        createdAt: new Date()
-      });
-      Alert.alert("Sucesso", "Filme adicionado com sucesso!");
-      router.back();
+      };
+
+      const result = await registerMovie(moviePayload);
+
+      if (result.valid) {
+        Alert.alert("Sucesso", "Filme adicionado com sucesso!");
+        router.back();
+      } else {
+        Alert.alert("Erro", result.error || "Não foi possível salvar o filme.");
+      }
     } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Não foi possível salvar o filme.");
+      console.error("Erro ao registrar filme na View:", error);
+      Alert.alert("Erro", "Ocorreu um erro inesperado ao salvar o filme.");
     } finally {
       setLoading(false);
     }

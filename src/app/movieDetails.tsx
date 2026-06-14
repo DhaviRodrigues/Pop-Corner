@@ -19,15 +19,14 @@ import { textStyle } from '@/styles/text';
 import { DynamicStars } from '@/components/DynamicStars';
 import { BackButton } from '@/components/BackButton';
 
-import { Comment } from '@/models/comment';
 import { getMovieById, deleteMovie } from '@/services/movieservice';
 import { addReviewToMovie } from '@/services/reviewservice';
-import { addMovieToWatchlist, removeMovieFromWatchlist, fetchUserData } from '@/services/userservice';
+import { addMovieToWatchlist, removeMovieFromWatchlist } from '@/services/userservice';
 
 export default function MovieDetailsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, isAdmin } = useAuth();
 
   const [movie, setMovie] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -46,8 +45,6 @@ export default function MovieDetailsScreen() {
   const [popupMessage, setPopupMessage] = useState('');
   const [popupOnClose, setPopupOnClose] = useState<(() => void) | null>(null);
 
-  // Verificação de Admin usando o estado do Contexto
-  const isAdmin = user ? ((user as any).isAdmin === true || (user as any).isAdm === true) : false;
 
   const { height, width: screenWidth } = Dimensions.get('window');
 
@@ -64,8 +61,6 @@ export default function MovieDetailsScreen() {
     }
     try {
       setIsSavingWatchlist(true);
-      
-      // 1. O Service lida com a infraestrutura/banco de dados
       const result = await addMovieToWatchlist((user as any).id, movie.id);
       
       if (!result.valid) {
@@ -74,9 +69,7 @@ export default function MovieDetailsScreen() {
         return;
       }
 
-      // 2. EVOLUÇÃO AQUI: Em vez de fetchUserData + setUser, apenas avisa o contexto
       await refreshUser();
-
       setPopupMessage('Filme adicionado à watchlist!');
       setPopupVisible(true);
       setPopupOnClose(() => () => router.push('/watchlist'));
@@ -102,8 +95,6 @@ export default function MovieDetailsScreen() {
     }
     try {
       setIsSavingWatchlist(true);
-      
-      // 1. O Service remove a relação no Firestore
       const result = await removeMovieFromWatchlist((user as any).id, movie.id);
       
       if (!result.valid) {
@@ -112,9 +103,7 @@ export default function MovieDetailsScreen() {
         return;
       }
 
-      // 2. EVOLUÇÃO AQUI: Sincroniza o estado global reativamente
       await refreshUser();
-
       setPopupMessage('Filme removido da watchlist.');
       setPopupVisible(true);
       setPopupOnClose(() => () => setPopupOnClose(null));
@@ -138,13 +127,12 @@ export default function MovieDetailsScreen() {
       } catch (error) {
         console.error("Erro ao buscar detalhes do filme:", error);
       } finally {
-        setLoading(false);
+        loading && setLoading(false);
       }
     };
     fetchMovieData();
   }, [id]);
 
-  // --- DELEÇÃO DE FILME (Via Service) ---
   const handleDeleteMovie = async () => {
     if (!adminPassword) {
       alert("Digite a senha para confirmar.");
@@ -181,20 +169,17 @@ export default function MovieDetailsScreen() {
     try {
         setIsSubmittingReview(true);
         const userName = typeof (user as any)?.getName === 'function' ? (user as any).getName() : ((user as any)?.name || "Usuário");
-        
-        const newComment = Comment.createComment({
+        const profilePic = typeof (user as any)?.getProfilePicture === 'function' ? (user as any).getProfilePicture() : ((user as any)?.profile_picture || "");
+
+        const reviewPayload = {
             id: Date.now().toString(),
             author: userName,
             rating: userRating,
-            movie: id as string,
-            cinema: "", 
             date: new Date().toISOString(),
             text: myReview.trim(),
-            status: 'Aprovado' 
-        });
-
-        const profilePic = typeof (user as any)?.getProfilePicture === 'function' ? (user as any).getProfilePicture() : ((user as any)?.profile_picture || "");
-        const reviewPayload = { ...newComment, profilePic };
+            status: 'Aprovado',
+            profilePic: profilePic
+        };
 
         const updatedMovieData = await addReviewToMovie(id as string, reviewPayload);
 
@@ -221,8 +206,8 @@ export default function MovieDetailsScreen() {
 
   // --- MEMOS PARA RENDERIZAÇÃO ---
   const currentMovieReviews = useMemo(() => {
-    return movie?.comentarios || [];
-  }, [movie?.comentarios]);
+    return movie?.comentarios || movie?.comments || [];
+  }, [movie]);
 
   const isInWatchlist = useMemo(() => {
     try {

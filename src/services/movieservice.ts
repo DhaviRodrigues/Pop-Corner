@@ -12,31 +12,42 @@ export interface MovieServiceResult {
 /**
  * Cadastra um filme isolado na base de dados do Firestore.
  */
-export async function registerMovie(movie: Movie): Promise<MovieServiceResult> {
+export async function registerMovie(payload: any): Promise<MovieServiceResult> {
   try {
-    const firestoreMovieData = {
-      title: movie.getTitle(),
-      director: movie.getDirector(),
-      year: movie.getYear(),
-      duration: movie.getDuration(),
-      classification: movie.getClassification(),
-      tags: movie.getTags(),
-      image: movie.getImage(),
-      rating: movie.getRating(),
-      ratingCount: movie.getRatingCount(),
-      synopsis: movie.getSynopsis(),
-      created_at: Timestamp.fromDate(movie.getCreatedAt()),
+    const tagsArray = payload.tags 
+      ? payload.tags.split(',').map((g: string) => g.trim().toUpperCase()) 
+      : [];
       
-      comments: movie.getAllComments().map(comment => ({
-        id: comment.getId(),
-        author: comment.getAuthor(),
-        rating: comment.getRating(),
-        movie: comment.getMovie(),
-        cinema: comment.getCinema(),
-        date: comment.getDate(),
-        text: comment.getText(),
-        status: comment.getStatus()
-      }))
+    const computedYear = payload.year || new Date().getFullYear();
+
+    const movieInstance = Movie.createMovie({
+      title: payload.title,
+      director: payload.director,
+      year: computedYear,
+      duration: payload.duration,
+      classification: payload.classification,
+      tags: tagsArray,
+      image: payload.image,
+      synopsis: payload.synopsis,
+      rating: 0,
+      ratingCount: 0,
+      createdAt: new Date(),
+      comments: []
+    });
+
+    const firestoreMovieData = {
+      title: movieInstance.getTitle(),
+      director: movieInstance.getDirector(),
+      year: movieInstance.getYear(),
+      duration: movieInstance.getDuration(),
+      classification: movieInstance.getClassification(),
+      tags: movieInstance.getTags(),
+      image: movieInstance.getImage(),
+      rating: movieInstance.getRating(),
+      ratingCount: movieInstance.getRatingCount(),
+      synopsis: movieInstance.getSynopsis(),
+      created_at: Timestamp.fromDate(movieInstance.getCreatedAt()),
+      comments: []
     };
 
     const docRef = await addDoc(collection(db, "movies"), firestoreMovieData);

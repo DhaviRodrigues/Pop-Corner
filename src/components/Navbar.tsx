@@ -3,8 +3,8 @@ import { View, TouchableOpacity, Text, Image, useWindowDimensions } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { navBarStyle } from '@/styles/navbar';
-import { UserAdmin } from '@/models/userAdmin';
 import { useAuth } from '@/contexts/UserContext';
+import { verifyAdmin } from '@/services/userservice';
 
 const BottomNavbar = () => {
   const router = useRouter();
@@ -19,16 +19,17 @@ const BottomNavbar = () => {
     : require('../screenAssets/Navbar/Navbar.svg');
 
   useEffect(() => {
-    const verifyAdmin = async () => {
+    const checkAdminStatus = async () => {
       if (user) {
-        const isUserAdmin = await UserAdmin.checkIsAdmin();
-        setIsAdmin(isUserAdmin);
+        // Utiliza o serviço unificado para verificar a role no Firestore
+        const result = await verifyAdmin();
+        setIsAdmin(result.isAdmin);
       } else {
         setIsAdmin(false);
       }
     };
 
-    verifyAdmin();
+    checkAdminStatus();
   }, [user]);
 
   const tabs = [

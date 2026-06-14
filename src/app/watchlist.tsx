@@ -1,21 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, Dimensions, FlatList, Image, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
+import { View, ScrollView, Dimensions, FlatList, Image, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/UserContext';
 import { BackButton } from '@/components/BackButton';
 import { TitleBar } from '@/components/TitleBar';
 import { DropdownY } from '@/components/DropdownY';
+import { getMovieById } from '@/services/movieservice'; 
 import { miscStyle } from '@/styles/misc';
-import { MOVIES } from '@/data/mockFilmes';
 import { COLORS } from '@/constants/colors';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/config/firebase';
 
 const { height, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function WatchlistScreen() {
   const router = useRouter();
-  const { user } =  useAuth();
+  const { user } = useAuth();
   const [watchlistMovies, setWatchlistMovies] = useState<any[]>([]);
   const [loadingMovies, setLoadingMovies] = useState(true);
 
@@ -27,42 +25,36 @@ export default function WatchlistScreen() {
       const fetchedMovies = await Promise.all(
         userWatchlist.map(async (watchlistItem) => {
           const movieId = watchlistItem.getIdFilme();
+          
           try {
-            const movieSnap = await getDoc(doc(db, 'filmes', movieId));
-            if (movieSnap.exists()) {
-              const data = movieSnap.data();
+            const movieDataFromService = await getMovieById(movieId);
+            
+            if (movieDataFromService) {
               return {
                 id: movieId,
-                image: data.image ?? null,
-                title: data.title ?? '',
+                image: movieDataFromService.image ?? null,
+                title: movieDataFromService.title ?? '',
                 missing: false,
               };
             }
           } catch (error) {
-            console.warn('Erro ao buscar filme da watchlist:', error);
+            console.warn(`Erro ao buscar filme ${movieId} da watchlist:`, error);
           }
 
-          const movieData = MOVIES.find((m) => String(m.id) === movieId);
-          return {
-            id: movieId,
-            image: movieData?.image ?? null,
-            title: movieData?.title ?? '',
-            missing: !movieData,
-          };
+          return { id: movieId, image: null, title: '', missing: true };
         })
       );
 
-      setWatchlistMovies(fetchedMovies);
+      const validMovies = fetchedMovies.filter(m => !m.missing && m.image);
+      setWatchlistMovies(validMovies);
       setLoadingMovies(false);
     };
 
     fetchWatchlistMovies();
   }, [user]);
 
-  // Only include movies that resolved correctly (no missing/placeholder cards)
-  const visibleMovies = watchlistMovies.filter(m => !m.missing && m.image);
   const moviesWithAdd = [
-    ...visibleMovies,
+    ...watchlistMovies,
     { id: 'add-movie', image: null, isAddButton: true }
   ];
 
@@ -113,23 +105,11 @@ export default function WatchlistScreen() {
         activeOpacity={0.8}
         onPress={() => router.push({ pathname: '/movieDetails', params: { id: item.id } })}
       >
-        {item.image ? (
-          <Image 
-            source={{ uri: item.image }} 
-            style={{ width: '100%', height: '100%' }} 
-            resizeMode="cover" 
-          />
-        ) : (
-          <View style={{
-            width: '100%',
-            height: '100%',
-            backgroundColor: COLORS.black,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 10,
-          }}>
-          </View>
-        )}
+        <Image 
+          source={{ uri: item.image }} 
+          style={{ width: '100%', height: '100%' }} 
+          resizeMode="cover" 
+        />
       </TouchableOpacity>
     );
   };

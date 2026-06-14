@@ -1,16 +1,12 @@
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
 import { componentStyle } from "@/styles/component";
-// Constantes que armazenam as dimensões do dispositivo para garantir a adaptabilidade do layout.
-const { height, width } = Dimensions.get('window');
 
-// Interface para as propriedades do componente, permitindo a execução de funções externas no evento de clique.
 interface MyCouponsProps {
   onPress?: () => void;
 }
 
 export function MyCoupons({ onPress }: MyCouponsProps) {
   return (
-    // Componente de toque que encapsula toda a área do card, utilizando activeOpacity para feedback visual discreto.
     <TouchableOpacity 
       style={componentStyle.couponContainer} 
       onPress={onPress}

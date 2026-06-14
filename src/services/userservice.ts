@@ -218,6 +218,23 @@ export async function createUserProfile(
   }
 }
 
+export async function updateUserProfileField(fieldsOb: Record<string, any>): Promise<{ success: boolean; error?: string }> {
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return { success: false, error: "Usuário não autenticado." };
+    }
+
+    const userRef = doc(db, 'users', currentUser.uid);
+    await updateDoc(userRef, fieldsOb);
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error("Erro ao atualizar campo do perfil no userservice:", error);
+    return { success: false, error: "Erro interno ao atualizar os dados cadastrais." };
+  }
+}
+
 export async function updateUserWatchlist(userId: string, watchlist: WatchlistEntry[]): Promise<UpdateResult> {
   try {
     const userDocRef = doc(db, 'users', userId);

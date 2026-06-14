@@ -5,12 +5,11 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { ValidationPopup } from "@/components/ValidationPopup";
 import { useUserRegistration } from '@/contexts/UserRegistrationContext';
-
 import { Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
-import { Box } from "../components/Box";
-import { ButtonVoltar } from "../components/ButtonVoltar";
-import { ButtonY } from "../components/ButtonY";
-import CodeInput from "../components/CodeInput";
+import { Box } from "@/components/Box";
+import { ButtonVoltar } from "@/components/ButtonVoltar";
+import { ButtonY } from "@/components/ButtonY";
+import CodeInput from "@/components/CodeInput";
 import { verify2FACode, resend2FACode } from "@/services/authservice";
 
 export default function Verify2FA() {

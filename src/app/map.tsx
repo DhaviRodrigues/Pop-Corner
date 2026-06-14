@@ -9,7 +9,7 @@ import {
 import { useRouter } from "expo-router";
 import BottomNavbar from "@/components/Navbar";
 import { style, popupStyles } from "@/styles/cinema";
-import { useUser } from "@/contexts/UserContext";
+import { useAuth } from "@/contexts/UserContext";
 import { BackButton } from "@/components/BackButton";
 
 // IMPORTAÇÕES EXCLUSIVAS DO FIREBASE 
@@ -38,7 +38,7 @@ export default function MapaWeb() {
   const router = useRouter();
   const [MapComponents, setMapComponents] = useState<any>(null);
   
-  const { user } = useUser();
+  const { user } = useAuth();
 
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);

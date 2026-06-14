@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Alert, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; // Voltando a usar o SafeAreaView como raiz
-import { UserAdmin } from '@/models/userAdmin'; 
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { movieStyle } from '@/styles/movie';
 import BottomNavbar from '@/components/Navbar'; 
 import { Input } from '@/components/Input'; 
-import { ButtonY } from '@/components/ButtonY'; 
-import { ButtonB } from '@/components/ButtonB'; 
+import { ButtonY } from '@/components/ButtonY';
 import { useAuth } from '@/contexts/UserContext';
 import { adminControlStyle } from '@/styles/adminControl'; 
 import { COLORS } from '@/constants/colors';

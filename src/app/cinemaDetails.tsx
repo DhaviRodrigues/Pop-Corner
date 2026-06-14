@@ -8,8 +8,8 @@ import { AdminEditButton } from '@/components/AdminEditButton';
 import { AdminDeleteButton } from '@/components/AdminDeleteButton';
 import { BackButton } from '@/components/BackButton';
 import { useAuth } from '@/contexts/UserContext';
-import { db, auth } from '@/config/firebase';
-import { doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { getCinemaById, deleteCinema, updateCinemaReviews } from '@/services/cinemaService';
+import { getMovieById } from '@/services/movieservice';
 import { movieStyle } from '@/styles/movie'; 
 import { textStyle } from '@/styles/text';
 import { cinemaDetailsStyle } from '@/styles/cinemadetails';
@@ -45,7 +45,7 @@ export default function CinemaDetailsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [cinema, setCinema] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -55,46 +55,24 @@ export default function CinemaDetailsScreen() {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   
-  // ESTADO QUE FORÇA O REDESENHO DOS BOTÕES DE ADMIN
-  const [isAdmin, setIsAdmin] = useState(false);
-
   const [filmesCartazReal, setFilmesCartazReal] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchCinema = async () => {
+    const fetchCinemaData = async () => {
       if (!id) return;
       try {
-        const docRef = doc(db, 'cinemas', id as string);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setCinema({ id: docSnap.id, ...docSnap.data() });
+        const data = await getCinemaById(id as string);
+        if (data) {
+          setCinema(data);
         }
       } catch (error) {
-        console.error("Erro ao buscar cinema:", error);
+        console.error("Erro ao carregar o cinema através do service:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    const verifyAdmin = async () => {
-      if (auth.currentUser) {
-        try {
-          const userRef = doc(db, 'users', auth.currentUser.uid);
-          const snap = await getDoc(userRef);
-          if (snap.exists()) {
-            const data = snap.data();
-            if (data.isAdm === true || data.isAdmin === true) {
-              setIsAdmin(true); // Ativa os botões na tela
-            }
-          }
-        } catch (error) {
-          console.error("Erro ao verificar admin:", error);
-        }
-      }
-    };
-
-    fetchCinema();
-    verifyAdmin();
+    fetchCinemaData();
 
     if (typeof window !== "undefined" && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -106,20 +84,19 @@ export default function CinemaDetailsScreen() {
 
   useEffect(() => {
     const fetchFilmesDetalhados = async () => {
-      if (cinema?.filmesEmCartaz && cinema.filmesEmCartaz.length > 0) {
+      const listaFilmesIds = cinema?.filmesEmCartaz || cinema?.moviesInTheaters || [];
+      
+      if (listaFilmesIds.length > 0) {
         try {
           const listaFilmesBuscados = [];
-          for (const filmeId of cinema.filmesEmCartaz) {
-            const filmeRef = doc(db, 'filmes', filmeId);
-            const filmeSnap = await getDoc(filmeRef);
-            if (filmeSnap.exists()) {
-              const dadosFilme = filmeSnap.data();
-              
-              let pathImg = dadosFilme.url_imagem || dadosFilme.imagem || dadosFilme.poster_path || null;
+          for (const filmeId of listaFilmesIds) {
+            const dadosFilme = await getMovieById(filmeId);
+            if (dadosFilme) {
+              let pathImg = dadosFilme.image || dadosFilme.url_imagem || dadosFilme.poster_path || null;
               if (pathImg && pathImg.startsWith('/')) {
                  pathImg = `https://image.tmdb.org/t/p/w500${pathImg}`;
               }
-              const movieTitle = dadosFilme.nome || dadosFilme.titulo || dadosFilme.title || dadosFilme.original_title || "Filme sem título";
+              const movieTitle = dadosFilme.title || dadosFilme.titulo || dadosFilme.nome || "Filme sem título";
 
               listaFilmesBuscados.push({
                 id: filmeId,
@@ -130,7 +107,7 @@ export default function CinemaDetailsScreen() {
           }
           setFilmesCartazReal(listaFilmesBuscados);
         } catch (error) {
-          console.error("Erro ao carregar os filmes do cartaz:", error);
+          console.error("Erro ao carregar os filmes do cartaz pelo service:", error);
         }
       } else {
         setFilmesCartazReal([]);
@@ -142,22 +119,24 @@ export default function CinemaDetailsScreen() {
 
   const handleDeleteCinema = async (password: string) => {
     if (!isAdmin) {
-      throw new Error("Not admin");
+      throw new Error("Not authorized");
     }
 
     try {
-      await deleteDoc(doc(db, 'cinemas', id as string));
-      router.replace('/cinemas');
+      const result = await deleteCinema(id as string, password);
+      if (result.valid) {
+        router.replace('/cinemas');
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
-      console.error("Erro ao deletar:", error);
+      console.error("Erro ao deletar via service:", error);
       throw error;
     }
   };
 
   const handleSubmitReview = async () => {
-    if (userRating === 0) return;
-    if (!myReview.trim()) return;
-    if (!user && !auth.currentUser) return;
+    if (userRating === 0 || !myReview.trim() || !user) return;
 
     try {
         setIsSubmittingReview(true);
@@ -165,22 +144,33 @@ export default function CinemaDetailsScreen() {
         const userName = typeof (user as any)?.getName === 'function' ? (user as any).getName() : ((user as any)?.name || "Usuário");
         const userPic = typeof (user as any)?.getProfilePicture === 'function' ? (user as any).getProfilePicture() : ((user as any)?.profile_picture || "");
 
-        const newComment = { user: userName, profilePic: userPic, rating: userRating, comment: myReview.trim(), createdAt: new Date().toISOString() };
-        const currentComments = cinema.comentarios || [];
+        const newComment = { 
+          user: userName, 
+          profilePic: userPic, 
+          rating: userRating, 
+          comment: myReview.trim(), 
+          createdAt: new Date().toISOString() 
+        };
+        
+        const currentComments = cinema.comentarios || cinema.comments || [];
         const updatedComments = [newComment, ...currentComments]; 
         
         const totalRating = updatedComments.reduce((acc, curr) => acc + curr.rating, 0);
         const newAverage = totalRating / updatedComments.length;
 
-        const docRef = doc(db, 'cinemas', id as string);
-        await updateDoc(docRef, { comentarios: updatedComments, avaliacao: newAverage });
+        // Delega a atualização do documento e cálculos de média para o cinemaService
+        const result = await updateCinemaReviews(id as string, updatedComments, newAverage);
 
-        setCinema({ ...cinema, comentarios: updatedComments, avaliacao: newAverage });
-        setMyReview('');
-        setUserRating(0);
+        if (result.valid) {
+          setCinema({ ...cinema, comentarios: updatedComments, avaliacao: newAverage });
+          setMyReview('');
+          setUserRating(0);
+        } else {
+          console.error("Falha ao salvar comentários:", result.error);
+        }
 
     } catch (error) {
-        console.error("Erro ao enviar avaliação:", error);
+        console.error("Erro ao submeter avaliação para o service:", error);
     } finally {
         setIsSubmittingReview(false);
     }
@@ -199,6 +189,10 @@ export default function CinemaDetailsScreen() {
       distanciaText = `${calculateDistance(userLocation[0], userLocation[1], lat, lng)} km`;
     }
   }
+  const cinemaName = cinema.nome || cinema.name || "Cinema";
+  const cinemaImage = cinema.url_imagem || cinema.imagem || cinema.image;
+  const cinemaRating = cinema.avaliacao || cinema.rating || 0;
+  const cinemaComments = cinema.comentarios || cinema.comments || [];
 
   return (
     <View style={cinemaDetailsStyle.mainContainer}> 
@@ -231,7 +225,7 @@ export default function CinemaDetailsScreen() {
 
         <View style={cinemaDetailsStyle.contentWrapper}>
             <View style={cinemaDetailsStyle.titleRow}>
-                <Text style={cinemaDetailsStyle.cinemaName} numberOfLines={2}>{cinema.nome}</Text>
+                <Text style={cinemaDetailsStyle.cinemaName} numberOfLines={2}>{cinemaName}</Text>
                 <TouchableOpacity style={cinemaDetailsStyle.mapButton} onPress={navigateToMap}>
                     <Image source={require("@/screenAssets/Map-Buttom.svg")} style={{ width: 20, height: 20, marginRight: 5 }} resizeMode="contain" />
                     <Text style={cinemaDetailsStyle.mapDistanceText}>{distanciaText}</Text>
@@ -240,7 +234,7 @@ export default function CinemaDetailsScreen() {
             
             <View style={{ height: 1, backgroundColor: '#FFF', width: '100%', marginVertical: 10 }} />
             
-            <View style={{ marginBottom: 20 }}><DynamicStarsDisplay rating={cinema.avaliacao || 0} /></View>
+            <View style={{ marginBottom: 20 }}><DynamicStarsDisplay rating={cinemaRating} /></View>
 
             <Text style={cinemaDetailsStyle.sectionTitle}>Filmes em Cartaz</Text>
             <FlatList 
@@ -289,7 +283,7 @@ export default function CinemaDetailsScreen() {
 
             <View style={movieStyle.detailsSectionGrey}>
                 <Text style={textStyle.detailsSectionTitle}>Avaliações e Comentários</Text>
-                {cinema.comentarios && cinema.comentarios.length > 0 ? cinema.comentarios.map((rev: any, index: number) => (
+                {cinemaComments.length > 0 ? cinemaComments.map((rev: any, index: number) => (
                     <View key={index} style={movieStyle.detailsReviewItem}>
                         <View style={movieStyle.detailsReviewAvatar}>
                             {rev.profilePic ? <Image source={{ uri: rev.profilePic }} style={{ width: '100%', height: '100%', borderRadius: 25 }} /> : <Feather name="user" size={24} color="#2A0800" />}

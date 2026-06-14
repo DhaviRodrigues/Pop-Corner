@@ -1,9 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Dimensions, ScrollView, Text, View, FlatList, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import { useRouter, useFocusEffect } from 'expo-router';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/config/firebase';
-
 import { BoxDark } from "@/components/BoxDark";
 import { BoxDarkSelection } from "@/components/BoxDarkSelection";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -11,13 +8,14 @@ import { MyCoupons } from "@/components/MyCoupons";
 import BottomNavbar from "@/components/Navbar";
 import { ProfileIcon } from "@/components/ProfileIcon";
 import { UserPipoka } from "@/components/UserPipoka";
-import { useUser } from "@/contexts/UserContext";
-import { User } from '@/models/user';
+import { MovieCard } from '@/components/MovieCard';
+import { ButtonY } from '@/components/ButtonY';
+import { useAuth } from "@/contexts/UserContext";
+import { fetchUserData } from '@/services/userservice';
+import { getMovieById } from '@/services/movieservice';
 import { miscStyle } from "@/styles/misc";
 import { profileStyle } from "@/styles/profile";
 import { textStyle } from "@/styles/text";
-import { MovieCard } from '@/components/MovieCard';
-import { ButtonY } from '@/components/ButtonY';
 import { COLORS } from '@/constants/colors';
 
 const { height, width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -30,7 +28,7 @@ interface ProfileMovie {
 }
 
 export default function Profile(){
-    const { user, setUser, logout, isLoading: authLoading } = useUser();
+    const { user, setUser, logout, loading: authLoading } = useAuth();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [recentMovies, setRecentMovies] = useState<ProfileMovie[]>([]);
@@ -41,7 +39,7 @@ export default function Profile(){
             
             const syncProfileAndWatchlist = async () => {
                 try {
-                    const updatedUser = await User.fetchUserData();
+                    const updatedUser = await fetchUserData();
                     if (updatedUser) {
                         setUser(updatedUser);
                         const userWatchlist = updatedUser.getWatchlist() ?? [];
@@ -57,20 +55,20 @@ export default function Profile(){
                             top10Entries.map(async (watchlistItem) => {
                                 const movieId = watchlistItem.getIdFilme();
                                 try {
-                                    const movieSnap = await getDoc(doc(db, 'filmes', movieId));
-                                    if (movieSnap.exists()) {
-                                        const data = movieSnap.data();
+                                    const movieData = await getMovieById(movieId);
+                                    if (movieData) {
                                         return {
                                             id: movieId,
-                                            image: data.image ?? null,
+                                            image: movieData.image ?? null,
                                         };
                                     }
                                 } catch (error) {
-                                    console.warn(`Erro ao buscar dados do filme ${movieId} para o perfil:`, error);
+                                    console.warn(`Erro ao buscar dados do filme ${movieId} via service no perfil:`, error);
                                 }
                                 return { id: movieId, image: null };
                             })
                         );
+                        
                         const validMovies = fetchedMovies.filter(m => m.image !== null) as ProfileMovie[];
                         setRecentMovies(validMovies);
                     } else {
@@ -83,6 +81,7 @@ export default function Profile(){
                     setIsLoading(false);
                 }
             };
+            
             syncProfileAndWatchlist();
         }, [authLoading])
     );
@@ -100,16 +99,13 @@ export default function Profile(){
 
     const handleLogout = async () => {
         try {
-            if (user) await user.logout();
-        } catch (error) {
-            console.warn('Erro ao deslogar do Firebase:', error);
-        } finally {
-            try {
-                if (logout) logout();
-                setUser(null);
-            } catch (e) {
-                console.warn('Erro ao resetar contextos:', e);
+            if (user && logout) {
+                await logout();
             }
+        } catch (error) {
+            console.warn('Erro ao deslogar na camada de serviço:', error);
+        } finally {
+            if (setUser) setUser(null);
             router.replace('/');
         }
     };
@@ -117,7 +113,7 @@ export default function Profile(){
     const cardSpacing = height * 0.015;
 
     const renderMovieCard = ({ item }: { item: ProfileMovie }) => (
-    <MovieCard movie={item} />
+        <MovieCard movie={item} />
     );
 
     return(

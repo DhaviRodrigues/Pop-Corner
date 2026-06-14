@@ -120,6 +120,55 @@ export async function updateCoupon(couponId: string, payload: Partial<CouponPayl
   }
 }
 
+export async function validateRedeemedCoupon(codigoCupom: string): Promise<ServiceResult<{ nome_cupom: string }>> {
+  try {
+    const docRef = doc(db, 'cupons_resgatados', codigoCupom.trim());
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      return {
+        valid: false,
+        error: 'Não encontramos nenhum cupom com este código no sistema Pop-Corner.'
+      };
+    }
+
+    const dadosCupom = docSnap.data();
+
+    if (dadosCupom.status === 'USADO') {
+      return {
+        valid: false,
+        error: `O cupom "${dadosCupom.nome_cupom || 'Resgatado'}" já foi utilizado anteriormente.`
+      };
+    }
+
+    if (dadosCupom.status === 'DISPONIVEL' || dadosCupom.status === 'DISPONÍVEL') {
+      await updateDoc(docRef, { 
+        status: 'USADO',
+        validadoEm: serverTimestamp()
+      });
+
+      return {
+        valid: true,
+        data: {
+          nome_cupom: dadosCupom.nome_cupom || 'Desconto'
+        }
+      };
+    }
+
+    return {
+      valid: false,
+      error: 'O cupom está num estado inválido para resgate.'
+    };
+
+  } catch (error) {
+    console.error("Erro ao validar cupom no service:", error);
+    return {
+      valid: false,
+      error: 'Falha ao comunicar com o servidor. Tente novamente.'
+    };
+  }
+}
+
 export async function deleteCoupon(couponId: string): Promise<ServiceResult> {
   try {
     await deleteDoc(doc(db, "cupons", couponId));

@@ -12,6 +12,11 @@ export class User implements IUser {
     public watchlist: WatchlistEntry[] = []
   ) {}
 
+  // --- Novo Método Adicionado ---
+  getId(): string | number { 
+    return this.id; 
+  }
+
   getName(): string { return this.name; }
   getEmail(): string { return this.email; }
   getGenres(): string[] { return this.favorite_genres; }
@@ -22,7 +27,6 @@ export class User implements IUser {
   setName(newName: string): void {
     this.name = newName;
   }
-
 
   addMovieToLocalWatchlist(idFilme: string): { valid: boolean; error: string } {
     const idLimpo = (idFilme || '').toString().trim();
@@ -37,7 +41,6 @@ export class User implements IUser {
     this.watchlist.push(novoItem);
     return { valid: true, error: "" };
   }
-
 
   removeMovieFromLocalWatchlist(idFilme: string): { valid: boolean; error: string } {
     const idLimpo = (idFilme || '').toString().trim();
