@@ -7,21 +7,16 @@ import {
   ScrollView,
   StatusBar,
   useWindowDimensions,
-  StyleSheet,
+  Switch,
   ActivityIndicator,
 } from 'react-native';
 import { miscStyle } from '@/styles/misc';
 import { textStyle } from '@/styles/text';
-import { logoStyle } from '@/styles/logo';
-import { componentStyle } from '@/styles/component';
 import { COLORS } from '@/constants/colors';
-import { FormInput } from '@/components/CouponFormInput';
-import { CouponFormSlider } from '@/components/CouponFormSlider';
 import { CouponTypeDropdown } from '@/components/CouponTypeDropdown';
 import BottomNavbar from '@/components/Navbar';
-import { DateInput } from '@/components/DateInput';
 import { createCoupon, getCoupon, updateCoupon } from '@/services/couponService';
-import { couponFormStyle } from '@/styles/couponForm';
+import { couponFormStyle, placeholderColor } from '@/styles/couponForm';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BackButton } from '@/components/BackButton';
 import { ButtonY } from '@/components/ButtonY';
@@ -92,6 +87,39 @@ export default function CouponFormScreen() {
       setLoading(false);
     }
   };
+
+  function LocalInput({
+  text,
+  value,
+  onChangeText,
+  keyboardType = "default",
+  editable = true,
+}: {
+  text: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  keyboardType?: any;
+  editable?: boolean;
+}) {
+  return (
+    <View 
+      style={[
+        couponFormStyle.inputWrapper, 
+        !editable ? couponFormStyle.inputDisabled : null
+      ]}
+    >
+      <TextInput
+        placeholder={text}
+        placeholderTextColor={placeholderColor}
+        keyboardType={keyboardType}
+        editable={editable}
+        style={couponFormStyle.inputText}
+        value={value}
+        onChangeText={onChangeText}
+      />
+    </View>
+  );
+}
 
   const validateForm = () => {
     if (
@@ -236,17 +264,12 @@ export default function CouponFormScreen() {
     }
   };
 
-  return (
+return (
     <View style={miscStyle.background}>
       <StatusBar barStyle="light-content" backgroundColor="#922B21" />
 
-      <BackButton 
-        style={couponFormStyle.backButtonContainer}
-        onPress={() => router.back()}
-      />
-
       {loading && isEditing ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={miscStyle.center}>
           <ActivityIndicator size="large" color="#FFFEB2" />
         </View>
       ) : (
@@ -254,11 +277,10 @@ export default function CouponFormScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={couponFormStyle.scrollContent}
         >
-          <View style={[miscStyle.center, { marginTop: height * 0.05 }]}>
+          <View style={couponFormStyle.headerContainer}>
             <Image
               source={require('../../assets/images/Logo.png')}
-              style={logoStyle.escudo}
-              resizeMode="contain"
+              style={couponFormStyle.logoImage}
             />
           </View>
 
@@ -268,8 +290,8 @@ export default function CouponFormScreen() {
             </Text>
 
             <View style={couponFormStyle.fullInput}>
-              <FormInput
-                placeholder="Nome"
+              <LocalInput
+                text="Nome"
                 value={nome}
                 onChangeText={setNome}
               />
@@ -277,16 +299,16 @@ export default function CouponFormScreen() {
 
             <View style={couponFormStyle.row}>
               <View style={couponFormStyle.halfInput}>
-                <FormInput
-                  placeholder="Valor em Pipokas"
+                <LocalInput
+                  text="Valor em Pipokas"
                   value={valorPipokas}
                   onChangeText={setValorPipokas}
                   keyboardType="numeric"
                 />
               </View>
               <View style={couponFormStyle.halfInput}>
-                <FormInput
-                  placeholder="URL do Ícone"
+                <LocalInput
+                  text="URL do Ícone"
                   value={urlIcone}
                   onChangeText={setUrlIcone}
                   keyboardType="url"
@@ -294,7 +316,7 @@ export default function CouponFormScreen() {
               </View>
             </View>
 
-            <View style={couponFormStyle.fullInput}>
+            <View style={couponFormStyle.dropdownWrapper}>
               <CouponTypeDropdown
                 value={tipo}
                 onSelect={setTipo}
@@ -302,8 +324,8 @@ export default function CouponFormScreen() {
             </View>
 
             <View style={couponFormStyle.fullInput}>
-              <FormInput
-                placeholder="Valor dos benefícios"
+              <LocalInput
+                text="Valor dos benefícios"
                 value={valorBeneficios}
                 onChangeText={setValorBeneficios}
                 keyboardType="numeric"
@@ -311,98 +333,102 @@ export default function CouponFormScreen() {
             </View>
 
             <View style={couponFormStyle.fullInput}>
-              <FormInput
-                placeholder="Quantidade de cupons"
+              <LocalInput
+                text="Quantidade de cupons"
                 value={qtdCupons}
                 onChangeText={setQtdCupons}
                 keyboardType="numeric"
-                disabled={!limitada}
+                editable={limitada}
               />
             </View>
 
             <View style={couponFormStyle.row}>
               <View style={couponFormStyle.halfInput}>
-                <DateInput
-                  placeholder="Data Exp. (dd/mm/aaaa)"
+                <LocalInput
+                  text="Data Exp. (dd/mm/aaaa)"
                   value={dataExpiracao}
                   onChangeText={setDataExpiracao}
-                  disabled={!temporaria}
+                  editable={temporaria}
                 />
               </View>
               <View style={couponFormStyle.halfInput}>
-                <FormInput
-                  placeholder="Tempo de Validade"
+                <LocalInput
+                  text="Tempo de Validade"
                   value={tempoValidade}
                   onChangeText={setTempoValidade}
                 />
               </View>
             </View>
 
-            <View style={couponFormStyle.row}>
-              <View style={couponFormStyle.halfInput}>
-                <CouponFormSlider
-                  label="Limitada"
-                  active={limitada}
-                  onToggle={() => {
-                    setLimitada((v) => {
-                      const next = !v;
-                      if (!next) {
-                        setQtdCupons('');
-                      }
-                      return next;
-                    });
+            <View style={couponFormStyle.sliderRow}>
+              <View style={couponFormStyle.sliderItem}>
+                <Text style={couponFormStyle.sliderLabel}>Limitada</Text>
+                <Switch
+                  value={limitada}
+                  onValueChange={(v) => {
+                    setLimitada(v);
+                    if (!v) setQtdCupons('');
                   }}
+                  trackColor={{ false: "#555", true: COLORS.gold }}
+                  thumbColor={limitada ? COLORS.primary : "#f4f3f4"}
                 />
               </View>
-              <View style={couponFormStyle.halfInput}>
-                <CouponFormSlider
-                  label="Temporária"
-                  active={temporaria}
-                  onToggle={() => {
-                    setTemporaria((v) => {
-                      const next = !v;
-                      if (!next) {
-                        setDataExpiracao('');
-                      }
-                      return next;
-                    });
+              <View style={couponFormStyle.sliderItem}>
+                <Text style={couponFormStyle.sliderLabel}>Temporária</Text>
+                <Switch
+                  value={temporaria}
+                  onValueChange={(v) => {
+                    setTemporaria(v);
+                    if (!v) setDataExpiracao('');
                   }}
+                  trackColor={{ false: "#555", true: COLORS.gold }}
+                  thumbColor={temporaria ? COLORS.primary : "#f4f3f4"}
                 />
               </View>
             </View>
 
             <View style={couponFormStyle.grayBoxContainer}>
               <Text style={couponFormStyle.grayBoxTitle}>Observações</Text>
-              <View style={[componentStyle.inputContainer, { width: "100%", height: 100, borderRadius: 10 }]}>
+              <View style={couponFormStyle.textAreaWrapper}>
                 <TextInput
-                  style={[componentStyle.inputText, { flex: 1, textAlignVertical: 'top', padding: 10, fontFamily: "Poppins-Regular" } as any]}
+                  style={couponFormStyle.textAreaInput}
                   value={observacoes}
                   onChangeText={setObservacoes}
                   multiline
                   placeholder="Digite as observações..."
-                  placeholderTextColor="#A9A9A9"
+                  placeholderTextColor={placeholderColor}
                 />
               </View>
             </View>
 
             {statusMessage ? (
-              <Text style={[couponFormStyle.errorText, { color: statusType === 'success' ? '#B5E48C' : COLORS.gold }]}>
+              <Text style={couponFormStyle.errorText}>
                 {statusMessage}
               </Text>
             ) : null}
 
-            <View style={{ marginTop: height * 0.03, width: '100%', alignItems: 'center' }}>
-              <ButtonY 
-                 title={loading ? 'Enviando...' : isEditing ? 'Atualizar' : 'Confirmar'} 
-                 onPress={handleConfirmar} 
-              />
-            </View>
+            <ButtonY 
+               title={loading ? 'Enviando...' : isEditing ? 'Atualizar' : 'Confirmar'} 
+               onPress={handleConfirmar} 
+            />
 
           </View>
         </ScrollView>
       )}
 
       <BottomNavbar />
+
+      {/* Mantive o BackButton aqui no final garantindo que ele não seja bloqueado */}
+      <BackButton 
+        style={couponFormStyle.backButtonContainer}
+        onPress={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace("/mycoupons"); 
+          }
+        }}
+      />
     </View>
   );
 }
