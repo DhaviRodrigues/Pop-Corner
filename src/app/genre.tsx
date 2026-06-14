@@ -3,29 +3,27 @@ import { ButtonGenre } from "@/components/ButtonGenre";
 import { ButtonVoltar } from "@/components/ButtonVoltar";
 import { ButtonY } from "@/components/ButtonY";
 import { ValidationPopup } from "@/components/ValidationPopup";
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/UserContext'; // EVOLUÇÃO: Alterado de useUser para useAuth conforme sua implementação
 import { useUserRegistration } from '@/contexts/UserRegistrationContext';
-import { User } from '@/types/user';
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, Text, View } from "react-native";
-import { auth, db } from '@/config/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import { uploadUserPhoto } from '@/services/storage';
+
+import { registerUser } from "@/services/authservice";
+
 const { height } = Dimensions.get('window');
 
-// Array estático com os gêneros. Como não muda com frequência, fica hardcoded aqui mesmo, mas se a ideia for expandir, o ideal seria puxar do banco depois.
 const genres = ['AÇÃO', 'DRAMA', 'COMÉDIA', 'TERROR', 'FICÇÃO CIENTÍFICA', 'SUSPENSE', 'ROMANCE', 'FAROESTE', 'MUSICAL'];
 
 export default function Genre(){
     const router = useRouter();
     // Recupera os dados (nome, email, senha) que o usuário digitou nas telas anteriores do fluxo. O context evita ter que ficar passando isso por params na rota.
     const { data, resetData } = useUserRegistration();
-    // Esse setUser é o que vai dizer pro app como um todo que o cara logou e quem ele é.
-    const { setUser } = useUser();
+    const { refreshUser } = useAuth();
+    
     const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
     const [validationMessage, setValidationMessage] = useState("");
     const [showValidationPopup, setShowValidationPopup] = useState(false);
@@ -53,61 +51,36 @@ export default function Genre(){
         // Ativa o loading pra travar a tela e impedir que o usuário clique 2 vezes no botão e cadastre duplicado.
         setIsLoading(true);
         
-        // Pega tudo que estava salvo no contexto do formulário e junta com a lista de gêneros dessa tela para bater na API do BCB inteligencia.
-        const result = await User.registerUser(
-            data.name,
-            data.email,
-            data.password,
-            selectedGenres
-        );
+        try {
+            const result = await registerUser(
+                data.name,
+                data.email,
+                data.password,
+                selectedGenres,
+                data.profilePhotoUri,
+                data.profilePhotoFileName
+            );
 
-        if (result.valid) {
-            const userId = result.uid || auth.currentUser?.uid;
-            if (!userId) {
-                setValidationMessage('Não foi possível identificar o usuário após o registro. Tente novamente.');
-                setShowValidationPopup(true);
+            if (result.valid) {
+                // Sincroniza reativamente o estado global do usuário recém-criado
+                await refreshUser();
+
+                resetData(); // Limpa o context de registro já que acabamos de usar os dados
                 setIsLoading(false);
+                router.push('/home');               
                 return;
             }
 
-            if (data.profilePhotoUri) {
-                const uploadResult = await uploadUserPhoto(
-                    data.profilePhotoUri,
-                    'perfil_foto',
-                    userId,
-                    data.profilePhotoFileName
-                );
-
-                if (!uploadResult.success) {
-                    setValidationMessage(uploadResult.error || 'Erro ao enviar a foto de perfil. Tente novamente.');
-                    setShowValidationPopup(true);
-                    setIsLoading(false);
-                    return;
-                }
-
-                if (uploadResult.signedUrl) {
-                    await updateDoc(doc(db, 'users', userId), {
-                        profile_picture: uploadResult.signedUrl,
-                    });
-                }
-            }
-
-            // Se o cadastro deu bom, já fazemos o fetch pra pegar os dados da sessão/perfil desse novo usuário no banco.
-            const userData = await User.fetchUserData();
-            if (userData) {
-                setUser(userData);
-            }
-
-            resetData(); // Limpa a sujeira do context de registro já que acabamos de usar os dados.
+            // Se caiu aqui, o service retornou algum erro tratado (ex: e-mail já existe).
+            setValidationMessage(result.error || "Falha ao concluir o cadastro.");
+            setShowValidationPopup(true);
+        } catch (error) {
+            console.error("Erro inesperado no fluxo de cadastro de gêneros:", error);
+            setValidationMessage("Ocorreu um erro inesperado no servidor.");
+            setShowValidationPopup(true);
+        } finally {
             setIsLoading(false);
-            router.push('/home'); // Após escolher gêneros, dirigir para a tela de perfil
-            return;
         }
-
-        // Se caiu aqui, a API retornou erro (ex: e-mail já existe). Passamos a string de erro pro popup exibir.
-        setValidationMessage(result.error);
-        setShowValidationPopup(true);
-        setIsLoading(false);
     };
 
     const closeValidationPopup = () => {

@@ -1,4 +1,4 @@
-import { UserProvider } from '@/contexts/UserContext';
+import { AuthProvider } from '@/contexts/UserContext';
 import { UserRegistrationProvider } from '@/contexts/UserRegistrationContext';
 import {
   Poppins_300Light,
@@ -35,7 +35,7 @@ export default function RootLayout() {
   }
 
   return (
-    <UserProvider>
+    <AuthProvider>
       <UserRegistrationProvider>
         <Head>
           <title>PopCorner</title>
@@ -83,6 +83,6 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
         </Stack>
       </UserRegistrationProvider>
-    </UserProvider>
+    </AuthProvider>
   );
 }

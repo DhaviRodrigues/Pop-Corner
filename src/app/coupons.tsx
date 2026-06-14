@@ -1,63 +1,145 @@
-import React from 'react';
-import { ScrollView, View, Alert } from 'react-native';
-import BottomNavbar from '@/components/Navbar';
-import { miscStyle } from '@/styles/misc';
-import { StoreCoupon } from '@/components/StoreCoupon';
-import { UserCoupon } from '@/components/UserCoupon';
-import { ButtonY } from '@/components/ButtonY'; 
-
-// Apenas o necessário para rodar o teste
-import { auth } from '@/config/firebase';
-import { comprarCupomService } from '@/services/pipokaService';
+import React, { useState, useEffect } from "react";
+import { View, Text, Image, FlatList, Platform, ActivityIndicator, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import BottomNavbar from "@/components/Navbar";
+import { StoreCoupon } from "@/components/StoreCoupon";
+import { AdminAddButton } from "@/components/AdminAddButton";
+import { movieStyle } from "@/styles/movie";
+import { COLORS } from "@/constants/colors";
+import { useRouter } from "expo-router";
+import { useAuth } from "@/contexts/UserContext";
+import { fetchCoupons, deleteCoupon } from "@/services/couponService";
+import { verifyAdmin } from "@/services/userservice";
 
 export default function Coupons() {
+  const router = useRouter();
+  const { user } = useAuth();
 
-  // Função direta de teste
-  const handleBuyCoupon = async () => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return Alert.alert("Erro", "Usuário não logado.");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [couponsList, setCouponsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      
+      // Fetch coupons
+      const couponsResult = await fetchCoupons();
+      if (couponsResult.valid && couponsResult.data) {
+        setCouponsList(couponsResult.data);
+      }
+
+      // Verify admin
+      const adminResult = await verifyAdmin();
+      if (adminResult.valid) {
+        setIsAdmin(adminResult.isAdmin);
+      }
+
+      setLoading(false);
+    };
+
+    loadData();
+  }, []);
+
+  const handleEditCoupon = (couponId: string) => {
+    router.push({
+      pathname: "/addCoupons",
+      params: { couponId }
+    });
+  };
+
+  const handleDeleteCoupon = async (couponId: string, password: string) => {
+    if (!isAdmin) {
+      throw new Error("Not admin");
+    }
 
     try {
-      const resultado = await comprarCupomService(uid, 'cupom_teste_1', 100, 'Cupom Provisório 10%');
-      if (resultado.valid) {
-        Alert.alert("Sucesso!", "100 Pipokas gastas e cupom gerado!");
-      } else {
-        Alert.alert("Ops!", resultado.error);
+      const result = await deleteCoupon(couponId);
+      
+      if (!result.valid) {
+        throw new Error(result.error);
       }
+      
+      setCouponsList(prev => prev.filter(c => c.id !== couponId));
     } catch (error) {
-      Alert.alert("Erro", "Falha no teste.");
+      console.error("Erro ao deletar:", error);
+      throw error;
     }
   };
 
-  return (
-    <View style={miscStyle.background}>
-        <ScrollView showsVerticalScrollIndicator={false} style={{ width: '100%' }}>
-          
-          {/* BOTÃO DE TESTE DIRETO */}
-          <View style={{ paddingHorizontal: 20, marginTop: 20, marginBottom: 10 }}>
-            <ButtonY 
-              title="Testar Resgate (Gastar 100)" 
-              onPress={handleBuyCoupon} 
-            />
-          </View>
+  const renderCoupon = ({ item }: { item: any }) => {
+    // Adicionamos os nomes (camelCase) que vieram do formulário como plano B
+    return (
+      <StoreCoupon
+        id={item.id}
+        title={item.nome_cupom || item.nome || ""}
+        type={item.tipo_cupom || item.tipo || ""}
+        circleText={String(item.valor_beneficio || item.valorBeneficios || "0")}
+        pipokaCost={item.valor_pipokas || item.valorPipokas || 0}
+        description={item.descricao_produto || item.observacoes || ""}
+        timer={item.data_expiracao_resgate?.toDate?.() || item.dataExpiracao?.toDate?.()}
+        amount={item.quantidade_disponivel || item.qtdCupons}
+        isAdmin={isAdmin}
+        onEdit={handleEditCoupon}
+        onDelete={handleDeleteCoupon}
+        urlIcone={item.urlIcone}
+      />
+    );
+  };
 
-          <StoreCoupon 
-            title="Cupom 1"
-            type="Promoção"
-            circleText="10"
-            pipokaCost={100}
-            description="Descrição do cupom 1"
-          />
-          <UserCoupon
-            title="20 Reais de Desconto in Ingressos"
-            discountAmount="20"
-            description="Promoção válida apenas para ingressos"
-            status="Ativo"
-            validity="dd/mm/aaaa"
-            onShowCode={() => {}}
-          />
+  if (loading) {
+    return (
+      <SafeAreaView style={[movieStyle.filmesContainer, { flex: 1, backgroundColor: COLORS.primary, justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.gold} />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={[movieStyle.filmesContainer, { flex: 1, backgroundColor: COLORS.primary }]}>
+      <View style={[movieStyle.filmesHeader, { position: 'relative' }]}>
+        <Image source={require("@/screenAssets/logo/full-logo.png")} style={movieStyle.filmesLogo} />
+
+        {isAdmin && (
+          <AdminAddButton onPress={() => router.push("/addCoupons")} />
+        )}
+      </View>
+
+      {couponsList.length === 0 ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 }}>
+          <Text style={{ color: COLORS.gold, fontSize: 16, fontFamily: "Poppins-Regular" }}>
+            Nenhum cupom disponível
+          </Text>
+        </View>
+      ) : (
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 10, paddingTop: 10 }}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={{ flex: 1, marginRight: 5 }}>
+              {couponsList
+                .filter((_, index) => index % 2 === 0)
+                .map((item, index) => (
+                  <View key={`left-${item.id}-${index}`} style={{ marginBottom: 15 }}>
+                    {renderCoupon({ item })}
+                  </View>
+                ))}
+            </View>
+
+            <View style={{ flex: 1, marginLeft: 5 }}>
+              {couponsList
+                .filter((_, index) => index % 2 !== 0)
+                .map((item, index) => (
+                  <View key={`right-${item.id}-${index}`} style={{ marginBottom: 15 }}>
+                    {renderCoupon({ item })}
+                  </View>
+                ))}
+            </View>
+          </View>
         </ScrollView>
+      )}
+
       <BottomNavbar />
-    </View>
-  );
-}
+    </SafeAreaView>
+  );}

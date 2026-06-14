@@ -1,16 +1,15 @@
+import React, { useState } from "react";
+import { ActivityIndicator, Image, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useRouter } from "expo-router";
 import { Box } from "@/components/Box";
 import { ButtonVoltar } from "@/components/ButtonVoltar";
 import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
-import { auth } from "@/config/firebase";
-import { updatePassword } from "firebase/auth";
+import { changeCurrentUserPassword } from "@/services/authservice";
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
-import { useRouter } from "expo-router";
-import { useState } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 export default function PasswordUpdate() {
   const router = useRouter();
@@ -42,22 +41,19 @@ export default function PasswordUpdate() {
       return;
     }
 
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      setValidationMessage("Não foi possível atualizar a senha. Faça login novamente.");
+    setIsLoading(true);
+
+    const result = await changeCurrentUserPassword(password);
+    
+    setIsLoading(false);
+
+    if (!result.valid) {
+      setValidationMessage(result.error);
       setShowValidationPopup(true);
       return;
     }
 
-    setIsLoading(true);
-    try {
-      await updatePassword(currentUser, password);
-      router.push('/profile');
-    } catch (error) {
-      setValidationMessage("Erro ao atualizar a senha. Tente novamente.");
-      setShowValidationPopup(true);
-    }
-    setIsLoading(false);
+    router.push('/profile');
   };
 
   const closeValidationPopup = () => {

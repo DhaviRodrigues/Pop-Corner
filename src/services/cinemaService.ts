@@ -1,6 +1,7 @@
 import { db } from "@/config/firebase";
-import { collection, addDoc } from "firebase/firestore";
-import { Cinema } from "@/types/cinema";
+import { collection, addDoc, doc, getDoc, getDocs, deleteDoc, updateDoc, GeoPoint, Timestamp } from "firebase/firestore";
+import { Cinema } from "@/models/cinema";
+import { Session } from "@/models/session";
 
 export interface CinemaResult {
   valid: boolean;
@@ -8,20 +9,185 @@ export interface CinemaResult {
   id?: string;
 }
 
+export interface CinemaServiceResult {
+  valid: boolean;
+  error: string;
+}
+
 export async function registerCinema(cinema: Cinema): Promise<CinemaResult> {
   try {
-    const docRef = await addDoc(collection(db, "cinemas"), cinema.toFirestore());
-    
-    return {
-      valid: true,
-      error: "",
-      id: docRef.id
+    const firestoreData = {
+      nome: cinema.getNome(),
+      cidade: cinema.getCidade(),
+      endereco: cinema.getEndereco(),
+      url_imagem: cinema.getUrlImagem(),
+      coordinates: new GeoPoint(cinema.getLatitude(), cinema.getLongitude()),
+      created_at: Timestamp.now(),
+      nome_search: cinema.getNome().toLowerCase(),
+      filmesEmCartaz: cinema.getFilmesEmCartaz(),
+      sessoes: cinema.getSessoes().map(sessao => ({
+        id_filme: sessao.getIdFilme(),
+        data: sessao.getData(),
+        horario: sessao.getHorario()
+      })),
+      avaliacao: cinema.getAvaliacao(),
+      comentarios: cinema.getComentarios(),
+      is_parceiro: cinema.getIsParceiro()
     };
+
+    const docRef = await addDoc(collection(db, "cinemas"), firestoreData);
+    return { valid: true, error: "", id: docRef.id };
   } catch (error) {
     console.error("Erro ao cadastrar cinema:", error);
-    return {
-      valid: false,
-      error: "Ocorreu um erro ao salvar o cinema."
-    };
+    return { valid: false, error: "Ocorreu um erro ao salvar o cinema." };
+  }
+}
+
+export async function saveOrUpdateCinema(dadosCrus: any, editId?: string): Promise<boolean> {
+  try {
+    const sessoesInstanciadas = (dadosCrus.sessoes || []).map((s: any) =>
+      Session.createSessao({
+        idFilme: s.idFilme || s.id_filme,
+        data: s.data,
+        horario: s.horario,
+      })
+    );
+
+    const cinemaInstancia = Cinema.createCinema({
+      nome: dadosCrus.nome,
+      cidade: dadosCrus.cidade,
+      endereco: dadosCrus.endereco,
+      latitude: dadosCrus.latitude,
+      longitude: dadosCrus.longitude,
+      urlImagem: dadosCrus.urlImagem || dadosCrus.url_imagem,
+      filmesEmCartaz: dadosCrus.filmesEmCartaz,
+      sessoes: sessoesInstanciadas,
+      isParceiro: dadosCrus.isParceiro ?? dadosCrus.is_parceiro,
+    });
+
+    if (editId) {
+      const docRef = doc(db, "cinemas", editId);
+      const docSnap = await getDoc(docRef);
+      const dadosAtuais = docSnap.exists() ? docSnap.data() : {};
+      
+      const updatePayload = {
+        nome: cinemaInstancia.getNome(),
+        cidade: cinemaInstancia.getCidade(),
+        endereco: cinemaInstancia.getEndereco(),
+        url_imagem: cinemaInstancia.getUrlImagem(),
+        coordinates: new GeoPoint(cinemaInstancia.getLatitude(), cinemaInstancia.getLongitude()),
+        filmesEmCartaz: cinemaInstancia.getFilmesEmCartaz(),
+        sessoes: cinemaInstancia.getSessoes().map(sessao => ({
+          id_filme: sessao.getIdFilme(),
+          data: sessao.getData(),
+          horario: sessao.getHorario()
+        })),
+        is_parceiro: cinemaInstancia.getIsParceiro(),
+        avaliacao: dadosAtuais.avaliacao || 0,
+        comentarios: dadosAtuais.comentarios || [],
+      };
+      
+      await updateDoc(docRef, updatePayload);
+      return true;
+    } else {
+      const resultado = await registerCinema(cinemaInstancia);
+      return resultado.valid;
+    }
+  } catch (error) {
+    console.error("Erro no cinemaService ao instanciar/salvar dados:", error);
+    throw error; 
+  }
+}
+
+export async function getAllCinemas(): Promise<any[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, "cinemas"));
+    
+    return querySnapshot.docs.map(docSnap => {
+      const data = docSnap.data();
+      
+      // Mapeia os dados brutos estendendo fallbacks seguros para a listagem
+      return {
+        id: docSnap.id,
+        nome: data.nome || data.name || "Cinema sem nome",
+        latitude: data.latitude ?? data.coordinates?.latitude,
+        longitude: data.longitude ?? data.coordinates?.longitude,
+        imagem: data.imagem || data.url_imagem || data.urlImagem || null,
+        avaliacao: data.avaliacao || data.rating || 0,
+        isParceiro: data.isParceiro || data.is_parceiro || false,
+        comentarios: data.comentarios || data.comments || [],
+        filmesEmCartaz: data.filmesEmCartaz || data.moviesInTheaters || []
+      };
+    });
+  } catch (error) {
+    console.error("Erro na camada de serviço ao buscar todos os cinemas:", error);
+    return [];
+  }
+}
+
+export async function getCinemaById(id: string): Promise<any | null> {
+  try {
+    const docRef = doc(db, "cinemas", id);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      return {
+        id: snap.id,
+        ...data,
+        coordinates: data.coordinates ? {
+          latitude: data.coordinates.latitude,
+          longitude: data.coordinates.longitude
+        } : null,
+        sessoes: (data.sessoes || []).map((s: any) => ({
+          idFilme: s.id_filme,
+          data: s.data,
+          horario: s.horario
+        }))
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Erro ao buscar cinema por ID no service:", error);
+    return null;
+  }
+}
+
+export async function deleteCinema(id: string, adminPassword?: string): Promise<CinemaServiceResult> {
+  try {
+    // Caso precise validar a senha passada por parâmetro no futuro:
+    if (adminPassword && adminPassword.trim() === "") {
+      return { valid: false, error: "Senha de confirmação em branco." };
+    }
+
+    const docRef = doc(db, "cinemas", id);
+    await deleteDoc(docRef);
+
+    return { valid: true, error: "" };
+  } catch (error) {
+    console.error("Erro ao deletar cinema no service:", error);
+    return { valid: false, error: "Erro ao excluir o cinema da base de dados." };
+  }
+}
+
+/**
+ * Atualiza o array de comentários e recalcula a nota média de avaliação do cinema.
+ */
+export async function updateCinemaReviews(
+  id: string, 
+  updatedComments: any[], 
+  newAverage: number
+): Promise<CinemaServiceResult> {
+  try {
+    const docRef = doc(db, "cinemas", id);
+    
+    await updateDoc(docRef, {
+      comentarios: updatedComments,
+      avaliacao: newAverage
+    });
+
+    return { valid: true, error: "" };
+  } catch (error) {
+    console.error("Erro ao atualizar avaliações do cinema no service:", error);
+    return { valid: false, error: "Não foi possível salvar sua avaliação no banco de dados." };
   }
 }

@@ -16,7 +16,7 @@ import { commentModerationStyle as S } from '@/styles/commentmoderation';
 import { CommentCard } from '@/components/CommentCard';
 import { SelectAllBar } from '@/components/SelectAllBar';
 import BottomNavbar from '@/components/Navbar';
-import { Comment } from '@/types/comment';
+import { Comment } from '@/models/comment';
 
 const { height } = Dimensions.get('window');
 
