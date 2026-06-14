@@ -1,58 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Dimensions, FlatList, Image, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, ScrollView, Text, Dimensions, FlatList, Image, TouchableOpacity, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/contexts/UserContext';
 import { BackButton } from '@/components/BackButton';
 import { TitleBar } from '@/components/TitleBar';
 import { DropdownY } from '@/components/DropdownY';
-import { getMovieById } from '@/services/movieservice'; 
 import { miscStyle } from '@/styles/misc';
+import { textStyle } from '@/styles/text';
+import { MOVIES } from '@/data/mockFilmes';
 import { COLORS } from '@/constants/colors';
 
 const { height, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function WatchlistScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-  const [watchlistMovies, setWatchlistMovies] = useState<any[]>([]);
-  const [loadingMovies, setLoadingMovies] = useState(true);
 
-  useEffect(() => {
-    const fetchWatchlistMovies = async () => {
-      setLoadingMovies(true);
-      const userWatchlist = user?.getWatchlist() ?? [];
-
-      const fetchedMovies = await Promise.all(
-        userWatchlist.map(async (watchlistItem) => {
-          const movieId = watchlistItem.getIdFilme();
-          
-          try {
-            const movieDataFromService = await getMovieById(movieId);
-            
-            if (movieDataFromService) {
-              return {
-                id: movieId,
-                image: movieDataFromService.image ?? null,
-                title: movieDataFromService.title ?? '',
-                missing: false,
-              };
-            }
-          } catch (error) {
-            console.warn(`Erro ao buscar filme ${movieId} da watchlist:`, error);
-          }
-
-          return { id: movieId, image: null, title: '', missing: true };
-        })
-      );
-
-      const validMovies = fetchedMovies.filter(m => !m.missing && m.image);
-      setWatchlistMovies(validMovies);
-      setLoadingMovies(false);
-    };
-
-    fetchWatchlistMovies();
-  }, [user]);
-
+  const watchlistMovies = MOVIES.slice(0, 7).map(m => ({ id: String(m.id), image: m.image }));
   const moviesWithAdd = [
     ...watchlistMovies,
     { id: 'add-movie', image: null, isAddButton: true }
@@ -78,7 +40,6 @@ export default function WatchlistScreen() {
             margin: height * 0.01,
           }}
           activeOpacity={0.8}
-          onPress={() => router.push('/movies')}
         >
           <Image
             source={require('@/screenAssets/icons/button-add.svg')}
@@ -129,18 +90,15 @@ export default function WatchlistScreen() {
         </View>
 
         <View style={{ width: '100%', alignItems: 'center', paddingTop: height * 0.02 }}>
-          <View style={{ alignSelf: 'flex-end', paddingRight: height * 0.016, marginBottom: height * 0.02 }}>
-            <DropdownY />
-          </View>
-
-          {loadingMovies ? (
-            <ActivityIndicator size="large" color={COLORS.gold} style={{ marginTop: height * 0.04 }} />
-          ) : (
+          {watchlistMovies.length > 0 ? (
             <>
+              <View style={{ alignSelf: 'flex-end', paddingRight: height * 0.016, marginBottom: height * 0.02 }}>
+                <DropdownY />
+              </View>
+
               <FlatList
                 data={moviesWithAdd}
                 numColumns={2}
-                key={2}
                 keyExtractor={(item) => item.id}
                 renderItem={renderMovieCard}
                 scrollEnabled={false}
@@ -151,6 +109,11 @@ export default function WatchlistScreen() {
                 }}
               />
             </>
+          ) : (
+            <View style={{ marginTop: height * 0.1, alignItems: 'center' }}>
+              <Text style={[textStyle.message, { fontSize: height * 0.018, marginBottom: height * 0.02, color: COLORS.gold }]}>Sua watchlist está vazia</Text>
+              <Text style={[textStyle.message, { fontSize: height * 0.016, color: COLORS.gold }]}>Adicione filmes para acompanhá-los depois</Text>
+            </View>
           )}
         </View>
       </ScrollView>

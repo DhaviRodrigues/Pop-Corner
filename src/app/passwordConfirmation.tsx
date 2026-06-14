@@ -1,43 +1,42 @@
-import React, { useState } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
 import { Box } from "@/components/Box";
 import { ButtonVoltar } from "@/components/ButtonVoltar";
 import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
-import { useAuth } from '@/contexts/UserContext';
-import { loginUser, validateLogin, getCurrentUserEmail } from "@/services/authservice";
+import { User } from "@/types/user";
+import { auth } from "@/config/firebase";
+import { useUser } from '@/contexts/UserContext';
 import { deleteUserProfile } from '@/services/userservice';
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useState } from "react";
+import { ActivityIndicator, Image, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 export default function PasswordConfirmation() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const styles = getStyles(width, height);
-  const { setUser } = useAuth();
-  
+  const { setUser } = useUser();
   const [password, setPassword] = useState("");
   const [validationMessage, setValidationMessage] = useState("");
   const [showValidationPopup, setShowValidationPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { from } = useLocalSearchParams<{ from: string }>();
 
-  const handleConfirm = async (from: string) => {
-    const email = getCurrentUserEmail() ?? "";
-
-    const validation = await validateLogin(email, password);
+  const handleConfirm = async (targetPath: string) => {
+    const email = auth.currentUser?.email ?? "";
+    const validation = User.validateLogin(email, password);
 
     if (!validation.valid) {
-      setValidationMessage(validation.error || "Senha inválida.");
+      setValidationMessage(validation.error);
       setShowValidationPopup(true);
       return;
     }
 
     setIsLoading(true);
-    const result = await loginUser(email, password);
+    const result = await User.loginUser(email, password);
     setIsLoading(false);
 
     if (!result.valid) {
@@ -50,6 +49,7 @@ export default function PasswordConfirmation() {
     if (from === 'profile') {
       router.push('/updatePassword');
     } else if (from === 'updateProfile') {
+      // Move user to deleted_users, delete auth user and clear session
       setIsLoading(true);
       const delResult = await deleteUserProfile();
       setIsLoading(false);

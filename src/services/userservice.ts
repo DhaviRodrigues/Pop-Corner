@@ -1,198 +1,10 @@
 import { auth, db } from "@/config/firebase";
 import { AuthError, deleteUser, signOut } from "firebase/auth";
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  serverTimestamp, 
-  query, 
-  getDocs, 
-  collection, 
-  where
-} from "firebase/firestore";
-import { WatchlistEntry } from '@/models/userWatchlist';
-import { User } from "@/models/user";
-import { IUser } from "@/types/IUser";
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 
 export interface UpdateResult {
   valid: boolean;
   error: string;
-}
-
-export interface AdminVerificationResult {
-  valid: boolean;
-  isAdmin: boolean;
-  error?: string;
-}
-
-export interface AdminUserResult {
-  id: string;
-  name: string;
-  email: string;
-}
-
-export async function fetchUserData(): Promise<User | null> {
-  try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return null;
-
-    const userDocRef = doc(db, 'users', currentUser.uid);
-    const userSnapshot = await getDoc(userDocRef);
-
-    if (userSnapshot.exists()) {
-      const userData = userSnapshot.data() as IUser;
-      let watchlistArr: WatchlistEntry[] = [];
-
-      try {
-        if (Array.isArray(userData.watchlist)) {
-          watchlistArr = userData.watchlist.map((w: any) => {
-            const idFilme = w.id_filme || w.idFilme || w.id || '';
-            const added = w.added_at || w.addedAt || w.dataAdicionado || w.added || '';
-            return WatchlistEntry.createEntry({ idFilme: String(idFilme), dataAdicionado: String(added) });
-          }).filter(Boolean);
-        }
-      } catch (e) {
-        console.warn('Erro ao converter watchlist do Firestore no Service:', e);
-        watchlistArr = [];
-      }
-
-      return new User(
-        currentUser.uid,
-        userData.name || '',
-        userData.email || '',
-        userData.profile_picture || '',
-        userData.favorite_genres || [],
-        userData.pipoka || 0,
-        watchlistArr
-      );
-    }
-
-    return null;
-  } catch (error) {
-    console.error("Erro ao buscar e instanciar dados do usuário:", error);
-    return null;
-  }
-}
-
-export async function addMovieToWatchlist(userInstance: User, idFilme: string): Promise<UpdateResult> {
-  const localResult = userInstance.addMovieToLocalWatchlist(idFilme);
-  if (!localResult.valid) return localResult;
-
-  const currentUser = auth.currentUser;
-  if (!currentUser) return { valid: false, error: 'Usuário não autenticado.' };
-
-  return updateUserWatchlist(currentUser.uid, userInstance.getWatchlist());
-}
-
-export async function removeMovieFromWatchlist(userInstance: User, idFilme: string): Promise<UpdateResult> {
-  const localResult = userInstance.removeMovieFromLocalWatchlist(idFilme);
-  if (!localResult.valid) return localResult;
-
-  const currentUser = auth.currentUser;
-  if (!currentUser) return { valid: false, error: 'Usuário não autenticado.' };
-
-  return updateUserWatchlist(currentUser.uid, userInstance.getWatchlist());
-}
-
-export async function verifyAdmin(): Promise<AdminVerificationResult> {
-  try {
-    if (!auth.currentUser) {
-      return { valid: false, isAdmin: false, error: "Usuário não autenticado" };
-    }
-
-    const userRef = doc(db, 'users', auth.currentUser.uid);
-    const snap = await getDoc(userRef);
-
-    if (!snap.exists()) {
-      return { valid: false, isAdmin: false, error: "Perfil do usuário não encontrado" };
-    }
-
-    const data = snap.data();
-    const isAdmin = data.isAdm === true || data.isAdmin === true;
-
-    return { valid: true, isAdmin };
-  } catch (error) {
-    console.error("Erro ao verificar admin:", error);
-    return { valid: false, isAdmin: false, error: "Erro ao verificar permissões de administrador" };
-  }
-}
-
-export async function fetchAllAdmins(): Promise<AdminUserResult[]> {
-  try {
-    const q = query(collection(db, 'users'), where('isAdmin', '==', true));
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map((document) => ({
-      id: document.id,
-      name: document.data().name || 'Sem nome',
-      email: document.data().email,
-    }));
-  } catch (error) {
-    console.error("Erro ao buscar administradores:", error);
-    throw new Error("Não foi possível carregar a lista de administradores.");
-  }
-}
-
-export async function addAdmin(email: string): Promise<void> {
-
-  const cleanEmail = email?.trim().toLowerCase();
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!cleanEmail) {
-    throw new Error("Por favor, insira um e-mail.");
-  }
-
-  if (!emailRegex.test(cleanEmail)) {
-    throw new Error("O formato do e-mail é inválido.");
-  }
-
-  try {
-    const q = query(collection(db, 'users'), where('email', '==', cleanEmail));
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      throw new Error("Nenhum usuário cadastrado com este e-mail foi encontrado.");
-    }
-
-    const userDoc = querySnapshot.docs[0];
-    const userRef = doc(db, 'users', userDoc.id);
-
-    await updateDoc(userRef, {
-      isAdmin: true,
-      isAdm: true
-    });
-  } catch (error: any) {
-    console.error("Erro ao adicionar admin no service:", error);
-    throw new Error(error.message || "Erro ao tentar promover usuário a administrador.");
-  }
-}
-
-export async function removeAdmin(
-  targetUserId: string, 
-  targetUserEmail: string, 
-  currentUserEmail?: string
-): Promise<void> {
-  if (targetUserEmail === currentUserEmail) {
-    throw new Error("Ação bloqueada: Você não pode remover seus próprios privilégios de administrador.");
-  }
-
-  if (!targetUserId) {
-    throw new Error("ID do usuário é obrigatório para remoção.");
-  }
-
-  try {
-    const userRef = doc(db, 'users', targetUserId);
-    
-    await updateDoc(userRef, {
-      isAdmin: false,
-      isAdm: false
-    });
-  } catch (error) {
-    console.error("Erro ao remover admin no service:", error);
-    throw new Error("Não foi possível remover os privilégios de administrador deste usuário.");
-  }
 }
 
 export async function createUserProfile(
@@ -218,40 +30,14 @@ export async function createUserProfile(
   }
 }
 
-export async function updateUserProfileField(fieldsOb: Record<string, any>): Promise<{ success: boolean; error?: string }> {
-  try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
-      return { success: false, error: "Usuário não autenticado." };
-    }
-
-    const userRef = doc(db, 'users', currentUser.uid);
-    await updateDoc(userRef, fieldsOb);
-    
-    return { success: true };
-  } catch (error: any) {
-    console.error("Erro ao atualizar campo do perfil no userservice:", error);
-    return { success: false, error: "Erro interno ao atualizar os dados cadastrais." };
-  }
-}
-
-export async function updateUserWatchlist(userId: string, watchlist: WatchlistEntry[]): Promise<UpdateResult> {
-  try {
-    const userDocRef = doc(db, 'users', userId);
-    const watchlistData = watchlist.map(item => item.toFirestore());
-    await setDoc(userDocRef, { watchlist: watchlistData }, { merge: true });
-    return { valid: true, error: '' };
-  } catch (error) {
-    console.error('Erro ao atualizar watchlist do usuário:', error);
-    return { valid: false, error: 'Erro ao atualizar watchlist do usuário.' };
-  }
-}
-
 export async function updateUserName(newName: string): Promise<UpdateResult> {
   try {
     const currentUser = auth.currentUser;
     if (!currentUser) {
-      return { valid: false, error: "Usuário não autenticado" };
+      return {
+        valid: false,
+        error: "Usuário não autenticado"
+      };
     }
 
     const userDocRef = doc(db, 'users', currentUser.uid);
@@ -259,11 +45,17 @@ export async function updateUserName(newName: string): Promise<UpdateResult> {
       name: newName.trim()
     });
 
-    return { valid: true, error: "" };
+    return {
+      valid: true,
+      error: ""
+    };
   } catch (error) {
     const authError = error as AuthError;
     console.error("Erro ao atualizar nome do usuário:", authError);
-    return { valid: false, error: "Erro ao atualizar nome do usuário" };
+    return {
+      valid: false,
+      error: "Erro ao atualizar nome do usuário"
+    };
   }
 }
 
@@ -271,7 +63,10 @@ export async function deleteUserProfile(): Promise<UpdateResult> {
   try {
     const currentUser = auth.currentUser;
     if (!currentUser) {
-      return { valid: false, error: "Usuário não autenticado" };
+      return {
+        valid: false,
+        error: "Usuário não autenticado"
+      };
     }
 
     const userDocRef = doc(db, 'users', currentUser.uid);
@@ -280,9 +75,13 @@ export async function deleteUserProfile(): Promise<UpdateResult> {
     if (!userSnapshot.exists()) {
       try {
         await deleteUser(currentUser);
-      } catch (e) {}
+      } catch (e) {
+      }
       await signOut(auth);
-      return { valid: true, error: "" };
+      return {
+        valid: true,
+        error: ""
+      };
     }
 
     const userData = userSnapshot.data();
@@ -295,11 +94,21 @@ export async function deleteUserProfile(): Promise<UpdateResult> {
     });
 
     await deleteDoc(userDocRef);
+
+    // Deleta auth user
     await deleteUser(currentUser);
+
     await signOut(auth);
 
-    return { valid: true, error: "" };
+    return {
+      valid: true,
+      error: ""
+    };
   } catch (error) {
-    return { valid: false, error: "Erro ao desativar/excluir perfil do usuário" };
+    const authError = error as AuthError;
+    return {
+      valid: false,
+      error: "Erro ao desativar/excluir perfil do usuário"
+    };
   }
 }

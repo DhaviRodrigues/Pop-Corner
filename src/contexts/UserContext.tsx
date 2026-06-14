@@ -1,112 +1,62 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { User } from '@/models/user';
-import { fetchUserData, verifyAdmin } from '@/services/userservice';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '@/config/firebase';
-import { Platform } from 'react-native';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { User } from '@/types/user';
 
-const IS_ADM_KEY = '@PopCorner:is_adm';
-
-interface AuthContextType {
+interface UserContextType {
   user: User | null;
-  loading: boolean;
-  isAdmin: boolean; 
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
-  refreshUser: () => Promise<void>;
-  logout: () => Promise<void>;
+  setUser: (user: User | null) => void;
+  isLoading: boolean; // Adicionado para sabermos se o app está checando o F5
+  logout: () => Promise<void>; // Mudou para Promise porque o Firebase desloga de forma assíncrona
 }
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      return localStorage.getItem(IS_ADM_KEY) === 'true';
-    }
-    return false;
-  });
-
-  const checkAdminPrivileges = async (userInstance: User | null) => {
-    if (!userInstance) {
-      setIsAdmin(false);
-      if (Platform.OS === 'web' && typeof window !== 'undefined') localStorage.removeItem(IS_ADM_KEY);
-      return;
-    }
-
-    const adminResult = await verifyAdmin();
-    const adminStatus = !!(adminResult.valid && adminResult.isAdmin);
-    
-    setIsAdmin(adminStatus);
-
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      if (adminStatus) {
-        localStorage.setItem(IS_ADM_KEY, 'true');
-      } else {
-        localStorage.removeItem(IS_ADM_KEY);
-      }
-    }
-  };
-
-  const refreshUser = async () => {
-    try {
-      const userInstance = await fetchUserData();
-      setUser(userInstance);
-      await checkAdminPrivileges(userInstance);
-    } catch (error) {
-      console.error("Erro ao sincronizar dados do usuário no contexto:", error);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await signOut(auth);
-      setUser(null);
-      setIsAdmin(false);
-      if (Platform.OS === 'web' && typeof window !== 'undefined') {
-        localStorage.removeItem(IS_ADM_KEY);
-      }
-    } catch (error) {
-      console.error("Erro ao executar logout no provedor:", error);
-      throw error;
-    }
-  };
+  const [isLoading, setIsLoading] = useState(true); // Começa como true enquanto checa o cache
+  const auth = getAuth();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
-      
-      if (firebaseUser) {
-        try {
-          const userInstance = await fetchUserData();
-          setUser(userInstance);
-          await checkAdminPrivileges(userInstance);
-        } catch (e) {
-          console.error("Erro ao reidratar sessão:", e);
+      try {
+        if (firebaseUser) {
+          const updatedUser = await User.fetchUserData();
+          setUser(updatedUser);
+        } else {
           setUser(null);
-          setIsAdmin(false);
         }
-      } else {
+      } catch (error) {
+        console.error("Erro ao sincronizar usuário pós-F5:", error);
         setUser(null);
-        setIsAdmin(false);
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          localStorage.removeItem(IS_ADM_KEY);
-        }
+      } finally {
+        setIsLoading(false);
       }
-      
-      setLoading(false);
     });
 
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, setUser, refreshUser, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  const logout = async () => {
+    try {
+      await auth.signOut();
+    } catch (error) {
+      console.warn("Erro ao deslogar do Firebase:", error);
+    } finally {
+      setUser(null);
+    }
+  };
 
-export const useAuth = () => useContext(AuthContext);
+  return (
+    <UserContext.Provider value={{ user, setUser, isLoading, logout }}>
+      {children}
+    </UserContext.Provider>
+  );
+}
+
+export function useUser() {
+  const context = useContext(UserContext);
+  if (context === undefined) {
+    throw new Error('useUser must be used within a UserProvider');
+  }
+  return context;
+}

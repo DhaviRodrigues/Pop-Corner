@@ -9,9 +9,11 @@ import {
 import { useRouter } from "expo-router";
 import BottomNavbar from "@/components/Navbar";
 import { style, popupStyles } from "@/styles/cinema";
-import { useAuth } from "@/contexts/UserContext";
-import { BackButton } from "@/components/BackButton";
-import { getAllCinemas } from "@/services/cinemaService";
+import { useUser } from "@/contexts/UserContext";
+
+// IMPORTAÇÕES EXCLUSIVAS DO FIREBASE 
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/config/firebase";
 
 const DynamicStarsPopup = ({ rating }: { rating: number }) => {
   return (
@@ -35,7 +37,7 @@ export default function MapaWeb() {
   const router = useRouter();
   const [MapComponents, setMapComponents] = useState<any>(null);
   
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
@@ -72,6 +74,7 @@ export default function MapaWeb() {
 
   useEffect(() => {
     if (Platform.OS === "web") {
+      
       if (!document.getElementById("leaflet-css")) {
         const link = document.createElement("link");
         link.id = "leaflet-css";
@@ -87,17 +90,26 @@ export default function MapaWeb() {
         }
       );
     }
-    
-    const fetchCinemasData = async () => {
+
+    const fetchCinemasFromFirebase = async () => {
       try {
-        const cinemasData = await getAllCinemas();
+        console.log("Buscando dados na coleção 'cinemas' do Firebase...");
+        const querySnapshot = await getDocs(collection(db, "cinemas"));
+        
+        const cinemasData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        console.log("CINEMAS RECEBIDOS DO FIREBASE:", cinemasData);
+        
         setCinemas(cinemasData);
       } catch (error) {
-        console.error("Erro ao carregar cinemas no Mapa via service:", error);
+        console.error("Erro ao carregar cinemas do Firebase:", error);
       }
     };
 
-    fetchCinemasData();
+    fetchCinemasFromFirebase();
   }, []);
 
   if (!MapComponents) {
@@ -174,6 +186,7 @@ export default function MapaWeb() {
             lng = parseFloat(String(cinema.coordinates[1]));
           }
 
+          // Segurança: Verifica se são números válidos
           if (lat === undefined || lng === undefined || isNaN(lat) || isNaN(lng)) {
             console.warn(`Cinema "${cinema.nome}" ignorado: coordenadas inválidas.`);
             return null;
@@ -187,6 +200,7 @@ export default function MapaWeb() {
                     <h3 style={popupStyles.title as React.CSSProperties}>{cinema.nome}</h3>
                     <DynamicStarsPopup rating={cinema.avaliacao || 0} />
                     
+                    {/* AQUI ESTÁ A MUDANÇA: Redireciona para cinemaDetails passando o ID */}
                     <button 
                       style={popupStyles.button as React.CSSProperties} 
                       onClick={() => router.push({ pathname: '/cinemaDetails', params: { id: cinema.id } })}
@@ -212,7 +226,9 @@ export default function MapaWeb() {
         </View>
       )}
 
-      <BackButton style={style.backButtonMap as any} />
+      <TouchableOpacity style={style.backButtonMap as any} onPress={() => router.back()}>
+        <Image source={require("@/screenAssets/back-icon-buttom.svg")} style={style.backIconMap as any} />
+      </TouchableOpacity>
 
       <View style={style.navbarWrapperMap as any}>
         <BottomNavbar />

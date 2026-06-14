@@ -97,7 +97,7 @@ export const style = StyleSheet.create({
     overflow: 'hidden',
   },
   cinemaStarForeground: {
-    color: COLORS.red, 
+    color: COLORS.primary, 
     fontSize: 18,
     bottom: 3,
     left: 3,
@@ -139,7 +139,7 @@ export const style = StyleSheet.create({
   seeMoreBtnOverlay: {
     position: 'absolute',
     bottom: -15,           
-    backgroundColor: COLORS.red,
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 16,
     paddingVertical: 4,
     borderRadius: 8,
@@ -149,7 +149,7 @@ export const style = StyleSheet.create({
   },
   seeMoreBtnText: {
     color: COLORS.gold,
-    fontSize: height * 0.016,
+    fontSize: height * 0.020,
     fontFamily: 'Poppins-Bold',
   },
   mapButtom:{

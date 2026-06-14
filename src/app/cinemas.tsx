@@ -1,10 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { View, Text, Image, FlatList, TouchableOpacity } from "react-native";
+import { View, Text, Image, FlatList, TouchableOpacity, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNavbar from "@/components/Navbar";
 import CinemaCard from "@/components/CinemaCard";
 import { ButtonY } from "@/components/ButtonY";
-import { AdminAddButton } from "@/components/AdminAddButton";
 import { filterMenuStyles as styles } from '@/styles/searchbar';
 import SearchBar from "@/components/SearchBar";
 import SortFilterBar from "@/components/SortFilterBar";
@@ -12,8 +11,10 @@ import { movieStyle } from "@/styles/movie";
 import { style as cinemaStyle } from "@/styles/cinema";
 import { COLORS } from "@/constants/colors";
 import { useRouter } from "expo-router";
-import { useAuth } from "@/contexts/UserContext";
-import { getAllCinemas } from "@/services/cinemaService";
+import { useUser } from "@/contexts/UserContext";
+
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/config/firebase"; 
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; 
@@ -29,8 +30,9 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export default function Cinemas() {
   const router = useRouter();
-  const { isAdmin } = useAuth();
-
+  const { user } = useUser();
+  
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [cinemasList, setCinemasList] = useState<any[]>([]);
   const [searchText, setSearchText] = useState("");
@@ -46,17 +48,41 @@ export default function Cinemas() {
   ];
 
   useEffect(() => {
-    const fetchCinemasData = async () => {
+    // 1. Carrega os cinemas
+    const fetchCinemas = async () => {
       try {
-        const cinemasData = await getAllCinemas();
+        const querySnapshot = await getDocs(collection(db, "cinemas"));
+        const cinemasData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
         setCinemasList(cinemasData);
       } catch (error) {
-        console.error("Erro ao carregar cinemas através do service:", error);
+        console.error("Erro ao carregar cinemas do Firebase:", error);
       }
     };
-    
-    fetchCinemasData();
-    
+    fetchCinemas();
+
+    // 2. Verifica privilégios de Admin assim que a tela abre
+    const verifyAdmin = async () => {
+      if (auth.currentUser) {
+        try {
+          const userRef = doc(db, 'users', auth.currentUser.uid);
+          const snap = await getDoc(userRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.isAdm === true || data.isAdmin === true) {
+              setIsAdmin(true); // Isto faz os botões aparecerem magicamente!
+            }
+          }
+        } catch (error) {
+          console.error("Erro ao verificar admin:", error);
+        }
+      }
+    };
+    verifyAdmin();
+
+    // 3. Localização
     if (typeof window !== "undefined" && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
@@ -70,30 +96,22 @@ export default function Cinemas() {
     let result = cinemasList;
 
     if (searchText) {
-      result = result.filter((c) => {
-        const nomeCinema = c.nome || c.name || "";
-        const nomeSearch = c.nome_search || "";
-        return (
-          nomeCinema.toLowerCase().includes(searchText.toLowerCase()) || 
-          nomeSearch.includes(searchText.toLowerCase())
-        );
-      });
+      result = result.filter((c) =>
+        c.nome?.toLowerCase().includes(searchText.toLowerCase()) || 
+        c.nome_search?.includes(searchText.toLowerCase())
+      );
     }
 
     if (onlyPartners) {
-      result = result.filter((c) => c.isParceiro === true || c.is_parceiro === true);
+      result = result.filter((c) => c.is_parceiro === true || c.isParceiro === true);
     }
 
     result = [...result].sort((a, b) => {
       let comp = 0;
       if (sortType === "alphabetical") {
-        const nomeA = a.nome || a.name || "";
-        const nomeB = b.nome || b.name || "";
-        comp = nomeA.localeCompare(nomeB);
+        comp = (a.nome || "").localeCompare(b.nome || "");
       } else if (sortType === "rating") {
-        const avaliacaoA = a.avaliacao || a.rating || 0;
-        const avaliacaoB = b.avaliacao || b.rating || 0;
-        comp = avaliacaoA - avaliacaoB;
+        comp = (a.avaliacao || 0) - (b.avaliacao || 0);
       }
       return sortAscending ? comp : -comp;
     });
@@ -129,7 +147,30 @@ export default function Cinemas() {
         <Image source={require("@/screenAssets/logo/full-logo.png")} style={movieStyle.filmesLogo} />
 
         {isAdmin && (
-          <AdminAddButton onPress={() => router.push("/addTheater")} />
+          <TouchableOpacity
+            onPress={() => router.push("/addTheater")}
+            style={{
+              position: "absolute",
+              top: Platform.OS === 'web' ? 20 : 40,
+              right: 20,
+              backgroundColor: COLORS.primary,
+              width: 55,
+              height: 55,
+              borderColor: COLORS.primaryDark,
+              borderWidth: 4,
+              borderRadius: 45, 
+              justifyContent: "center",
+              alignItems: "center",
+              elevation: 4, 
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 3,
+              zIndex: 100,
+            }}
+          >
+            <Text style={{ color: COLORS.gold, fontSize: 30, fontFamily: "Poppins-Bold", lineHeight: 30 }}>+</Text>
+          </TouchableOpacity>
         )}
 
         <View style={{ width: "100%", paddingHorizontal: 5, marginTop: 10 }}>
