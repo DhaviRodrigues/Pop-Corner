@@ -1,16 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, Image, FlatList, TouchableOpacity, ListRenderItem, Platform } from 'react-native';
+import { View, Text, Image, FlatList, TouchableOpacity, ListRenderItem } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY';
 import SearchBar from '@/components/SearchBar';
 import SortFilterBar from '@/components/SortFilterBar';
 import GenreFilter from '@/components/GenreFilter';
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/config/firebase";
 import { movieStyle } from '@/styles/movie';
 import { textStyle } from '@/styles/text';
 import { COLORS } from '@/constants/colors';
+import { useAuth } from '@/contexts/UserContext';
+import { getAllMovies } from '@/services/movieservice';
 
 function DynamicStars({ rating }: { rating: number }) {
   const fill1 = Math.max(0, Math.min(1, rating - 0));
@@ -35,46 +35,30 @@ function DynamicStars({ rating }: { rating: number }) {
 
 export default function MoviesScreen() {
   const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { user, isAdmin } = useAuth();
   const [moviesList, setMoviesList] = useState<any[]>([]);
   const [searchText, setSearchText] = useState('');
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [sortType, setSortType] = useState('alphabetical');
   const [sortAscending, setSortAscending] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  
-  const isYellow = (tagName: string) => ['AÇÃO', 'FANTASIA', 'FICÇÃO'].includes(tagName.toUpperCase());
+  const [visibleCount, setVisibleCount] = useState(10);
 
-  // --- LÓGICA DE PAGINAÇÃO ---
-  const [visibleCount, setVisibleCount] = useState(10); // Começa com 10
+  const isYellow = (tagName: string) => ['AÇÃO', 'FANTASIA', 'FICÇÃO'].includes(tagName.toUpperCase());
 
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "filmes"));
-        const data = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setMoviesList(data);
-      } catch (error) {
-        console.error("Erro ao carregar filmes:", error);
-      }
-    };
-
-    const checkAdminStatus = async () => {
-      if (auth.currentUser) {
-        const userRef = doc(db, "users", auth.currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          if (userData.isAdm || userData.isAdmin) setIsAdmin(true);
+        const data = await getAllMovies();
+        if (data) {
+          setMoviesList(data);
         }
+      } catch (error) {
+        console.error("Erro ao carregar filmes na View:", error);
       }
     };
 
     fetchMovies();
-    checkAdminStatus();
   }, []);
 
   const availableGenres = useMemo(() => {

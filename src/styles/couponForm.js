@@ -1,5 +1,5 @@
 import { StyleSheet, Dimensions } from 'react-native';
-
+import { COLORS } from "@/constants/colors";
 const { height, width } = Dimensions.get('window');
 
 export const placeholderColor = '#AAAAAA';
@@ -215,5 +215,67 @@ export const couponFormStyle = StyleSheet.create({
 
   scrollContentInner: {
     paddingBottom: height * 0.18,
+  },
+
+    backButtonContainer: {
+      position: "absolute",
+      top: height * 0.06,
+      left: width * 0.05,
+      zIndex: 99,
+    },
+    scrollContent: { 
+      paddingBottom: height * 0.2, 
+      paddingTop: height * 0.02 
+    },
+    formContainer: {
+      width: width * 0.9,
+      alignSelf: "center",
+      alignItems: "center",
+    },
+    titleText: {
+      marginVertical: height * 0.03,
+      textAlign: "center",
+      fontFamily: "Poppins-Bold",
+    },
+    row: {
+      flexDirection: "row",
+      width: "100%",
+      justifyContent: "center",
+      gap: 10,
+      marginVertical: height * 0.010,
+    },
+    halfInput: { flex: 1 },
+    fullInput: { width: "100%", marginVertical: height * 0.010 },
+    grayBoxContainer: {
+      width: "100%",
+      backgroundColor: COLORS.textMuted,
+      borderRadius: 20,
+      padding: width * 0.04,
+      marginTop: height * 0.02,
+      marginBottom: height * 0.02,
+    },
+    grayBoxTitle: {
+      color: COLORS.black,
+      marginBottom: height * 0.015,
+      fontSize: width * 0.042,
+      fontFamily: "Poppins-Bold",
+    },
+    errorText: {
+      color: COLORS.gold,
+      fontSize: width * 0.035,
+      textAlign: "center",
+      marginTop: 10,
+      marginBottom: 10,
+      fontFamily: "Poppins-SemiBold",
+    },
+    dropdownWrapper: {
+      width: "100%", 
+      marginVertical: height * 0.010,
+      zIndex: 99,
+      elevation: 15,
+    },
+    inputDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#E8E8E8',
   },
 });

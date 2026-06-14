@@ -1,15 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, ScrollView, Image, ActivityIndicator, TouchableOpacity, Modal, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, Image, ActivityIndicator, TouchableOpacity, Modal, TextInput, Alert, Platform, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, getDoc, deleteDoc } from 'firebase/firestore'; 
-import { db, auth } from '@/config/firebase';
 import { Feather } from '@expo/vector-icons'; 
+
 import { COLORS } from '@/constants/colors';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/UserContext';
+
 import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY'; 
 import { ButtonB } from '@/components/ButtonB'; 
 import { ButtonAddWatchlist } from '@/components/ButtonAddWatchlist';
+import { ValidationPopup } from '@/components/ValidationPopup';
 import { Input } from '@/components/Input';
 import { InfoRow } from '@/components/InfoRow';
 import { ReviewItem } from '@/components/ReviewItem';
@@ -17,83 +18,120 @@ import { movieStyle } from '@/styles/movie';
 import { textStyle } from '@/styles/text';
 import { DynamicStars } from '@/components/DynamicStars';
 import { BackButton } from '@/components/BackButton';
-import { submitReviewService, deleteReviewService } from '@/services/reviewService';
+
+import { getMovieById, deleteMovie } from '@/services/movieservice';
+import { addReviewToMovie } from '@/services/reviewservice';
+import { addMovieToWatchlist, removeMovieFromWatchlist } from '@/services/userservice';
 
 export default function MovieDetailsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { user } = useUser();
+  const { user, refreshUser, isAdmin } = useAuth();
 
   const [movie, setMovie] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(5);
 
+  // Estados de Avaliação
   const [myReview, setMyReview] = useState('');
   const [userRating, setUserRating] = useState(0); 
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [hasReviewed, setHasReviewed] = useState(false); 
+
+  // Estados de Admin e Popups
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
-  const [isAdminState, setIsAdminState] = useState(false);
+  const [isSavingWatchlist, setIsSavingWatchlist] = useState(false);
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
+  const [popupOnClose, setPopupOnClose] = useState<(() => void) | null>(null);
 
-  const currentUserUid = auth.currentUser?.uid || (user as any)?.uid || (user as any)?.id;
-  
-  const isContextAdmin = user 
-    ? ((user as any).isAdmin === true || (user as any).isAdm === true)
-    : false;
-  const isAdmin = isContextAdmin || isAdminState;
+
+  const { height, width: screenWidth } = Dimensions.get('window');
+
+  const handleAddToWatchlist = async () => {
+    if (!user) {
+      setPopupMessage('Faça login para adicionar filmes à watchlist.');
+      setPopupVisible(true);
+      return;
+    }
+    if (!movie?.id) {
+      setPopupMessage('Não foi possível identificar o filme.');
+      setPopupVisible(true);
+      return;
+    }
+    try {
+      setIsSavingWatchlist(true);
+      const result = await addMovieToWatchlist((user as any).id, movie.id);
+      
+      if (!result.valid) {
+        setPopupMessage(result.error || 'Erro ao adicionar à watchlist.');
+        setPopupVisible(true);
+        return;
+      }
+
+      await refreshUser();
+      setPopupMessage('Filme adicionado à watchlist!');
+      setPopupVisible(true);
+      setPopupOnClose(() => () => router.push('/watchlist'));
+    } catch (error) {
+      console.error('Erro ao adicionar à watchlist:', error);
+      setPopupMessage('Erro ao adicionar à watchlist. Tente novamente.');
+      setPopupVisible(true);
+    } finally {
+      setIsSavingWatchlist(false);
+    }
+  };
+
+  const handleRemoveFromWatchlist = async () => {
+    if (!user) {
+      setPopupMessage('Faça login para remover filmes da watchlist.');
+      setPopupVisible(true);
+      return;
+    }
+    if (!movie?.id) {
+      setPopupMessage('Não foi possível identificar o filme.');
+      setPopupVisible(true);
+      return;
+    }
+    try {
+      setIsSavingWatchlist(true);
+      const result = await removeMovieFromWatchlist((user as any).id, movie.id);
+      
+      if (!result.valid) {
+        setPopupMessage(result.error || 'Erro ao remover da watchlist.');
+        setPopupVisible(true);
+        return;
+      }
+
+      await refreshUser();
+      setPopupMessage('Filme removido da watchlist.');
+      setPopupVisible(true);
+      setPopupOnClose(() => () => setPopupOnClose(null));
+    } catch (error) {
+      console.error('Erro ao remover da watchlist:', error);
+      setPopupMessage('Erro ao remover da watchlist. Tente novamente.');
+      setPopupVisible(true);
+    } finally {
+      setIsSavingWatchlist(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchMovie = async () => {
+    const fetchMovieData = async () => {
       if (!id) return;
       try {
-        const docRef = doc(db, "filmes", id as string);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setMovie({ id: docSnap.id, ...docSnap.data() });
+        const fetchedMovie = await getMovieById(id as string);
+        if (fetchedMovie) {
+          setMovie(fetchedMovie);
         }
       } catch (error) {
         console.error("Erro ao buscar detalhes do filme:", error);
       } finally {
-        setLoading(false);
+        loading && setLoading(false);
       }
     };
-
-    const checkAdminDB = async () => {
-      if (auth.currentUser) {
-        try {
-          const userRef = doc(db, 'users', auth.currentUser.uid);
-          const snap = await getDoc(userRef);
-          if (snap.exists()) {
-            const data = snap.data();
-            if (data.isAdm === true || data.isAdmin === true) {
-              setIsAdminState(true);
-            }
-          }
-        } catch (err) {
-          console.warn("Erro ao checar admin:", err);
-        }
-      }
-    };
-
-    fetchMovie();
-    checkAdminDB();
+    fetchMovieData();
   }, [id]);
-
-  useEffect(() => {
-    if (movie?.comentarios && currentUserUid) {
-      const existingReview = movie.comentarios.find((c: any) => c.uid === currentUserUid);
-      if (existingReview) {
-        setHasReviewed(true);
-        setMyReview(existingReview.comment);
-        setUserRating(existingReview.rating);
-      } else {
-        setHasReviewed(false);
-        setMyReview('');
-        setUserRating(0);
-      }
-    }
-  }, [movie?.comentarios, currentUserUid]);
 
   const handleDeleteMovie = async () => {
     if (!adminPassword) {
@@ -101,107 +139,83 @@ export default function MovieDetailsScreen() {
       return;
     }
     try {
-      await deleteDoc(doc(db, 'filmes', id as string));
-      setShowDeleteModal(false);
-      router.replace('/(tabs)/filmes'); 
+      const result = await deleteMovie(id as string, adminPassword);
+      if (result.valid) {
+          setShowDeleteModal(false);
+          router.replace('/(tabs)/filmes'); 
+      } else {
+          alert(result.error || "Falha ao deletar filme.");
+      }
     } catch (error) {
       console.error("Erro ao deletar:", error);
-      alert("Falha ao deletar filme.");
+      alert("Ocorreu um erro inesperado ao deletar o filme.");
     }
   };
 
   const handleSubmitReview = async () => {
-    if (userRating === 0) return alert("Por favor, selecione uma nota de 1 a 5 estrelas.");
-    if (!myReview.trim()) return alert("Por favor, escreva um comentário para a sua avaliação.");
-    if (!currentUserUid) return alert("Você precisa estar logado para avaliar.");
-    if (!id) return alert("Erro ao identificar o filme.");
+    if (userRating === 0) {
+        alert("Por favor, selecione uma nota de 1 a 5 estrelas.");
+        return;
+    }
+    if (!myReview.trim()) {
+        alert("Por favor, escreva um comentário para a sua avaliação.");
+        return;
+    }
+    if (!user) {
+        alert("Você precisa estar logado para avaliar.");
+        return;
+    }
 
     try {
         setIsSubmittingReview(true);
-
         const userName = typeof (user as any)?.getName === 'function' ? (user as any).getName() : ((user as any)?.name || "Usuário");
-        const userPic = typeof (user as any)?.getProfilePicture === 'function' ? (user as any).getProfilePicture() : ((user as any)?.profile_picture || "");
+        const profilePic = typeof (user as any)?.getProfilePicture === 'function' ? (user as any).getProfilePicture() : ((user as any)?.profile_picture || "");
 
-        const { updatedComments, newAverage, pipokaMessage } = await submitReviewService({
-          collectionName: 'filmes',
-          itemId: id as string,
-          currentUserUid,
-          userName,
-          userPic,
-          userRating,
-          myReview,
-          currentComments: movie?.comentarios || [],
-          hasReviewed,
-          pipokaAmount: 100, 
-          itemTitle: movie?.title || "Filme"
-        });
+        const reviewPayload = {
+            id: Date.now().toString(),
+            author: userName,
+            rating: userRating,
+            date: new Date().toISOString(),
+            text: myReview.trim(),
+            status: 'Aprovado',
+            profilePic: profilePic
+        };
 
-        setMovie({ 
-            ...movie, 
-            comentarios: updatedComments, 
-            rating: newAverage, 
-            ratingCount: updatedComments.length 
-        });
+        const updatedMovieData = await addReviewToMovie(id as string, reviewPayload);
+
+        if (updatedMovieData) {
+            setMovie(updatedMovieData); 
+        }
+
+        setMyReview('');
+        setUserRating(0);
         
-        if (Platform.OS === 'web') window.alert(pipokaMessage);
-        else Alert.alert("Sucesso", pipokaMessage);
+        if (Platform.OS === 'web') {
+            window.alert("Avaliação enviada com sucesso!");
+        } else {
+            Alert.alert("Sucesso", "Sua avaliação foi enviada!");
+        }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao enviar avaliação:", error);
-        alert("Erro ao enviar avaliação. Tente novamente.");
+        alert(error.message || "Erro ao enviar avaliação. Tente novamente.");
     } finally {
         setIsSubmittingReview(false);
     }
   };
 
-  // DELEÇÃO DELEGADA AO SERVIÇO UNIFICADO
-  const handleDeleteMyReview = async () => {
-    const procederExclusao = async () => {
-      try {
-        const { updatedComments, newAverage } = await deleteReviewService(
-          'filmes',
-          id as string,
-          currentUserUid,
-          movie?.comentarios || []
-        );
-
-        setMovie({ 
-          ...movie, 
-          comentarios: updatedComments, 
-          rating: newAverage, 
-          ratingCount: updatedComments.length 
-        });
-
-        setMyReview('');
-        setUserRating(0);
-        setHasReviewed(false);
-
-        if (Platform.OS === 'web') window.alert("Sua avaliação foi excluída.");
-        else Alert.alert("Removido", "Sua avaliação foi excluída.");
-      } catch (error) {
-        console.error("Erro ao deletar avaliação:", error);
-        alert("Não foi possível apagar a avaliação.");
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      const confirmar = window.confirm("Tem certeza que deseja apagar o seu comentário?");
-      if (confirmar) await procederExclusao();
-    } else {
-      Alert.alert(
-        "Remover Avaliação",
-        "Tem certeza que deseja apagar o seu comentário?",
-        [
-          { text: "Cancelar", style: "cancel" },
-          { text: "Apagar", style: "destructive", onPress: procederExclusao }
-        ]
-      );
-    }
-  };
-
+  // --- MEMOS PARA RENDERIZAÇÃO ---
   const currentMovieReviews = useMemo(() => {
-    return movie?.comentarios || [];
-  }, [movie?.comentarios]);
+    return movie?.comentarios || movie?.comments || [];
+  }, [movie]);
+
+  const isInWatchlist = useMemo(() => {
+    try {
+      return !!user?.getWatchlist?.().some((w: any) => String(w.getIdFilme()) === String(movie?.id));
+    } catch (e) {
+      return false;
+    }
+  }, [user, movie?.id]);
 
   const paginatedReviews = useMemo(() => {
     return currentMovieReviews.slice(0, visibleCount);
@@ -295,7 +309,11 @@ export default function MovieDetailsScreen() {
 
           <View style={movieStyle.detailsInfoGroup}>
             <View style={movieStyle.detailsWatchlistBtnWrapper}>
-              <ButtonAddWatchlist onPress={() => console.log('Adicionou!')} />
+              {isInWatchlist ? (
+                <ButtonB title="Remover da Watchlist" h={height * 0.065} w={screenWidth * 0.65} textSize={height * 0.02} onPress={handleRemoveFromWatchlist} />
+              ) : (
+                <ButtonAddWatchlist onPress={handleAddToWatchlist} />
+              )}
             </View>
 
             <View style={movieStyle.detailsSynopsisCard}>
@@ -309,18 +327,9 @@ export default function MovieDetailsScreen() {
             <InfoRow icon="calendar-outline" label="Ano de lançamento" value={String(movie.year || '')} />
           </View>
 
-          {/* SEÇÃO DE AVALIAÇÃO COM BOTÃO DE DELETAR E TÍTULO DINÂMICO */}
+          {/* SEÇÃO DE AVALIAÇÃO */}
           <View style={movieStyle.detailsSectionGrey}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-              <Text style={[textStyle.detailsSectionTitle, { marginBottom: 0 }]}>
-                {hasReviewed ? "Sua Avaliação Atual" : "Deixe sua Avaliação"}
-              </Text>
-              {hasReviewed && (
-                <TouchableOpacity onPress={handleDeleteMyReview} style={{ padding: 5 }}>
-                  <Feather name="trash-2" size={20} color="#B22300" />
-                </TouchableOpacity>
-              )}
-            </View>
+            <Text style={textStyle.detailsSectionTitle}>Sua Avaliação</Text>
             
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 20 }}>
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -342,7 +351,7 @@ export default function MovieDetailsScreen() {
                 {isSubmittingReview ? (
                     <ActivityIndicator size="small" color={COLORS.primary} />
                 ) : (
-                    <ButtonY title={hasReviewed ? "Atualizar Avaliação" : "Avaliar"} onPress={handleSubmitReview} />
+                    <ButtonY title="Avaliar" onPress={handleSubmitReview} />
                 )}
             </View>
           </View>
@@ -362,9 +371,9 @@ export default function MovieDetailsScreen() {
                         key={rev.id || index.toString()} 
                         review={{
                             ...rev,
-                            name: rev.user || rev.name,
+                            name: rev.user || rev.author || rev.name,
                             avatar: rev.profilePic || rev.avatar,
-                            content: rev.comment || rev.content
+                            content: rev.comment || rev.text || rev.content
                         }} 
                     />
                 ))}
@@ -381,7 +390,7 @@ export default function MovieDetailsScreen() {
         </View>
       </ScrollView>
 
-      {/* MODAL DE DELEÇÃO DO FILME (ADMIN) */}
+      {/* MODAL DE DELEÇÃO */}
       <Modal visible={showDeleteModal} transparent={true} animationType="fade">
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.8)' }}>
           <View style={{ width: '85%', backgroundColor: COLORS.primary, padding: 25, borderRadius: 20, alignItems: 'center', borderWidth: 1, borderColor: COLORS.gold }}>
@@ -405,6 +414,19 @@ export default function MovieDetailsScreen() {
         </View>
       </Modal>
       
+      <ValidationPopup
+        visible={popupVisible}
+        message={popupMessage}
+        onClose={() => {
+          setPopupVisible(false);
+          if (popupOnClose) {
+            const cb = popupOnClose;
+            setPopupOnClose(null);
+            cb();
+          }
+        }}
+      />
+
       <BottomNavbar />
     </View>
   );

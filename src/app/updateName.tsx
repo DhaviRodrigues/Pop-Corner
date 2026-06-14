@@ -10,7 +10,6 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { updateUserName } from "@/services/userservice";
-import { User } from "@/types/user";
 
 const nameRegex = /^[\p{L} ]{3,20}$/u;
 

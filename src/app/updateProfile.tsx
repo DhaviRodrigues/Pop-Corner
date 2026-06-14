@@ -1,37 +1,37 @@
+import React, { useState } from "react";
+import { Dimensions, Image, ScrollView, View } from "react-native";
+import { useRouter } from "expo-router";
+import * as ImagePicker from 'expo-image-picker';
 import { BoxDark } from "@/components/BoxDark";
 import { BoxDarkSelection } from "@/components/BoxDarkSelection";
 import { ButtonY } from "@/components/ButtonY";
 import { TitleBar } from "@/components/TitleBar";
-import { COLORS } from "@/constants/colors";
-import { miscStyle } from "@/styles/misc";
-import { useRouter } from "expo-router";
-import { Dimensions, Image, ScrollView, View } from "react-native";
 import { ConfirmPopup } from "@/components/ConfirmPopup";
 import { ValidationPopup } from "@/components/ValidationPopup";
-import { useState } from "react";
-import * as ImagePicker from 'expo-image-picker';
-import { useUser } from '@/contexts/UserContext';
-import { auth, db } from '@/config/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { useAuth } from '@/contexts/UserContext';
+import { fetchUserData, updateUserProfileField } from '@/services/userservice';
 import { uploadUserPhoto, ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
-import { User } from '@/types/user';
+import { COLORS } from "@/constants/colors";
+import { miscStyle } from "@/styles/misc";
+
 
 const { height } = Dimensions.get("window");
 
 export default function UpdateProfile() {
-  const { user, setUser, logout } = useUser();
+  const { user, setUser } = useAuth();
   const router = useRouter();
   const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [isChangingPhoto, setIsChangingPhoto] = useState(false);
   const [validationMessage, setValidationMessage] = useState("");
   const [showValidationPopup, setShowValidationPopup] = useState(false);
+  const userIdString = String(user?.getId() || '');
 
   const handleConfirmDeactivateAccount = () => {
-        setShowDeletePopup(false);
-        router.push({
-          pathname: '/passwordConfirmation',
-          params: { from: 'updateProfile' }
-        });
+    setShowDeletePopup(false);
+    router.push({
+      pathname: '/passwordConfirmation',
+      params: { from: 'updateProfile' }
+    });
   };
 
   const getImageExtension = (uri: string) => {
@@ -42,16 +42,20 @@ export default function UpdateProfile() {
     try {
       setIsChangingPhoto(true);
 
-      if (!auth.currentUser) {
-        setValidationMessage('Usuário não autenticado.');
+      // Atualiza o campo na base de dados de forma abstrata através do service
+      const response = await updateUserProfileField({ profile_picture: '' });
+      
+      if (!response.success) {
+        setValidationMessage(response.error || 'Usuário não autenticado ou erro ao processar.');
         setShowValidationPopup(true);
         setIsChangingPhoto(false);
         return;
       }
 
-      await updateDoc(doc(db, 'users', auth.currentUser.uid), { profile_picture: '' });
-      const updated = await User.fetchUserData();
+      // Sincroniza o Context do Usuário reativamente
+      const updated = await fetchUserData();
       if (updated && setUser) setUser(updated);
+      
       setIsChangingPhoto(false);
       router.push('/profile');
     } catch (error) {
@@ -97,14 +101,7 @@ export default function UpdateProfile() {
         return;
       }
 
-      if (!auth.currentUser) {
-        setValidationMessage('Usuário não autenticado.');
-        setShowValidationPopup(true);
-        setIsChangingPhoto(false);
-        return;
-      }
-
-      const uploadResponse = await uploadUserPhoto(uri, 'perfil_foto', auth.currentUser.uid, fileName);
+      const uploadResponse = await uploadUserPhoto(uri, 'perfil_foto', userIdString, fileName);
       if (!uploadResponse.success) {
         setValidationMessage(uploadResponse.error || 'Erro ao fazer upload da foto.');
         setShowValidationPopup(true);
@@ -114,9 +111,12 @@ export default function UpdateProfile() {
 
       const signed = uploadResponse.signedUrl;
       if (signed) {
-        await updateDoc(doc(db, 'users', auth.currentUser.uid), { profile_picture: signed });
-        const updated = await User.fetchUserData();
+        // Atualiza a URL assinada gerada no documento do Firestore via userservice
+        await updateUserProfileField({ profile_picture: signed });
+        
+        const updated = await fetchUserData();
         if (updated && setUser) setUser(updated);
+        
         setIsChangingPhoto(false);
         router.push('/profile');
         return;
@@ -158,7 +158,7 @@ export default function UpdateProfile() {
             iconSource={require('@/screenAssets/icons/profile-icon.svg')}
             title="Alterar Nome de Usuário"
             description="Renomeia o nome do usuário"
-            color = {COLORS.white}
+            color={COLORS.white}
             onPress={() => router.push('/updateName')}
           />
 
@@ -166,7 +166,7 @@ export default function UpdateProfile() {
             iconSource={require('@/screenAssets/trashbin.svg')}
             title="Remover Foto de Perfil"
             description="Restaura a foto de perfil para a imagem padrão"
-            color = {COLORS.white}
+            color={COLORS.white}
             onPress={handleRemovePhoto}
           />
 
@@ -189,18 +189,20 @@ export default function UpdateProfile() {
             title="Deletar Perfil"
             description="Remova sua conta permanentemente"
             onPress={() => setShowDeletePopup(true)}
-            style={{ marginTop: height * 0.015}}
+            style={{ marginTop: height * 0.015 }}
           />
         </BoxDark>
 
         <ButtonY title="Voltar" onPress={() => router.push('/profile')} />
       </ScrollView>
+      
       <ConfirmPopup 
         visible={showDeletePopup}
         message="Tem certeza que deseja remover seu perfil permanentemente?"
         onClose={() => setShowDeletePopup(false)}
         onConfirm={handleConfirmDeactivateAccount}
       />
+      
       <ValidationPopup
         visible={showValidationPopup}
         message={validationMessage}

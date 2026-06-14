@@ -5,7 +5,6 @@ import { Input } from "@/components/Input";
 import { Pencil } from "@/components/Pencil";
 import { ProfileIcon } from "@/components/ProfileIcon";
 import { ValidationPopup } from "@/components/ValidationPopup";
-import { User } from '@/types/user';
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
@@ -14,9 +13,7 @@ import { useState } from 'react';
 import { Dimensions, Image, Text, View } from "react-native";
 import { useUserRegistration } from '@/contexts/UserRegistrationContext';
 import { ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
-import { db } from '@/config/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { sendVerificationEmail } from '@/services/cadastro2fa';
+import { initiateRegistration } from "@/services/authservice";
 
 const { height } = Dimensions.get('window');
 
@@ -63,11 +60,26 @@ export default function Register() {
         setIsPhotoLoading(false);
     };
 
+    // CORREÇÃO: Declarada antes de ser chamada no fluxo para evitar o erro de referência
+    const validateRegisterInput = () => {
+        if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+            return { valid: false, error: "Todos os campos devem ser preenchidos." };
+        }
+        if (password !== confirmPassword) {
+            return { valid: false, error: "As senhas inseridas não coincidem." };
+        }
+        if (password.length < 8) {
+            return { valid: false, error: "A senha deve conter no mínimo 8 caracteres." };
+        }
+        return { valid: true, error: "" };
+    };
+
     const handleContinue = async () => {
         // Trava para evitar cliques duplos se já estiver carregando
         if (isLoading || isPhotoLoading) return;
 
-        const result = User.validateRegister(name, email, password, confirmPassword);
+        // Agora o validador já foi inicializado e está pronto para uso
+        const result = validateRegisterInput();
 
         if (!result.valid) {
             setValidationMessage(result.error);
@@ -84,17 +96,9 @@ export default function Register() {
         setIsLoading(true);
 
         const code = Math.floor(10000 + Math.random() * 90000).toString(); 
-
         const cleanEmail = email.trim().toLowerCase();
 
-        // Salvar no Firestore
-        await setDoc(doc(db, "temp_codes", cleanEmail), {
-            code: code,
-            createdAt: serverTimestamp()
-        });
-
-        // Enviar o e-mail
-        const enviado = await sendVerificationEmail(email.trim(), code);
+        const enviado = await initiateRegistration(cleanEmail, code);
 
         if (!enviado) {
             setValidationMessage("Erro ao enviar e-mail. Tente novamente.");
@@ -103,7 +107,6 @@ export default function Register() {
             return;
         }
 
-        // Salvar dados no contexto, incluindo a URI da foto de perfil (será feito upload em genre.tsx)
         setData({
             name: name.trim(),
             email: cleanEmail,
@@ -168,7 +171,6 @@ export default function Register() {
                             *A senha deve conter mais de 8 caracteres, letras maiúsculas e números
                         </Text>
 
-                        {/* Apenas um botão, usando o estado isLoading */}
                         <ButtonY 
                             title={isLoading ? "Enviando..." : isPhotoLoading ? "Carregando foto..." : "Continuar"} 
                             onPress={handleContinue} 

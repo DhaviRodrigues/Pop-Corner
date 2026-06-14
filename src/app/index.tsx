@@ -3,16 +3,14 @@ import { ButtonB } from "@/components/ButtonB";
 import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
-import { useUser } from "@/contexts/UserContext";
-import { User } from "@/types/user";
+import { useAuth } from "@/contexts/UserContext";
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
 import { Link, useRouter } from 'expo-router';
 import { useState } from "react";
 import { ActivityIndicator, useWindowDimensions, Image, Text, TouchableOpacity, View } from "react-native";
-
-
+import { loginUser } from "@/services/authservice";
 
 export default function Index(){
     const { height } = useWindowDimensions();
@@ -20,7 +18,7 @@ export default function Index(){
     // Hook do expo-router para gerenciar o redirecionamento programático após o login dar certo
     const router = useRouter();
     // Trazendo a função do contexto global para salvar as informações do usuário logado na memória do app
-    const { setUser } = useUser();
+    const { user } = useAuth();
     
     // Estados básicos de controle de formulário e de feedback visual
     const [email, setEmail] = useState("");
@@ -29,9 +27,19 @@ export default function Index(){
     const [showValidationPopup, setShowValidationPopup] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    function validateLoginInput() {
+        if (!email || email.trim() === "" || !password || password.trim() === "") {
+            return {
+                valid: false,
+                error: "Todos os campos precisam ser preenchidos"
+            };
+        }
+        return { valid: true, error: "" };
+    }
+
     async function handleLogin() {
-        // Validação no front-end antes de qualquer coisa para não mandar requisição inútil pra API se os campos estiverem vazios
-        const validation = User.validateLogin(email, password);
+        // Validação no front-end isolada da camada de domínio
+        const validation = validateLoginInput();
         if (!validation.valid) {
             setValidationMessage(validation.error);
             setShowValidationPopup(true);
@@ -40,25 +48,20 @@ export default function Index(){
 
         // Trava o botão de submit com o spinner para evitar duplo clique
         setIsLoading(true);
-        const result = await User.loginUser(email, password);
+        
+        // Utiliza o authService para realizar a autenticação com o Firebase
+        const result = await loginUser(email, password);
 
         if (result.valid) {
-            // Após validar as credenciais, é necessário buscar o resto dos dados do perfil para manter o app sincronizado
-            const userData = await User.fetchUserData();
-            if (userData) {
-                setUser(userData);
-            }
-
             setShowValidationPopup(false);
             setValidationMessage("");
             setIsLoading(false);
             
-            // Redireciona direto pra tela inicial já logado
             router.push('/home');
             return;
         }
 
-        // Se cair aqui, o login falhou na API (senha incorreta, etc). Mostra a mensagem que o backend devolveu.
+        // Se cair aqui, o login falhou na API (senha incorreta, etc). Mostra a mensagem que o service traduziu.
         setValidationMessage(result.error);
         setShowValidationPopup(true);
         setIsLoading(false);

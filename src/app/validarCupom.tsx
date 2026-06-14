@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/config/firebase';
-
-import { validateStyle } from '@/styles/validatecoupon';
-import { COLORS } from '@/constants/colors';
 import { BackButton } from '@/components/BackButton';
 import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY';
+import { validateRedeemedCoupon } from '@/services/couponService';
+import { validateStyle } from '@/styles/validatecoupon';
+import { COLORS } from '@/constants/colors';
 
-// Define os tipos para o estado do nosso Popup
 type PopupConfig = {
   visible: boolean;
   type: 'success' | 'error';
@@ -40,66 +37,27 @@ export default function ValidarCupomScreen() {
 
     setLoading(true);
 
-    try {
-      // Procura o cupom na coleção dos cupons que pertencem aos usuários
-      const docRef = doc(db, 'cupons_resgatados', codigoLido.trim());
-      const docSnap = await getDoc(docRef);
+    const result = await validateRedeemedCoupon(codigoLido);
 
-      if (!docSnap.exists()) {
-        setPopup({
-          visible: true,
-          type: 'error',
-          title: 'Cupom Inválido',
-          message: 'Não encontramos nenhum cupom com este código no sistema Pop-Corner.'
-        });
-        setLoading(false);
-        return;
-      }
-
-      const dadosCupom = docSnap.data();
-
-      // REGRA 1: Verifica se já foi utilizado
-      if (dadosCupom.status === 'USADO') {
-        setPopup({
-          visible: true,
-          type: 'error',
-          title: 'Atenção!',
-          message: `O cupom "${dadosCupom.nome_cupom || 'Resgatado'}" já foi utilizado anteriormente.`
-        });
-      } 
-      // REGRA 2: Cupom válido, vamos consumi-do
-      else if (dadosCupom.status === 'DISPONIVEL' || dadosCupom.status === 'DISPONÍVEL') {
-        
-        await updateDoc(docRef, { status: 'USADO' });
-        
-        setPopup({
-          visible: true,
-          type: 'success',
-          title: 'Sucesso!',
-          message: `Cupom validado e consumido.\nBenefício liberado: ${dadosCupom.nome_cupom || 'Desconto'}`
-        });
-        setCodigoLido(''); 
-      } 
-      else {
-        setPopup({
-          visible: true,
-          type: 'error',
-          title: 'Status Desconhecido',
-          message: 'O cupom está num estado inválido para resgate.'
-        });
-      }
-
-    } catch (error) {
-      console.error(error);
+    if (!result.valid) {
       setPopup({
         visible: true,
         type: 'error',
-        title: 'Erro de Conexão',
-        message: 'Falha ao comunicar com o servidor. Tente novamente.'
+        title: result.error?.includes('anteriormente') ? 'Atenção!' : 'Cupom Inválido',
+        message: result.error || 'Erro ao processar validação.'
       });
-    } finally {
       setLoading(false);
+      return;
     }
+
+    setPopup({
+      visible: true,
+      type: 'success',
+      title: 'Sucesso!',
+      message: `Cupom validado e consumido.\nBenefício liberado: ${result.data?.nome_cupom}`
+    });
+    setCodigoLido('');
+    setLoading(false);
   };
 
   const popupBorderColor = popup.type === 'error' ? (COLORS.red || '#B22300') : '#2E7D32'; 
@@ -126,7 +84,7 @@ export default function ValidarCupomScreen() {
               value={codigoLido}
               onChangeText={setCodigoLido}
               style={validateStyle.inputField as any}
-              autoCapitalize="characters" // Facilita a leitura forçando tudo pra maiúsculo
+              autoCapitalize="characters"
             />
           </View>
 
@@ -141,7 +99,6 @@ export default function ValidarCupomScreen() {
 
       </ScrollView>
 
-      {/* MODAL / POPUP DE RESPOSTA (Exatamente como você pediu) */}
       <Modal visible={popup.visible} transparent={true} animationType="fade">
         <View style={validateStyle.modalOverlay}>
           
