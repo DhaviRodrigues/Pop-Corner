@@ -1,36 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, TouchableOpacity, Text, Image, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
-import { navBarStyle } from '@/styles/navbar';
-import { useAuth } from '@/contexts/UserContext';
-import { verifyAdmin } from '@/services/userservice';
+import { navBarStyle} from '@/styles/navbar';
 
 const BottomNavbar = () => {
   const router = useRouter();
+  // O hook usePathname é utilizado para identificar a rota atual e gerenciar o estado visual (ativo) de cada aba.
   const pathname = usePathname();
+  // Captura das dimensões da janela para implementar lógica de responsividade no background da barra.
   const { width } = useWindowDimensions();
   
-  const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  
-  const navbarBackground = width >= 510
+  // Seleção condicional do asset de fundo baseada na largura do dispositivo (breakpoint de 510px).
+  // Isso garante que o design da Navbar se adapte tanto a smartphones quanto a tablets ou telas maiores.
+  const navbarBackground = width >=510
     ? require('../screenAssets/Navbar/Navbar-Expandida.svg')
     : require('../screenAssets/Navbar/Navbar.svg');
-
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (user) {
-        // Utiliza o serviço unificado para verificar a role no Firestore
-        const result = await verifyAdmin();
-        setIsAdmin(result.isAdmin);
-      } else {
-        setIsAdmin(false);
-      }
-    };
-
-    checkAdminStatus();
-  }, [user]);
 
   const tabs = [
     {
@@ -54,8 +39,8 @@ const BottomNavbar = () => {
       icon: require('@/screenAssets/Navbar/ticktet-icon.svg'),
     },
     {
-      name: isAdmin ? 'Admin' : 'Perfil',
-      route: isAdmin ? '/adminControl' : '/profile',
+      name: 'Perfil',
+      route: '/profile',
       icon: require('../screenAssets/Navbar/perfil-icon.svg'),
     },
   ];
@@ -68,27 +53,28 @@ const BottomNavbar = () => {
         resizeMode="cover"
       />
       <View style={navBarStyle.navbarContainer}>
+        {/* O SafeAreaView é aplicado internamente para respeitar os limites de sistema (como o "notch"), mantendo o alinhamento dos itens. */}
         <SafeAreaView style={navBarStyle.safeArea}>
           <View style={navBarStyle.tabContainer}>
             {tabs.map((tab) => {
+              // Verificação booleana que compara a rota atual do sistema com a rota definida no objeto da aba.
               const isActive = pathname === tab.route;
               return (
                 <TouchableOpacity
-                  key={tab.name}
+                  key={tab.route}
                   style={navBarStyle.tab}
                   onPress={() => router.push(tab.route as any)}
                   activeOpacity={0.7}
                 >
-                  <View style={[navBarStyle.tabContent, isActive && navBarStyle.activeTabContent]}>
+                  {/* Aplicação de estilos condicionais através de arrays: estilos de estado 'active' são injetados apenas se isActive for verdadeiro. */}
+                  <View style={[navBarStyle.tabContent, isActive && navBarStyle .activeTabContent]}>
                     <View style={navBarStyle.iconWrapper}>
                       <Image
                         source={tab.icon}
                         style={[navBarStyle.imageIcon, isActive && navBarStyle.activeImageIcon]}
                         resizeMode="contain"
                       />
-                      <Text style={[navBarStyle.label, isActive && navBarStyle.activeLabel]}>
-                        {tab.name}
-                      </Text>
+                      <Text style={[navBarStyle.label, isActive && navBarStyle.activeLabel]}>{tab.name}</Text>
                     </View>
                   </View>
                 </TouchableOpacity>

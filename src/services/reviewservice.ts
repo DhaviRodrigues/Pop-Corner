@@ -1,98 +1,117 @@
 import { db } from "@/config/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { Movie } from "@/models/movie";
-import { Comment } from "@/models/comment";
+import { doc, updateDoc } from "firebase/firestore";
+import { creditarPipokasService } from "./pipokaService";
 
-/**
- * Adiciona uma nova avaliação a um filme específico, recalcula as médias 
- * de nota através do Model e atualiza o banco de dados.
- */
-export async function addReviewToMovie(movieId: string, reviewPayload: any): Promise<any | null> {
-  try {
-    const docRef = doc(db, "movies", movieId);
-    const docSnap = await getDoc(docRef);
-
-    if (!docSnap.exists()) throw new Error("Filme não encontrado para avaliação.");
-
-    const data = docSnap.data();
-
-    // Reconstrói o estado dos comentários atuais em memória usando o Model
-    const currentComments = (data.comments || []).map((c: any) => 
-      new Comment(c.id, c.author, c.rating, c.movie, c.cinema, c.date, c.text, c.status)
-    );
-
-    // Reconstrói a entidade do filme com as notas vigentes
-    const movie = new Movie(
-      data.title,
-      data.director,
-      data.year,
-      data.duration,
-      data.classification,
-      data.tags,
-      data.image,
-      data.rating || 0,
-      data.ratingCount || 0,
-      data.synopsis,
-      data.created_at ? data.created_at.toDate() : new Date(),
-      currentComments
-    );
-
-    // Cria a nova instância do comentário com os dados validados oriundos do formulário
-    const newComment = new Comment(
-      reviewPayload.id,
-      reviewPayload.author,
-      reviewPayload.rating,
-      movieId,
-      "",
-      reviewPayload.date,
-      reviewPayload.text,
-      reviewPayload.status
-    );
-
-    movie.addComment(newComment);
-
-    const updatedFirestoreData = {
-      rating: movie.getRating(),
-      ratingCount: movie.getRatingCount(),
-      comments: movie.getAllComments().map(c => ({
-        id: c.getId(),
-        author: c.getAuthor(),
-        rating: c.getRating(),
-        movie: c.getMovie(),
-        cinema: c.getCinema(),
-        date: c.getDate(),
-        text: c.getText(),
-        status: c.getStatus()
-      }))
-    };
-
-    await updateDoc(docRef, updatedFirestoreData);
-
-    // Retorna a projeção de dados limpos formatada para o consumo direto da View
-    return {
-      id: movieId,
-      title: movie.getTitle(),
-      director: movie.getDirector(),
-      year: movie.getYear(),
-      duration: movie.getDuration(),
-      classification: movie.getClassification(),
-      tags: movie.getTags(),
-      image: movie.getImage(),
-      rating: movie.getRating(),
-      ratingCount: movie.getRatingCount(),
-      synopsis: movie.getSynopsis(),
-      comentarios: movie.getAllComments().map(c => ({
-        id: c.getId(),
-        user: c.getAuthor(),
-        profilePic: c.getId() === reviewPayload.id ? reviewPayload.profilePic : "",
-        rating: c.getRating(),
-        comment: c.getText(),
-        createdAt: c.getDate()
-      }))
-    };
-
-  } catch (error) {
-    console.error("Erro na camada de serviço ao processar avaliação:", error);
-    return null;
-  }
+interface ReviewInput {
+  collectionName: 'filmes' | 'cinemas';
+  itemId: string;
+  currentUserUid: string;
+  userName: string;
+  userPic: string;
+  userRating: number;
+  myReview: string;
+  currentComments: any[];
+  hasReviewed: boolean;
+  pipokaAmount: number;
+  itemTitle: string;
 }
+
+export const submitReviewService = async ({
+  collectionName,
+  itemId,
+  currentUserUid,
+  userName,
+  userPic,
+  userRating,
+  myReview,
+  currentComments = [],
+  hasReviewed,
+  pipokaAmount,
+  itemTitle
+}: ReviewInput) => {
+  let updatedComments = [];
+  let pipokaMessage = "";
+
+  if (hasReviewed) {
+    updatedComments = currentComments.map((c: any) =>
+      c.uid === currentUserUid
+        ? { ...c, rating: userRating, comment: myReview.trim(), updatedAt: new Date().toISOString() }
+        : c
+    );
+    pipokaMessage = "Sua avaliação foi atualizada com sucesso!";
+  } else {
+
+    const resultadoPipoka = await creditarPipokasService(
+      currentUserUid,
+      pipokaAmount,
+      `Avaliação do ${collectionName === 'filmes' ? 'filme' : 'cinema'} ${itemTitle}`,
+      itemId
+    );
+
+    if (!resultadoPipoka.valid) {
+      pipokaMessage = `Avaliação enviada! (Você já havia recebido Pipokas por este ${collectionName === 'filmes' ? 'item' : 'cinema'} antes).`;
+    } else {
+      pipokaMessage = `Sua avaliação foi enviada e você ganhou ${pipokaAmount} Pipokas!`;
+    }
+
+    const newComment = {
+      id: Date.now().toString(),
+      uid: currentUserUid,
+      user: userName,
+      profilePic: userPic,
+      rating: userRating,
+      comment: myReview.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    updatedComments = [newComment, ...currentComments];
+  }
+
+  const totalRating = updatedComments.reduce((acc: number, curr: any) => acc + curr.rating, 0);
+  const newAverage = updatedComments.length > 0 ? totalRating / updatedComments.length : 0;
+
+  const updateData: any = { comentarios: updatedComments };
+  if (collectionName === 'filmes') {
+    updateData.rating = newAverage;
+    updateData.ratingCount = updatedComments.length;
+  } else {
+    updateData.avaliacao = newAverage;
+  }
+
+  const docRef = doc(db, collectionName, itemId);
+  await updateDoc(docRef, updateData);
+
+  return {
+    updatedComments,
+    newAverage,
+    pipokaMessage
+  };
+};
+
+export const deleteReviewService = async (
+  collectionName: 'filmes' | 'cinemas',
+  itemId: string,
+  currentUserUid: string,
+  currentComments: any[]
+) => {
+  const updatedComments = currentComments.filter((c: any) => c.uid !== currentUserUid);
+
+  const totalRating = updatedComments.reduce((acc: number, curr: any) => acc + curr.rating, 0);
+  const newAverage = updatedComments.length > 0 ? totalRating / updatedComments.length : 0;
+
+  const updateData: any = { comentarios: updatedComments };
+  if (collectionName === 'filmes') {
+    updateData.rating = newAverage;
+    updateData.ratingCount = updatedComments.length;
+  } else {
+    updateData.avaliacao = newAverage;
+  }
+
+  const docRef = doc(db, collectionName, itemId);
+  await updateDoc(docRef, updateData);
+
+  return {
+    updatedComments,
+    newAverage
+  };
+};

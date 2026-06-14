@@ -43,12 +43,12 @@ export function UserCoupon({title,discountAmount,description,status,validity,onS
           <View style={{ width: '100%' }}>
             <Text style={componentStyle.userCouponRightTitle}>Detalhes</Text>
             <View style={componentStyle.userCouponDetailRow}>
-              <Text style={componentStyle.userCouponDetailLabel}>Validade: </Text>
-              <Text style={componentStyle.userCouponDetailValue}>{validity}</Text>
-            </View>
-            <View style={componentStyle.userCouponDetailRow}>
               <Text style={componentStyle.userCouponDetailLabel}>Status: </Text>
               <Text style={statusStyle}>{status}</Text>
+            </View>
+            <View style={componentStyle.userCouponDetailRow}>
+              <Text style={componentStyle.userCouponDetailLabel}>Validade: </Text>
+              <Text style={componentStyle.userCouponDetailValue}>{validity}</Text>
             </View>
           </View>
           <View style={{ alignItems: 'center', width: '100%', marginTop: 10 }}>

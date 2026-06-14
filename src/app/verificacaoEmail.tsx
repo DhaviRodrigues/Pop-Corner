@@ -2,15 +2,18 @@ import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React from "react";
 import { ValidationPopup } from "@/components/ValidationPopup";
+import { db } from "@/config/firebase";
 import { useUserRegistration } from '@/contexts/UserRegistrationContext';
-import { Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
-import { Box } from "@/components/Box";
-import { ButtonVoltar } from "@/components/ButtonVoltar";
-import { ButtonY } from "@/components/ButtonY";
-import CodeInput from "@/components/CodeInput";
-import { verify2FACode, resend2FACode } from "@/services/authservice";
+import { sendVerificationEmail } from '@/services/cadastro2fa';
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { Box } from "../components/Box";
+import { useState } from "react";
+import { ButtonVoltar } from "../components/ButtonVoltar";
+import { ButtonY } from "../components/ButtonY";
+import CodeInput from "../components/CodeInput";
+import { doc, getDoc, serverTimestamp, setDoc } from "@firebase/firestore";
 
 export default function Verify2FA() {
   const router = useRouter();
@@ -27,55 +30,57 @@ export default function Verify2FA() {
   const { data } = useUserRegistration();
 
   const handleConfirm = async () => {
-    if (loading) return;
-    
-    if (typedCode.length < 5) {
-      setValidationMessage("Por favor, insira o código de 5 dígitos.");
+  if (loading) return;
+  
+  if (typedCode.length < 5) {
+    setValidationMessage("Por favor, insira o código de 5 dígitos.");
+    setShowValidationPopup(true);
+    return;
+  }
+
+  setLoading(true);
+  const docRef = doc(db, "temp_codes", data.email.toLowerCase());
+  const snap = await getDoc(docRef);
+
+  if (snap.exists()) {
+    const { code, createdAt } = snap.data();
+    const date = Date.now();
+    const createdTime = createdAt.toMillis();
+
+    if (code === typedCode && (date - createdTime) < 600000) {
+      router.push("/genre");
+    } else {
+      setValidationMessage(code !== typedCode ? "Código incorreto." : "Este código expirou.");
       setShowValidationPopup(true);
-      return;
     }
+  } else {
+    setValidationMessage("Código não encontrado. Tente reenviar.");
+    setShowValidationPopup(true);
+  }
+  setLoading(false);
+};
 
-    try {
-      setLoading(true);
-      
-      const result = await verify2FACode(data.email, typedCode);
-
-      if (result.valid) {
-        router.push("/genre");
-      } else {
-        setValidationMessage(result.error);
-        setShowValidationPopup(true);
-      }
-    } catch (error) {
-      console.error("Erro ao confirmar código na UI:", error);
-      setValidationMessage("Erro inesperado ao verificar o código.");
-      setShowValidationPopup(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
+const handleResend = async () => {
     if (resending) return;
     
-    try {
-      setResending(true);
-      
-      // Service assume a geração do código aleatório, gravação no Firestore e disparo do e-mail
-      const result = await resend2FACode(data.email);
+    setResending(true);
+    const newCode = Math.floor(10000 + Math.random() * 90000).toString(); 
 
-      if (result.valid) {
-        setValidationMessage("Um novo código foi enviado para seu e-mail!");
-      } else {
-        setValidationMessage(result.error || "Erro ao reenviar e-mail. Tente novamente.");
-      }
-    } catch (error) {
-      console.error("Erro ao solicitar reenvio na UI:", error);
-      setValidationMessage("Erro de conexão ao reenviar o código.");
-    } finally {
-      setShowValidationPopup(true);
-      setResending(false);
+    await setDoc(doc(db, "temp_codes", data.email.toLowerCase()), {
+      code: newCode,
+      createdAt: serverTimestamp()
+    });
+    
+    const enviado = await sendVerificationEmail(data.email, newCode);
+
+    if (enviado) {
+      setValidationMessage("Um novo código foi enviado para seu e-mail!");
+    } else {
+      setValidationMessage("Erro ao reenviar e-mail. Tente novamente.");
     }
+    
+    setShowValidationPopup(true);
+    setResending(false);
   };
 
   return (

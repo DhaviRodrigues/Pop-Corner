@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Dimensions, FlatList, ScrollView, Text, View, ActivityIndicator } from "react-native";
-import { COLORS } from "@/constants/colors";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { db } from "@/config/firebase"; 
 
 import { MovieCard } from "@/components/MovieCard";
 import BottomNavbar from "@/components/Navbar";
 import { TitleBar } from "@/components/TitleBar";
 import { miscStyle } from "@/styles/misc";
-import { getAllMovies } from "@/services/movieservice";
 
 const { height } = Dimensions.get("window");
 
@@ -17,22 +17,27 @@ export default function Home() {
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        const moviesList = await getAllMovies();
+        // Busca na coleção "filmes" 
+        const q = query(collection(db, "filmes"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        const moviesList = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
         setMovies(moviesList);
       } catch (error) {
-        console.error("Erro ao carregar filmes na tela Home:", error);
+        console.error("Erro ao carregar filmes:", error);
       } finally {
         setLoading(false);
       }
     };
-    
     fetchMovies();
   }, []);
 
   if (loading) {
     return (
       <View style={[miscStyle.background, { justifyContent: 'center' }]}>
-        <ActivityIndicator size="large" color={COLORS.gold} />
+        <ActivityIndicator size="large" color="#FFFEB2" />
       </View>
     );
   }
@@ -63,7 +68,7 @@ export default function Home() {
             <Text style={miscStyle.sectionBadgeText}>Descubra novos filmes</Text>
           </View>
           <FlatList
-            data={movies.slice(4)}
+            data={movies.slice(4)} // O restante dos filmes
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <MovieCard movie={item} />}
             horizontal

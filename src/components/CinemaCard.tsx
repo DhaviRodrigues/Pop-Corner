@@ -100,7 +100,7 @@ const CinemaCard = ({
           style={{
             position: "absolute",
             top: 92,
-            right: 225,
+            right: 285,
             width: 76,
             height: 40,
             zIndex: 10,

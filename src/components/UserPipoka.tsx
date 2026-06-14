@@ -1,4 +1,4 @@
-import { User } from "@/models/user";
+import { User } from "@/types/user";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { componentStyle } from "@/styles/component";
 import { Dimensions} from "react-native";
