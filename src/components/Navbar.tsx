@@ -3,15 +3,24 @@ import { View, TouchableOpacity, Text, Image, useWindowDimensions } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { navBarStyle } from '@/styles/navbar';
+<<<<<<< HEAD
 import { useAuth } from '@/contexts/UserContext';
 import { verifyAdmin } from '@/services/userservice';
+=======
+import { UserAdmin } from '@/types/userAdmin';
+import { useUser } from '@/contexts/UserContext';
+>>>>>>> main
 
 const BottomNavbar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   
+<<<<<<< HEAD
   const { user } = useAuth();
+=======
+  const { user } = useUser();
+>>>>>>> main
   const [isAdmin, setIsAdmin] = useState(false);
   
   const navbarBackground = width >= 510
@@ -19,17 +28,28 @@ const BottomNavbar = () => {
     : require('../screenAssets/Navbar/Navbar.svg');
 
   useEffect(() => {
+<<<<<<< HEAD
     const checkAdminStatus = async () => {
       if (user) {
         // Utiliza o serviço unificado para verificar a role no Firestore
         const result = await verifyAdmin();
         setIsAdmin(result.isAdmin);
+=======
+    const verifyAdmin = async () => {
+      if (user) {
+        const isUserAdmin = await UserAdmin.checkIsAdmin();
+        setIsAdmin(isUserAdmin);
+>>>>>>> main
       } else {
         setIsAdmin(false);
       }
     };
 
+<<<<<<< HEAD
     checkAdminStatus();
+=======
+    verifyAdmin();
+>>>>>>> main
   }, [user]);
 
   const tabs = [

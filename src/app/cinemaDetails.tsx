@@ -32,7 +32,7 @@ const DynamicStarsDisplay = ({ rating }: { rating: number }) => {
                 <View key={index} style={{ position: 'relative', width: 22, height: 22, marginRight: 2 }}>
                     <Text style={{ position: 'absolute', color: '#666', fontSize: 20 }}>★</Text>
                     <View style={{ width: `${fill * 100}%`, overflow: 'hidden' }}>
-                        <Text style={{ color: '#FFFEB2', fontSize: 20 }}>★</Text>
+                        <Text style={{ color: COLORS.gold, fontSize: 20 }}>★</Text>
                     </View>
                 </View>
             ))}
