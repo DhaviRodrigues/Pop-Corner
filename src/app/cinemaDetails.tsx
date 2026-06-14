@@ -7,7 +7,7 @@ import { ButtonY } from '@/components/ButtonY';
 import { AdminEditButton } from '@/components/AdminEditButton';
 import { AdminDeleteButton } from '@/components/AdminDeleteButton';
 import { BackButton } from '@/components/BackButton';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/UserContext';
 import { db, auth } from '@/config/firebase';
 import { doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { movieStyle } from '@/styles/movie'; 
@@ -45,7 +45,7 @@ export default function CinemaDetailsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   
-  const { user } = useUser();
+  const { user } = useAuth();
 
   const [cinema, setCinema] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -270,7 +270,7 @@ export default function CinemaDetailsScreen() {
                 <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 20 }}>
                     {[1, 2, 3, 4, 5].map((star) => (
                         <TouchableOpacity key={star} onPress={() => setUserRating(star)} style={{ paddingHorizontal: 5 }}>
-                            <Text style={{ fontSize: 36, color: star <= userRating ? '#FFFEB2' : '#666' }}>★</Text>
+                            <Text style={{ fontSize: 36, color: star <= userRating ? COLORS.gold : '#666' }}>★</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -283,7 +283,7 @@ export default function CinemaDetailsScreen() {
                 </View>
                 
                 <View style={movieStyle.detailsButtonWrapper}>
-                    {isSubmittingReview ? <ActivityIndicator size="small" color="#FFFEB2" /> : <ButtonY title="Avaliar" onPress={handleSubmitReview} />}
+                    {isSubmittingReview ? <ActivityIndicator size="small" color={COLORS.gold} /> : <ButtonY title="Avaliar" onPress={handleSubmitReview} />}
                 </View>
             </View>
 

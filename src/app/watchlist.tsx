@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, Dimensions, FlatList, Image, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/UserContext';
 import { BackButton } from '@/components/BackButton';
 import { TitleBar } from '@/components/TitleBar';
 import { DropdownY } from '@/components/DropdownY';
 import { miscStyle } from '@/styles/misc';
-import { textStyle } from '@/styles/text';
 import { MOVIES } from '@/data/mockFilmes';
 import { COLORS } from '@/constants/colors';
 import { doc, getDoc } from 'firebase/firestore';
@@ -16,7 +15,7 @@ const { height, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function WatchlistScreen() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user } =  useAuth();
   const [watchlistMovies, setWatchlistMovies] = useState<any[]>([]);
   const [loadingMovies, setLoadingMovies] = useState(true);
 

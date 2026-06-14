@@ -3,7 +3,7 @@ import { ButtonVoltar } from "@/components/ButtonVoltar";
 import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
-import { User } from "@/types/user";
+import { User } from "@/models/user";
 import { auth } from "@/config/firebase";
 import { useUser } from '@/contexts/UserContext';
 import { deleteUserProfile } from '@/services/userservice';

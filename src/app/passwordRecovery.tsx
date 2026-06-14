@@ -1,16 +1,16 @@
+import React, { useState } from "react";
+import { ActivityIndicator, useWindowDimensions, Image, Text, TouchableOpacity, View } from "react-native";
+import { Link, useRouter } from 'expo-router';
+
 import { Box } from "@/components/Box";
 import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
-import { User } from "@/types/user";
-import { sendPasswordResetEmail } from "@/services/updatePassword";
-import { Link, useRouter } from 'expo-router';
-import { useState } from "react";
 import { ButtonVoltar } from "@/components/ButtonVoltar";
-import { ActivityIndicator, useWindowDimensions, Image, Text, TouchableOpacity, View } from "react-native";
 import { miscStyle } from "@/styles/misc";
 import { logoStyle } from "@/styles/logo";
 import { textStyle } from "@/styles/text";
+import { sendPasswordResetEmail } from "@/services/authservice";
 
 export default function PasswordRecovery() {
   const { height } = useWindowDimensions();
@@ -22,25 +22,40 @@ export default function PasswordRecovery() {
   const [validationMessage, setValidationMessage] = useState("");
 
   async function handleResetPassword() {
-    const validation = User.validatePasswordRecovery(email);
-    if (!validation.valid) {
-      setValidationMessage(validation.error);
+    if (!email.trim()) {
+      setValidationMessage("Por favor, digite o seu e-mail.");
       setShowValidationPopup(true);
       return;
     }
 
-    setLoading(true);
-    const { success, message } = await sendPasswordResetEmail(email);
-    setLoading(false);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setValidationMessage("Por favor, insira um e-mail válido.");
+      setShowValidationPopup(true);
+      return;
+    }
 
-    setValidationMessage(message);
-    setShowValidationPopup(true);
+    try {
+      setLoading(true);
+      
+      const { success, message } = await sendPasswordResetEmail(email.trim());
+      
+      setValidationMessage(message);
+      setShowValidationPopup(true);
 
-    if (success) {
-      setEmail('');
-      setTimeout(() => {
-        router.push('/');
-      }, 3000);
+      if (success) {
+        setEmail('');
+        setTimeout(() => {
+          setShowValidationPopup(false);
+          router.push('/');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("Erro ao recuperar senha na tela:", error);
+      setValidationMessage("Ocorreu um erro inesperado. Tente novamente mais tarde.");
+      setShowValidationPopup(true);
+    } finally {
+      setLoading(false);
     }
   }
 

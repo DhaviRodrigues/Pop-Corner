@@ -17,20 +17,13 @@ import {
   TextInput,
   Switch,
 } from "react-native";
-import { Cinema } from "@/types/cinema";
-import { Sessao } from "@/types/sessao";
-import { registerCinema } from "@/services/cinemaService";
+import { Cinema } from "@/models/cinema";
+import { Session } from "@/models/session";
 import { ButtonY } from "../components/ButtonY";
 import BottomNavbar from "../components/Navbar";
 import { BackButton } from "@/components/BackButton";
-import {
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-  updateDoc,
-} from "firebase/firestore";
-import { db } from "@/config/firebase";
+import { getCinemaById, saveOrUpdateCinema } from "@/services/cinemaService";
+import { getAllMovies } from "@/services/movieservice";
 
 function LocalInput({
   text,
@@ -96,6 +89,7 @@ export default function CreateCinema() {
   >([]);
   const [erroSessao, setErroSessao] = useState("");
   const [erroCinema, setErroCinema] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const isCinemaPronto = !!(
     nome.trim() &&
@@ -109,29 +103,29 @@ export default function CreateCinema() {
   useEffect(() => {
     const fetchMoviesAndCinema = async () => {
       try {
-        const snap = await getDocs(collection(db, "filmes"));
-        const movies = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        const movies = await getAllMovies();
         setAvailableMovies(movies);
 
         if (editId) {
-          const docRef = doc(db, "cinemas", editId as string);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setNome(data.nome || "");
-            setCidade(data.cidade || "");
-            setEndereco(data.endereco || "");
-            if (data.coordinates) {
-              setLatitude(String(data.coordinates.latitude || ""));
-              setLongitude(String(data.coordinates.longitude || ""));
+          const cinemaData = await getCinemaById(editId as string);
+          if (cinemaData) {
+            setNome(cinemaData.nome || "");
+            setCidade(cinemaData.cidade || "");
+            setEndereco(cinemaData.endereco || "");
+            if (cinemaData.coordinates) {
+              setLatitude(String(cinemaData.coordinates.latitude || ""));
+              setLongitude(String(cinemaData.coordinates.longitude || ""));
             }
-            setUrlImagem(data.url_imagem || data.imagem || "");
-            setIsParceiro(data.is_parceiro || data.isParceiro || false);
-            setFilmesEmCartaz(data.filmesEmCartaz || []);
+            setUrlImagem(cinemaData.url_imagem || cinemaData.imagem || "");
+            setIsParceiro(cinemaData.is_parceiro || cinemaData.isParceiro || false);
+            setFilmesEmCartaz(cinemaData.filmesEmCartaz || []);
+            if (cinemaData.sessoes) {
+              setSessoes(cinemaData.sessoes);
+            }
           }
         }
       } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+        console.error("Erro ao carregar dados na View CreateCinema:", error);
       }
     };
     fetchMoviesAndCinema();
@@ -139,27 +133,14 @@ export default function CreateCinema() {
 
   const getMovieTitle = (movie: any) => {
     if (!movie) return "Filme Desconhecido";
-    return (
-      movie.title ||
-      movie.nome ||
-      movie.titulo ||
-      movie.original_title ||
-      "Filme sem Título"
-    );
+    return movie.title || movie.nome || movie.titulo || "Filme sem Título";
   };
 
   const getMovieImage = (movie: any) => {
     if (!movie) return null;
-    const path =
-      movie.image ||
-      movie.url_imagem ||
-      movie.imagem ||
-      movie.poster_path ||
-      movie.backdrop_path;
+    const path = movie.image || movie.url_imagem || movie.imagem;
     if (!path) return null;
-    if (path.startsWith("http")) return path;
-    if (path.startsWith("/")) return `https://image.tmdb.org/t/p/w500${path}`;
-    return null;
+    return path.startsWith("http") ? path : null;
   };
 
   const getMovieData = (id: string) => {
@@ -173,7 +154,7 @@ export default function CreateCinema() {
       return;
     }
     try {
-      Sessao.createSessao({
+      Session.createSessao({
         idFilme: filmeSessao,
         data: dataSessao,
         horario: horarioSessao,
@@ -197,14 +178,18 @@ export default function CreateCinema() {
     }
 
     try {
+      setLoading(true);
+
+      // Instancia as sessões com a Model para garantir integridade e validações internas do domínio
       const sessoesInstanciadas = sessoes.map((s) =>
-        Sessao.createSessao({
+        Session.createSessao({
           idFilme: s.idFilme,
           data: s.data,
           horario: s.horario,
         }),
       );
 
+      // Instancia a classe de domínio Cinema
       const cinemaInstancia = Cinema.createCinema({
         nome,
         cidade,
@@ -217,30 +202,20 @@ export default function CreateCinema() {
         isParceiro,
       });
 
-      const dadosParaSalvar = cinemaInstancia.toFirestore();
+      // Passa a instância pura da entidade para o Service persistir de forma encapsulada
+      const sucesso = await saveOrUpdateCinema(cinemaInstancia, editId as string);
 
-      if (editId) {
-        const docRef = doc(db, "cinemas", editId as string);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const dadosAtuais = docSnap.data();
-          const updatePayload = {
-            ...dadosParaSalvar,
-            avaliacao: dadosAtuais.avaliacao || 0,
-            comentarios: dadosAtuais.comentarios || [],
-          };
-          await updateDoc(docRef, updatePayload);
-          Alert.alert("Sucesso!", "Cinema atualizado.");
-        }
+      if (sucesso) {
+        Alert.alert("Sucesso!", `Cinema ${editId ? "atualizado" : "cadastrado"} com sucesso.`);
+        if (router.canGoBack()) router.back();
+        else router.replace("/cinemas");
       } else {
-        await registerCinema(cinemaInstancia);
-        Alert.alert("Sucesso!", "Cinema cadastrado.");
+        setErroCinema("Houve um problema ao salvar as informações do cinema.");
       }
-
-      if (router.canGoBack()) router.back();
-      else router.replace("/cinemas");
     } catch (error: any) {
-      setErroCinema(error.message);
+      setErroCinema(error.message || "Erro inesperado.");
+    } finally {
+      setLoading(false);
     }
   };
 

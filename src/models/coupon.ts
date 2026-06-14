@@ -7,7 +7,7 @@ export enum TipoCupom {
   DOIS_POR_UM = 'DOIS_POR_UM'
 }
 
-export class Cupom {
+export class Coupon {
   constructor(
     private idCupom: string,
     private nomeCupom: string,
@@ -86,7 +86,7 @@ export class Cupom {
     isTempoLimitado?: boolean;
     dataExpiracaoResgate?: Date | null;
     quantidadeDisponivel?: number | null;
-  }): Cupom {
+  }): Coupon {
     
     // Validações estritas baseadas nos limites definidos
     if (payload.nomeCupom.length > 100) throw new Error("O nome do cupom excedeu 100 caracteres.");
@@ -111,7 +111,7 @@ export class Cupom {
         throw new Error("Para brindes, o valor do benefício deve ser o nome do produto (String).");
     }
 
-    return new Cupom(
+    return new Coupon(
       payload.idCupom || "", 
       payload.nomeCupom,
       payload.valorPipokas,
@@ -142,8 +142,8 @@ export class Cupom {
     };
   }
 
-  static fromFirestore(id: string, data: any): Cupom {
-    return new Cupom(
+  static fromFirestore(id: string, data: any): Coupon {
+    return new Coupon(
       id,
       data.nome_cupom || "",
       data.valor_pipokas || 0,

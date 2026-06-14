@@ -1,12 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, Image, ActivityIndicator, TouchableOpacity, Modal, TextInput, Alert, Platform, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, getDoc, deleteDoc, updateDoc } from 'firebase/firestore'; // Importei o updateDoc
-import { db, auth } from '@/config/firebase';
 import { Feather } from '@expo/vector-icons'; 
 
 import { COLORS } from '@/constants/colors';
-import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/UserContext';
 
 import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY'; 
@@ -14,7 +12,6 @@ import { ButtonB } from '@/components/ButtonB';
 import { ButtonAddWatchlist } from '@/components/ButtonAddWatchlist';
 import { ValidationPopup } from '@/components/ValidationPopup';
 import { Input } from '@/components/Input';
-import { User } from '@/types/user';
 import { InfoRow } from '@/components/InfoRow';
 import { ReviewItem } from '@/components/ReviewItem';
 import { movieStyle } from '@/styles/movie'; 
@@ -22,10 +19,15 @@ import { textStyle } from '@/styles/text';
 import { DynamicStars } from '@/components/DynamicStars';
 import { BackButton } from '@/components/BackButton';
 
+import { Comment } from '@/models/comment';
+import { getMovieById, deleteMovie } from '@/services/movieservice';
+import { addReviewToMovie } from '@/services/reviewservice';
+import { addMovieToWatchlist, removeMovieFromWatchlist, fetchUserData } from '@/services/userservice';
+
 export default function MovieDetailsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { user, setUser } = useUser();
+  const { user, refreshUser } = useAuth();
 
   const [movie, setMovie] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -36,19 +38,16 @@ export default function MovieDetailsScreen() {
   const [userRating, setUserRating] = useState(0); 
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
-  // Estados de Admin
+  // Estados de Admin e Popups
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
-  const [isAdminState, setIsAdminState] = useState(false);
   const [isSavingWatchlist, setIsSavingWatchlist] = useState(false);
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
   const [popupOnClose, setPopupOnClose] = useState<(() => void) | null>(null);
 
-  const isContextAdmin = user 
-    ? ((user as any).isAdmin === true || (user as any).isAdm === true)
-    : false;
-  const isAdmin = isContextAdmin || isAdminState;
+  // Verificação de Admin usando o estado do Contexto
+  const isAdmin = user ? ((user as any).isAdmin === true || (user as any).isAdm === true) : false;
 
   const { height, width: screenWidth } = Dimensions.get('window');
 
@@ -58,85 +57,83 @@ export default function MovieDetailsScreen() {
       setPopupVisible(true);
       return;
     }
-
     if (!movie?.id) {
       setPopupMessage('Não foi possível identificar o filme.');
       setPopupVisible(true);
       return;
     }
-
     try {
       setIsSavingWatchlist(true);
-      const result = await (user as any).addMovieWatchlist(movie.id);
+      
+      // 1. O Service lida com a infraestrutura/banco de dados
+      const result = await addMovieToWatchlist((user as any).id, movie.id);
+      
       if (!result.valid) {
         setPopupMessage(result.error || 'Erro ao adicionar à watchlist.');
         setPopupVisible(true);
         return;
       }
 
-      const updatedUser = await User.fetchUserData();
-      if (updatedUser) {
-        setUser(updatedUser);
-      }
+      // 2. EVOLUÇÃO AQUI: Em vez de fetchUserData + setUser, apenas avisa o contexto
+      await refreshUser();
 
       setPopupMessage('Filme adicionado à watchlist!');
       setPopupVisible(true);
-      // on close we'll navigate to watchlist
       setPopupOnClose(() => () => router.push('/watchlist'));
     } catch (error) {
       console.error('Erro ao adicionar à watchlist:', error);
-        setPopupMessage('Erro ao adicionar à watchlist. Tente novamente.');
-        setPopupVisible(true);
+      setPopupMessage('Erro ao adicionar à watchlist. Tente novamente.');
+      setPopupVisible(true);
     } finally {
       setIsSavingWatchlist(false);
     }
   };
 
-    const handleRemoveFromWatchlist = async () => {
-      if (!user) {
-        setPopupMessage('Faça login para remover filmes da watchlist.');
+  const handleRemoveFromWatchlist = async () => {
+    if (!user) {
+      setPopupMessage('Faça login para remover filmes da watchlist.');
+      setPopupVisible(true);
+      return;
+    }
+    if (!movie?.id) {
+      setPopupMessage('Não foi possível identificar o filme.');
+      setPopupVisible(true);
+      return;
+    }
+    try {
+      setIsSavingWatchlist(true);
+      
+      // 1. O Service remove a relação no Firestore
+      const result = await removeMovieFromWatchlist((user as any).id, movie.id);
+      
+      if (!result.valid) {
+        setPopupMessage(result.error || 'Erro ao remover da watchlist.');
         setPopupVisible(true);
         return;
       }
 
-      if (!movie?.id) {
-        setPopupMessage('Não foi possível identificar o filme.');
-        setPopupVisible(true);
-        return;
-      }
+      // 2. EVOLUÇÃO AQUI: Sincroniza o estado global reativamente
+      await refreshUser();
 
-      try {
-        setIsSavingWatchlist(true);
-        const result = await (user as any).removeMovieWatchlist(movie.id);
-        if (!result.valid) {
-          setPopupMessage(result.error || 'Erro ao remover da watchlist.');
-          setPopupVisible(true);
-          return;
-        }
-
-        const updatedUser = await User.fetchUserData();
-        if (updatedUser) setUser(updatedUser);
-
-        setPopupMessage('Filme removido da watchlist.');
-        setPopupVisible(true);
-        setPopupOnClose(() => () => setPopupOnClose(null));
-      } catch (error) {
-        console.error('Erro ao remover da watchlist:', error);
-        setPopupMessage('Erro ao remover da watchlist. Tente novamente.');
-        setPopupVisible(true);
-      } finally {
-        setIsSavingWatchlist(false);
-      }
-    };
+      setPopupMessage('Filme removido da watchlist.');
+      setPopupVisible(true);
+      setPopupOnClose(() => () => setPopupOnClose(null));
+    } catch (error) {
+      console.error('Erro ao remover da watchlist:', error);
+      setPopupMessage('Erro ao remover da watchlist. Tente novamente.');
+      setPopupVisible(true);
+    } finally {
+      setIsSavingWatchlist(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchMovie = async () => {
+    const fetchMovieData = async () => {
       if (!id) return;
       try {
-        const docRef = doc(db, "filmes", id as string);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setMovie({ id: docSnap.id, ...docSnap.data() });
+        const fetchedMovie = await getMovieById(id as string);
+        if (fetchedMovie) {
+          setMovie(fetchedMovie);
         }
       } catch (error) {
         console.error("Erro ao buscar detalhes do filme:", error);
@@ -144,44 +141,29 @@ export default function MovieDetailsScreen() {
         setLoading(false);
       }
     };
-
-    const checkAdminDB = async () => {
-      if (auth.currentUser) {
-        try {
-          const userRef = doc(db, 'users', auth.currentUser.uid);
-          const snap = await getDoc(userRef);
-          if (snap.exists()) {
-            const data = snap.data();
-            if (data.isAdm === true || data.isAdmin === true) {
-              setIsAdminState(true);
-            }
-          }
-        } catch (err) {
-          console.warn("Erro ao checar admin:", err);
-        }
-      }
-    };
-
-    fetchMovie();
-    checkAdminDB();
+    fetchMovieData();
   }, [id]);
 
+  // --- DELEÇÃO DE FILME (Via Service) ---
   const handleDeleteMovie = async () => {
     if (!adminPassword) {
       alert("Digite a senha para confirmar.");
       return;
     }
     try {
-      await deleteDoc(doc(db, 'filmes', id as string));
-      setShowDeleteModal(false);
-      router.replace('/(tabs)/filmes'); 
+      const result = await deleteMovie(id as string, adminPassword);
+      if (result.valid) {
+          setShowDeleteModal(false);
+          router.replace('/(tabs)/filmes'); 
+      } else {
+          alert(result.error || "Falha ao deletar filme.");
+      }
     } catch (error) {
       console.error("Erro ao deletar:", error);
-      alert("Falha ao deletar filme.");
+      alert("Ocorreu um erro inesperado ao deletar o filme.");
     }
   };
 
-  // Lógica de Envio da Avaliação
   const handleSubmitReview = async () => {
     if (userRating === 0) {
         alert("Por favor, selecione uma nota de 1 a 5 estrelas.");
@@ -191,50 +173,35 @@ export default function MovieDetailsScreen() {
         alert("Por favor, escreva um comentário para a sua avaliação.");
         return;
     }
-    if (!user && !auth.currentUser) {
+    if (!user) {
         alert("Você precisa estar logado para avaliar.");
         return;
     }
 
     try {
         setIsSubmittingReview(true);
-
         const userName = typeof (user as any)?.getName === 'function' ? (user as any).getName() : ((user as any)?.name || "Usuário");
-        const userPic = typeof (user as any)?.getProfilePicture === 'function' ? (user as any).getProfilePicture() : ((user as any)?.profile_picture || "");
-
-        const newComment = {
-            id: Date.now().toString(), // Um ID único para a key da lista
-            user: userName,
-            profilePic: userPic,
-            rating: userRating,
-            comment: myReview.trim(),
-            createdAt: new Date().toISOString()
-        };
-
-        const currentComments = movie.comentarios || [];
-        const updatedComments = [newComment, ...currentComments]; 
         
-        // Recalculando a média
-        const totalRating = updatedComments.reduce((acc, curr) => acc + curr.rating, 0);
-        const newAverage = totalRating / updatedComments.length;
-
-        // Atualizando no Firebase
-        const docRef = doc(db, 'filmes', id as string);
-        await updateDoc(docRef, {
-            comentarios: updatedComments,
-            rating: newAverage,
-            ratingCount: updatedComments.length // Atualiza também a quantidade de avaliações
+        const newComment = Comment.createComment({
+            id: Date.now().toString(),
+            author: userName,
+            rating: userRating,
+            movie: id as string,
+            cinema: "", 
+            date: new Date().toISOString(),
+            text: myReview.trim(),
+            status: 'Aprovado' 
         });
 
-        // Atualizando o estado local para exibir na hora
-        setMovie({
-            ...movie,
-            comentarios: updatedComments,
-            rating: newAverage,
-            ratingCount: updatedComments.length
-        });
+        const profilePic = typeof (user as any)?.getProfilePicture === 'function' ? (user as any).getProfilePicture() : ((user as any)?.profile_picture || "");
+        const reviewPayload = { ...newComment, profilePic };
 
-        // Limpando os inputs
+        const updatedMovieData = await addReviewToMovie(id as string, reviewPayload);
+
+        if (updatedMovieData) {
+            setMovie(updatedMovieData); 
+        }
+
         setMyReview('');
         setUserRating(0);
         
@@ -244,15 +211,15 @@ export default function MovieDetailsScreen() {
             Alert.alert("Sucesso", "Sua avaliação foi enviada!");
         }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Erro ao enviar avaliação:", error);
-        alert("Erro ao enviar avaliação. Tente novamente.");
+        alert(error.message || "Erro ao enviar avaliação. Tente novamente.");
     } finally {
         setIsSubmittingReview(false);
     }
   };
 
-  // Puxando os comentários reais do banco de dados do filme
+  // --- MEMOS PARA RENDERIZAÇÃO ---
   const currentMovieReviews = useMemo(() => {
     return movie?.comentarios || [];
   }, [movie?.comentarios]);
@@ -339,7 +306,6 @@ export default function MovieDetailsScreen() {
         resizeMode="cover"
       />
 
-      {/* Espaço extra (paddingBottom) para a Navbar não cobrir o final */}
       <ScrollView contentContainerStyle={[movieStyle.detailsScrollContent, {paddingBottom: 180 }]} showsVerticalScrollIndicator={false} bounces={false}>
         <View style={movieStyle.detailsPosterWrapper}>
           <Image source={{ uri: movie.image }} style={movieStyle.detailsPoster} resizeMode="cover" />
@@ -380,7 +346,6 @@ export default function MovieDetailsScreen() {
           <View style={movieStyle.detailsSectionGrey}>
             <Text style={textStyle.detailsSectionTitle}>Sua Avaliação</Text>
             
-            {/* Estrelas Interativas */}
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 20 }}>
                 {[1, 2, 3, 4, 5].map((star) => (
                     <TouchableOpacity key={star} onPress={() => setUserRating(star)} style={{ paddingHorizontal: 5 }}>
@@ -421,9 +386,9 @@ export default function MovieDetailsScreen() {
                         key={rev.id || index.toString()} 
                         review={{
                             ...rev,
-                            name: rev.user || rev.name,
+                            name: rev.user || rev.author || rev.name,
                             avatar: rev.profilePic || rev.avatar,
-                            content: rev.comment || rev.content
+                            content: rev.comment || rev.text || rev.content
                         }} 
                     />
                 ))}

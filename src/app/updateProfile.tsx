@@ -14,7 +14,7 @@ import { useUser } from '@/contexts/UserContext';
 import { auth, db } from '@/config/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { uploadUserPhoto, ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
-import { User } from '@/types/user';
+import { User } from '@/models/user';
 
 const { height } = Dimensions.get("window");
 

@@ -1,6 +1,6 @@
 export type CommentStatus = 'Pendente' | 'Aprovado' | 'Recusado' | 'Arquivado';
 
-export interface Comment {
+export interface IComment {
   id: string;
   author: string;
   rating: number;

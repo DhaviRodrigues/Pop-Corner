@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { commentModerationStyle as S } from '@/styles/commentmoderation';
 import { StarRating } from '@/components/StarRating';
 import { StatusBadge } from '@/components/StatusBadge';
-import { Comment } from '@/types/comment';
+import { Comment } from '@/models/comment';
 
 interface CommentCardProps {
   comment: Comment;

@@ -12,7 +12,7 @@ import BottomNavbar from "@/components/Navbar";
 import { ProfileIcon } from "@/components/ProfileIcon";
 import { UserPipoka } from "@/components/UserPipoka";
 import { useUser } from "@/contexts/UserContext";
-import { User } from '@/types/user';
+import { User } from '@/models/user';
 import { miscStyle } from "@/styles/misc";
 import { profileStyle } from "@/styles/profile";
 import { textStyle } from "@/styles/text";

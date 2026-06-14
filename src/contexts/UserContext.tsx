@@ -1,62 +1,51 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { User } from '@/types/user';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { User } from '@/models/user';
+import { fetchUserData } from '@/services/userservice';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/config/firebase';
 
-interface UserContextType {
+interface AuthContextType {
   user: User | null;
-  setUser: (user: User | null) => void;
-  isLoading: boolean; // Adicionado para sabermos se o app está checando o F5
-  logout: () => Promise<void>; // Mudou para Promise porque o Firebase desloga de forma assíncrona
+  loading: boolean;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  refreshUser: () => Promise<void>;
 }
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-export function UserProvider({ children }: { children: ReactNode }) {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Começa como true enquanto checa o cache
-  const auth = getAuth();
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      try {
-        if (firebaseUser) {
-          const updatedUser = await User.fetchUserData();
-          setUser(updatedUser);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Erro ao sincronizar usuário pós-F5:", error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const logout = async () => {
+  // Força uma nova busca ao banco de dados e sincroniza o estado global em memória
+  const refreshUser = async () => {
     try {
-      await auth.signOut();
+      const userInstance = await fetchUserData();
+      setUser(userInstance);
     } catch (error) {
-      console.warn("Erro ao deslogar do Firebase:", error);
-    } finally {
-      setUser(null);
+      console.error("Erro ao sincronizar dados do usuário no contexto:", error);
     }
   };
 
-  return (
-    <UserContext.Provider value={{ user, setUser, isLoading, logout }}>
-      {children}
-    </UserContext.Provider>
-  );
-}
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const userInstance = await fetchUserData();
+        setUser(userInstance);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
 
-export function useUser() {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
-}
+    return unsubscribe;
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user, loading, setUser, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => useContext(AuthContext);

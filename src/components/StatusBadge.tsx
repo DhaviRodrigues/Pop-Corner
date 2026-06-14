@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { commentModerationStyle as S } from '@/styles/commentmoderation';
-import { CommentStatus } from '@/types/comment';
+import { CommentStatus } from '@/models/comment';
 
 const STATUS_COLOR: Record<CommentStatus, string> = {
   Pendente: '#E67E22',
