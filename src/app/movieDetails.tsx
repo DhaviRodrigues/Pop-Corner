@@ -61,7 +61,7 @@ export default function MovieDetailsScreen() {
     }
     try {
       setIsSavingWatchlist(true);
-      const result = await addMovieToWatchlist((user as any).id, movie.id);
+      const result = await addMovieToWatchlist(user.id, movie.id);
       
       if (!result.valid) {
         setPopupMessage(result.error || 'Erro ao adicionar à watchlist.');
@@ -95,7 +95,7 @@ export default function MovieDetailsScreen() {
     }
     try {
       setIsSavingWatchlist(true);
-      const result = await removeMovieFromWatchlist((user as any).id, movie.id);
+      const result = await removeMovieFromWatchlist(user.id, movie.id);
       
       if (!result.valid) {
         setPopupMessage(result.error || 'Erro ao remover da watchlist.');

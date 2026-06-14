@@ -3,7 +3,7 @@ import { IUser } from '@/types/IUser';
 
 export class User implements IUser {
   constructor(
-    public id: string | number,
+    public id: string,
     public name: string,
     public email: string,
     public profile_picture: string,
@@ -12,11 +12,8 @@ export class User implements IUser {
     public watchlist: WatchlistEntry[] = []
   ) {}
 
-  // --- Novo Método Adicionado ---
-  getId(): string | number { 
-    return this.id; 
-  }
 
+  getId(): string | number { return this.id; }
   getName(): string { return this.name; }
   getEmail(): string { return this.email; }
   getGenres(): string[] { return this.favorite_genres; }

@@ -531,6 +531,51 @@ badgeWrapper: {
     alignItems: 'center',
     zIndex: 2, 
   },
+  dropdownWrapper: {
+    position: 'relative',
+    width: width * 0.45,
+    zIndex: 9999,
+  },
+  dropButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.gold,
+    borderRadius: height * 0.008,
+    paddingHorizontal: height * 0.04,
+    paddingVertical: height * 0.01,
+    width: '100%',
+  },
+  dropButtonText: {
+    color: COLORS.primary,
+    fontSize: height * 0.018,
+    fontWeight: '500',
+    fontFamily: 'Poppins-SemiBold',
+  },
+  dropOptions: {
+    position: 'absolute',
+    top: '105%',
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.gold,
+    borderRadius: height * 0.008,
+    overflow: 'hidden',
+    zIndex: 10000, 
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 5,
+  },
+  dropOptionItem: {
+    width: '100%',
+    paddingHorizontal: height * 0.014,
+    justifyContent: 'center',
+  },
+  dropOptionText: {
+    color: COLORS.primary,
+    fontSize: height * 0.016,
+},
 });
 
 export const synopsisStyle = StyleSheet.create({

@@ -13,6 +13,7 @@ import {
   where
 } from "firebase/firestore";
 import { WatchlistEntry } from '@/models/userWatchlist';
+import { getMovieById } from "@/services/movieservice";
 import { User } from "@/models/user";
 import { IUser } from "@/types/IUser";
 
@@ -31,6 +32,15 @@ export interface AdminUserResult {
   id: string;
   name: string;
   email: string;
+}
+
+export interface WatchlistFetchResult {
+  id: string;
+  image: string | null;
+  title: string;
+  genres: string[];
+  releaseDate: any;
+  addedAt: string | number;
 }
 
 export async function fetchUserData(): Promise<User | null> {
@@ -76,24 +86,38 @@ export async function fetchUserData(): Promise<User | null> {
   }
 }
 
-export async function addMovieToWatchlist(userInstance: User, idFilme: string): Promise<UpdateResult> {
-  const localResult = userInstance.addMovieToLocalWatchlist(idFilme);
-  if (!localResult.valid) return localResult;
+export async function addMovieToWatchlist(userId: string, idFilme: string): Promise<UpdateResult> {
+  try {
+    const userInstance = await fetchUserData(); 
+    
+    if (!userInstance) {
+      return { valid: false, error: 'Perfil do usuário não encontrado ou deslogado.' };
+    }
 
-  const currentUser = auth.currentUser;
-  if (!currentUser) return { valid: false, error: 'Usuário não autenticado.' };
+    const localResult = userInstance.addMovieToLocalWatchlist(idFilme);
+    if (!localResult.valid) return localResult;
 
-  return updateUserWatchlist(currentUser.uid, userInstance.getWatchlist());
+    return updateUserWatchlist(userId, userInstance.getWatchlist());
+  } catch (error) {
+    console.error("Erro ao adicionar filme no service:", error);
+    return { valid: false, error: "Erro interno ao processar a requisição." };
+  }
 }
 
-export async function removeMovieFromWatchlist(userInstance: User, idFilme: string): Promise<UpdateResult> {
-  const localResult = userInstance.removeMovieFromLocalWatchlist(idFilme);
-  if (!localResult.valid) return localResult;
-
-  const currentUser = auth.currentUser;
-  if (!currentUser) return { valid: false, error: 'Usuário não autenticado.' };
-
-  return updateUserWatchlist(currentUser.uid, userInstance.getWatchlist());
+export async function removeMovieFromWatchlist(userId: string, idFilme: string): Promise<UpdateResult> {
+  try {
+    const userInstance = await fetchUserData(); 
+    
+    if (!userInstance) {
+      return { valid: false, error: 'Perfil do usuário não encontrado ou deslogado.' };
+    }
+    const localResult = userInstance.removeMovieFromLocalWatchlist(idFilme);
+    if (!localResult.valid) return localResult;
+    return updateUserWatchlist(userId, userInstance.getWatchlist());
+  } catch (error) {
+    console.error("Erro ao remover filme no service:", error);
+    return { valid: false, error: "Erro interno ao processar a requisição." };
+  }
 }
 
 export async function verifyAdmin(): Promise<AdminVerificationResult> {
@@ -301,5 +325,58 @@ export async function deleteUserProfile(): Promise<UpdateResult> {
     return { valid: true, error: "" };
   } catch (error) {
     return { valid: false, error: "Erro ao desativar/excluir perfil do usuário" };
+  }
+}
+export async function fetchWatchlistMoviesForView(): Promise<WatchlistFetchResult[]> {
+  try {
+    const userInstance = await fetchUserData();
+    if (!userInstance) return [];
+
+    const userWatchlist = userInstance.getWatchlist() ?? [];
+
+    const fetchedMovies = await Promise.all(
+      userWatchlist.map(async (watchlistItem, index) => {
+        const movieId = watchlistItem.getIdFilme();
+        const dataAdicionado = (watchlistItem as any).dataAdicionado || String(index);
+        
+        try {
+          const movieDataFromService = await getMovieById(movieId);
+          
+          if (movieDataFromService) {
+            return {
+              id: movieId,
+              image: movieDataFromService.image ?? null,
+              title: movieDataFromService.title ?? '',
+              // Captura e repassa as propriedades necessárias para a ordenação na View
+              genres: movieDataFromService.genres ?? movieDataFromService.generos ?? [],
+              releaseDate: movieDataFromService.releaseDate?.toDate?.() || movieDataFromService.releaseDate || 0,
+              addedAt: dataAdicionado,
+              missing: false,
+            };
+          }
+        } catch (error) {
+          console.warn(`Erro ao buscar filme ${movieId} no service de Watchlist:`, error);
+        }
+
+        // Objeto de fallback caso o filme falhe, mantendo a estrutura do tipo correspondente
+        return { 
+          id: movieId, 
+          image: null, 
+          title: '', 
+          genres: [], 
+          releaseDate: 0, 
+          addedAt: String(index), 
+          missing: true 
+        };
+      })
+    );
+
+    // Agora o filtro remove os itens inválidos e o TypeScript aceita o cast perfeitamente
+    const validMovies = fetchedMovies.filter(m => !m.missing && m.image);
+    
+    return validMovies as WatchlistFetchResult[];
+  } catch (error) {
+    console.error("Erro no fluxo do service da watchlist:", error);
+    return [];
   }
 }
