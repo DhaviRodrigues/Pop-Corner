@@ -1,7 +1,9 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { COLORS } from "@/constants/colors";
 import { profileStyle } from "@/styles/profile";
 import { Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
+
+const chevronIcon = require("@/screenAssets/arrows.png"); 
 
 type BoxDarkSelectionProps = {
   iconSource: ImageSourcePropType;
@@ -32,7 +34,12 @@ export function BoxDarkSelection({
           <Text style={[profileStyle.configDescription, { color }]}>{description}</Text>
         </View>
       </View>
-      <MaterialCommunityIcons name="chevron-right" size={24} color={color} />
+      
+      <Image 
+        source={chevronIcon} 
+        style={{ width: 24, height: 24, tintColor: color }} 
+      />
+      
     </TouchableOpacity>
   );
 }

@@ -1,6 +1,5 @@
 import { COLORS } from "@/constants/colors";
 import { buttonStyle } from "@/styles/button";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Dimensions, Text, Image, TouchableOpacity } from "react-native";
 
 // Captura da dimensão vertical do dispositivo para aplicação de escalas responsivas no ícone.

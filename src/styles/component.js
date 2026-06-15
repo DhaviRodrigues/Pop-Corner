@@ -345,7 +345,6 @@ export const componentStyle = StyleSheet.create({
   userCouponContainer: {
     position: "relative",
     marginVertical: height * 0.02,
-    width: "100%",
     alignSelf: "center",
   },
   userCouponTicketWrapper: {

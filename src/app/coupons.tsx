@@ -86,8 +86,7 @@ export default function Coupons() {
     }
   };
 
-  const renderCoupon = ({ item }: { item: any }) => {
-    // Adicionamos os nomes (camelCase) que vieram do formulário como plano B
+const renderCoupon = ({ item }: { item: any }) => {
     return (
       <StoreCoupon
         id={item.id}
@@ -102,7 +101,7 @@ export default function Coupons() {
         onEdit={handleEditCoupon}
         onDelete={handleDeleteCoupon}
         urlIcone={item.urlIcone}
-        onPurchase={handlePurchase}
+        onPurchase={() => handlePurchase(item)} 
       />
     );
   };

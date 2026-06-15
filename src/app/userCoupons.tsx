@@ -53,16 +53,19 @@ export default function CouponsScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ 
               paddingHorizontal: 20,
-              paddingBottom: 40, // Espaço extra para não cortar atrás da navbar
+              paddingBottom: 40,
               alignItems: 'center' 
             }}
             renderItem={({ item }) => (
               <UserCoupon 
                 title={item.title || "Cupom"}
+                type={item.type}
+                circleText={item.circleText}
                 discountAmount={String(item.discountAmount) || "0"}
                 description={item.description || "Sem descrição"}
                 status={item.status || "Inativo"}
                 validity={item.validity || "N/A"}
+                urlIcone={item.urlIcone}
               />
             )}
             ListEmptyComponent={

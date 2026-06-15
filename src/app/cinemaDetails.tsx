@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, FlatList, ActivityIndicator, Platform, TextInput, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-
 import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY';
 import { AdminEditButton } from '@/components/AdminEditButton';
@@ -192,7 +191,6 @@ export default function CinemaDetailsScreen() {
                           <Image source={{ uri: item.image }} style={cinemaDetailsStyle.moviePoster} />
                         ) : (
                           <View style={[cinemaDetailsStyle.moviePoster, { backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' }]}>
-                             <Feather name="image" size={30} color="#666" />
                           </View>
                         )}
                         <Text style={cinemaDetailsStyle.movieName} numberOfLines={2}>{item.nome}</Text>
@@ -230,7 +228,6 @@ export default function CinemaDetailsScreen() {
                 {cinemaComments.length > 0 ? cinemaComments.map((rev: any, index: number) => (
                     <View key={index} style={movieStyle.detailsReviewItem}>
                         <View style={movieStyle.detailsReviewAvatar}>
-                            {rev.profilePic ? <Image source={{ uri: rev.profilePic }} style={{ width: '100%', height: '100%', borderRadius: 25 }} /> : <Feather name="user" size={24} color="#2A0800" />}
                         </View>
                         <View style={movieStyle.detailsReviewContent}>
                             <Text style={textStyle.detailsReviewUser}>{rev.user || "Usuário"} <Text style={textStyle.detailsReviewStars}>{'★'.repeat(rev.rating || 5) + '☆'.repeat(5 - (rev.rating || 5))}</Text></Text>

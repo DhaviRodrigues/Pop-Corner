@@ -142,19 +142,19 @@ export class Coupon {
     };
   }
 
-  static fromFirestore(id: string, data: any): Coupon {
+static fromFirestore(id: string, data: any): Coupon {
     return new Coupon(
       id,
-      data.nome_cupom || "",
-      data.valor_pipokas || 0,
-      data.url_icone || "",
-      data.tipo_cupom as TipoCupom,
-      data.valor_beneficio ?? null,
-      data.descricao_produto || "",
-      data.validade_pos_resgate || 0,
-      data.is_tempo_limitado || false,
-      data.data_expiracao_resgate ? data.data_expiracao_resgate.toDate() : null,
-      data.quantidade_disponivel !== undefined ? data.quantidade_disponivel : null
+      data.nome_cupom || data.nome || data.title,              
+      data.valor_pipokas || data.valorPipokas || data.pipokaCost || 0,
+      data.url_icone || data.urlIcone || "",
+      (data.tipo_cupom || data.tipo || data.type) as TipoCupom, 
+      data.valor_beneficio ?? data.valorBeneficios ?? data.circleText ?? null,
+      data.descricao_produto || data.observacoes || data.description || "",
+      Number(data.validade_pos_resgate || data.tempoValidade) || 0, 
+      data.is_tempo_limitado || data.temporaria || false,
+      data.data_expiracao_resgate ? data.data_expiracao_resgate.toDate() : (data.dataExpiracao?.toDate ? data.dataExpiracao.toDate() : null),
+      data.quantidade_disponivel ?? data.qtdCupons
     );
   }
 }

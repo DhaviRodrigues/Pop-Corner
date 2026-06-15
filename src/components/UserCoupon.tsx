@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, useWindowDimensions } from "react-native";
+import { View, Text, Image, useWindowDimensions } from "react-native";
 import { COLORS } from "@/constants/colors";
 import { ButtonY } from "@/components/ButtonY";
 import { componentStyle } from "@/styles/component";
@@ -7,22 +7,41 @@ import { router, useRouter } from 'expo-router';
 
 type UserCouponProps = {
   title: string;
+  type: string;
+  circleText: string;
   discountAmount: string;
   description: string;
   status: "Ativo" | "Expirado" | "Inativo";
   validity: string;
+  urlIcone?: string;
   onShowCode?: () => void;
 };
 
-export function UserCoupon({title,discountAmount,description,status,validity,onShowCode,}: UserCouponProps) {
+export function UserCoupon({
+  title,
+  type = "",
+  circleText = "",
+  discountAmount,
+  description,
+  status,
+  validity,
+  urlIcone,
+  onShowCode,
+}: UserCouponProps) {
   const [showCode, setShowCode] = useState(false);
   const { height } = useWindowDimensions();
+
+  const isImageCoupon = 
+    (type?.toLowerCase() === 'dois por um') || 
+    (type?.toLowerCase() === 'produto grátis') || 
+    (type === 'DOIS_POR_UM') || 
+    (type === 'PRODUTO_GRATIS');
 
   const handleShowCode = () => {
       router.push({
       pathname: '/couponQRCode',
       params: {
-        id: "CUPOM2026", // ID ou código real do cupom
+        id: "CUPOM2026",
         titulo: title,
         desc: description,
         status: status,
@@ -42,11 +61,22 @@ export function UserCoupon({title,discountAmount,description,status,validity,onS
         <View style={componentStyle.userCouponLeftSection}>
           <Text style={componentStyle.userCouponLeftTitle}>{title}</Text>
           <View style={componentStyle.userCouponCircleGlow}>
-            <Text style={componentStyle.userCouponCircleText}>
-              {discountAmount}
-              <Text style={componentStyle.coupomCircleCurrency}> R$</Text>
-            </Text>
+            {isImageCoupon && urlIcone ? (
+              <Image 
+                source={{ uri: urlIcone }} 
+                style={{ width: '65%', height: '65%' }} 
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={componentStyle.userCouponCircleText}>
+                {circleText}
+                {(type === 'VALOR_FIXO' || type === 'valor fixo') && (
+                  <Text style={componentStyle.coupomCircleCurrency}> R$</Text>
+                )}
+              </Text>
+            )}
           </View>
+
           <Text style={componentStyle.userCouponLeftDescription}>*{description}</Text>
         </View>
         <View style={componentStyle.userCouponRightSection}>

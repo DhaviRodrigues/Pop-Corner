@@ -324,8 +324,7 @@ export async function fetchUserCoupons(userId: string) {
   try {
     const colRef = collection(db, `user_coupons/${userId}/coupons`);
     const snapshot = await getDocs(colRef);
-    
-    // Filtramos o documento 'init' de placeholder que criamos no createUserProfile
+
     return snapshot.docs
       .filter(doc => doc.id !== 'init')
       .map(doc => ({ id: doc.id, ...doc.data() }));

@@ -6,7 +6,6 @@ import { COLORS } from "@/constants/colors";
 import { componentStyle } from "@/styles/component";
 import { AdminEditButton } from "@/components/AdminEditButton";
 import { AdminDeleteButton } from "@/components/AdminDeleteButton";
-import FontAwesome5 from "@expo/vector-icons/build/FontAwesome5";
 
 type StoreCouponProps = {
   id?: string;
@@ -122,7 +121,6 @@ export function StoreCoupon({
   }
   return null;
 };
-  // Verifica se o cupom é de um tipo que deve renderizar a imagem
   const isImageCoupon = type.toLowerCase() === 'dois por um' || type.toLowerCase() === 'produto grátis' || type === 'DOIS_POR_UM' || type === 'PRODUTO_GRATIS';
 
  return (
@@ -151,13 +149,11 @@ export function StoreCoupon({
             <Text style={componentStyle.coupomTitle}>{title}</Text>
           <View style={componentStyle.coupomGlowContainer}>
             <View style={componentStyle.coupomCircle}>
-              {/* LÓGICA DE RENDERIZAÇÃO DA IMAGEM ADICIONADA AQUI */}
               {isImageCoupon && urlIcone ? (
                 <Image 
                   source={{ uri: urlIcone }} 
                   style={{ width: '65%', height: '65%' }} 
                   resizeMode="contain"
-                  // Adicione o onError para debug caso ela continue invisível
                   onError={(e) => console.log("Erro ao carregar imagem:", e.nativeEvent.error)}
                 />
               ) : (
@@ -179,7 +175,7 @@ export function StoreCoupon({
               w={height * 0.13}
               h={height * 0.06}
               textSize={height * 0.016}
-              onPress={() => onPurchase?.({ id, title, pipokaCost, circleText, description })}
+              onPress={() => onPurchase?.({ id, title, pipokaCost, circleText, description, type, urlIcone })}
             />
         </View>
       </BoxDark>

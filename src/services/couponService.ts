@@ -1,6 +1,7 @@
 import { db } from "@/config/firebase";
 import { addDoc, collection, serverTimestamp, getDocs, doc, getDoc, updateDoc, deleteDoc, runTransaction} from "firebase/firestore";
 import { UpdateResult } from "@/services/userservice";
+import {Coupon} from "@/models/coupon"
 
 export interface CouponPayload {
   nome: string;
@@ -186,34 +187,38 @@ export async function deleteCoupon(couponId: string): Promise<ServiceResult> {
   }
 }
 
-export async function purchaseCoupon(userId: string, coupon: any, userPipokas: number): Promise<UpdateResult> {
+export async function purchaseCoupon(userId: string, couponData: any, userPipokas: number): Promise<UpdateResult> {
   try {
-    if (userPipokas < coupon.pipokaCost) {
+    const coupon = Coupon.fromFirestore(couponData.id, couponData);
+    console.log("DEBUG COUPON DATA:", {
+      tipo: coupon.getTipoCupom(),
+      nome: coupon.getNomeCupom()
+    });
+    
+    if (userPipokas < coupon.getValorPipokas()) {
       return { valid: false, error: "Pipokas insuficientes!" };
     }
 
-    let dataValidade = "Indeterminado";
-    if (coupon.diasValidade && typeof coupon.diasValidade === 'number') {
-      const date = new Date();
-      date.setDate(date.getDate() + coupon.diasValidade);
-      dataValidade = date.toLocaleDateString('pt-BR');
-    }
-
+    const dataVencimento = coupon.calcularDataVencimentoUso(new Date());
     const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, { pipoka: userPipokas - coupon.pipokaCost });
+    await updateDoc(userRef, { pipoka: userPipokas - coupon.getValorPipokas() });
 
     const couponRef = collection(db, `user_coupons/${userId}/coupons`);
+    const tipoCupom = coupon.getTipoCupom();
+
     await addDoc(couponRef, {
-      title: coupon.title,
-      discountAmount: coupon.circleText,
-      description: coupon.description,
+      type: tipoCupom,
+      title: coupon.getNomeCupom(),
+      circleText: coupon.getValorBeneficio()?.toString(),
+      description: coupon.getDescricaoProduto(),
       status: "Ativo",
-      validity: dataValidade,
+      urlIcone: coupon.getUrlIcone(),
+      validity: dataVencimento.toLocaleDateString('pt-BR'),
       addedAt: serverTimestamp()
     });
 
     return { valid: true, error: "" };
   } catch (error) {
-    return { valid: false, error: "Erro ao realizar troca." };
-  }
-}
+    console.error("Erro crítico na compra:", error);
+    return { valid: false, error: `Erro na troca: ${error instanceof Error ? error.message : 'Dados do cupom inválidos.'}` };
+  }}
