@@ -6,19 +6,26 @@ import { MovieCard } from "@/components/MovieCard";
 import BottomNavbar from "@/components/Navbar";
 import { TitleBar } from "@/components/TitleBar";
 import { miscStyle } from "@/styles/misc";
-import { getAllMovies } from "@/services/movieservice";
+import { getHomeMovies } from "@/services/recommendationService";
 
 const { height } = Dimensions.get("window");
 
 export default function Home() {
-  const [movies, setMovies] = useState<any[]>([]);
+  const [recommendedMovies, setRecommendedMovies] = useState<any[]>([]);
+  const [discoverMovies, setDiscoverMovies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        const moviesList = await getAllMovies();
-        setMovies(moviesList);
+        const resultado = await getHomeMovies();
+        
+        if (resultado.sucesso) {
+          setRecommendedMovies(resultado.recomendados);
+          setDiscoverMovies(resultado.descobrir);
+        } else {
+          console.error(resultado.erro);
+        }
       } catch (error) {
         console.error("Erro ao carregar filmes na tela Home:", error);
       } finally {
@@ -48,7 +55,7 @@ export default function Home() {
             <Text style={miscStyle.sectionBadgeText}>Recomendações</Text>
           </View>  
           <FlatList
-            data={movies.slice(0, 4)} // Primeiros 4 filmes
+            data={recommendedMovies} 
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <MovieCard movie={item} />}
             horizontal
@@ -63,7 +70,7 @@ export default function Home() {
             <Text style={miscStyle.sectionBadgeText}>Descubra novos filmes</Text>
           </View>
           <FlatList
-            data={movies.slice(4)}
+            data={discoverMovies} 
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <MovieCard movie={item} />}
             horizontal
