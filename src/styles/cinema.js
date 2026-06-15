@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 import { Dimensions } from "react-native";
 import { Platform } from "react-native";
 import { COLORS } from "../constants/colors";
-const { height } = Dimensions.get("window");
+const { height, width } = Dimensions.get("window");
 
 export const style = StyleSheet.create({
 
@@ -232,6 +232,120 @@ export const style = StyleSheet.create({
     fontFamily: "Poppins-Bold",
     lineHeight: 38, 
   },
+    backIcon: { width: width * 0.12, height: width * 0.12 },
+  scrollContent: { paddingBottom: height * 0.2, paddingTop: height * 0.02 },
+  formContainer: {
+    width: width * 0.9,
+    alignSelf: "center",
+    alignItems: "center",
+  },
+  titleText: {
+    marginVertical: height * 0.03,
+    textAlign: "center",
+    fontFamily: "Poppins-Bold",
+  },
+  row: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "center",
+    gap: 10,
+  },
+  halfInput: { flex: 1 },
+  fullInput: { width: "100%", marginVertical: height * 0.015 },
+  grayBoxContainer: {
+    width: "100%",
+    backgroundColor: COLORS.textMuted,
+    borderRadius: 20,
+    padding: width * 0.04,
+    marginTop: height * 0.02,
+  },
+  grayBoxTitle: {
+    color: COLORS.black,
+    marginBottom: height * 0.015,
+    fontSize: width * 0.042,
+    fontFamily: "Poppins-Bold",
+  },
+  buttonWrapper: {
+    width: "60%",
+    alignSelf: "center",
+    marginTop: height * 0.01,
+  },
+  sessionRow: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: height * 0.015,
+  },
+  dropdownBox: {
+    flex: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    height: 50,
+  },
+  dropdownText: {
+    color: COLORS.textMuted,
+    fontSize: width * 0.035,
+    fontFamily: "Poppins-Regular",
+  },
+  dropdownIcon: {
+    color: COLORS.textMuted,
+    fontSize: width * 0.035,
+    fontFamily: "Poppins-Regular",
+  },
+  sessionSmallInput: { flex: 1.2 },
+  dropdownListaBox: {
+    position: "absolute",
+    top: 55,
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.red,
+    borderWidth: 2,
+    borderRadius: 10,
+    maxHeight: 120,
+    zIndex: 999,
+    elevation: 5,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEEEEE",
+  },
+  dropdownItemText: {
+    color: "#333333",
+    fontSize: width * 0.035,
+    fontFamily: "Poppins-Regular",
+  },
+  sessionsContainer: {
+    maxHeight: height * 0.15,
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 15,
+  },
+  sessionListText: {
+    color: COLORS.textMuted,
+    fontSize: width * 0.035,
+    marginBottom: 8,
+    fontFamily: "Poppins-Regular",
+  },
+  errorText: {
+    color: COLORS.gold,
+    fontSize: width * 0.035,
+    textAlign: "center",
+    marginBottom: 10,
+    fontFamily: "Poppins-Regular",
+  },
+    backButtonContainer: {
+    position: "absolute",
+    top: height * 0.06,
+    left: width * 0.05,
+    zIndex: 99,
+  },
 })
 
 export const popupStyles = {
@@ -278,5 +392,5 @@ export const popupStyles = {
     cursor: "pointer",
     width: "90%",
     fontSize: "12px",
-  },
+  }
 };

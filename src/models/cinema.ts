@@ -1,5 +1,6 @@
 import { ICinema, ICinemaPayload } from "@/types/ICinema";
 import { Session } from "./session";
+import { Comment } from "@/models/comment";
 
 export class Cinema implements ICinema {
   constructor(
@@ -12,8 +13,9 @@ export class Cinema implements ICinema {
     public filmesEmCartaz: string[],
     public sessoes: Session[],
     public avaliacao: number = 0,
-    public comentarios: any[] = [],
-    public isParceiro: boolean = false
+    public comments: Comment[] = [],
+    public isParceiro: boolean = false,
+    public qnt_avaliacoes: number = 0,
   ) {}
 
   // Getters estruturados (POO)
@@ -26,8 +28,9 @@ export class Cinema implements ICinema {
   getFilmesEmCartaz(): string[] { return this.filmesEmCartaz; }
   getSessoes(): Session[] { return this.sessoes; }
   getAvaliacao(): number { return this.avaliacao; }
-  getComentarios(): any[] { return this.comentarios; }
+  getComentarios(): Comment[] { return this.comments; }
   getIsParceiro(): boolean { return this.isParceiro; }
+  getQntAvaliacoes(): number { return this.qnt_avaliacoes; }
 
   /**
    * Fábrica Estática (Factory Pattern):

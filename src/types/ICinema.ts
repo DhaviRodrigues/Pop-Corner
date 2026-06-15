@@ -1,4 +1,5 @@
 import { Session } from "@/models/session";
+import { Comment } from "@/models/comment";
 
 export interface ICinema {
   nome: string;
@@ -10,8 +11,9 @@ export interface ICinema {
   filmesEmCartaz: string[];
   sessoes: Session[];
   avaliacao: number;
-  comentarios: any[];
+  comments: Comment[];
   isParceiro: boolean;
+  qnt_avaliacoes: number;
 }
 
 export interface ICinemaPayload {

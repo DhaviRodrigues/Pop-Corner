@@ -1,25 +1,25 @@
 import { WatchlistEntry } from '@/models/userWatchlist';
 import { IUser } from '@/types/IUser';
+import { Coupon } from '@/models/coupon'
 
 export class User implements IUser {
   constructor(
-    public id: string,
     public name: string,
     public email: string,
     public profile_picture: string,
     public favorite_genres: string[],
     public pipoka: number,
-    public watchlist: WatchlistEntry[] = []
+    public watchlist: WatchlistEntry[] = [],
+    public coupons: Coupon[] = []
   ) {}
-
-
-  getId(): string | number { return this.id; }
+  
   getName(): string { return this.name; }
   getEmail(): string { return this.email; }
   getGenres(): string[] { return this.favorite_genres; }
   getProfilePicture(): string { return this.profile_picture; }
   getPipoka(): number { return this.pipoka; }
   getWatchlist(): WatchlistEntry[] { return this.watchlist; }
+  getCoupons(): Coupon[] { return this.coupons; }
 
   setName(newName: string): void {
     this.name = newName;

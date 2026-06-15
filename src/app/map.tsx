@@ -122,23 +122,20 @@ export default function MapaWeb() {
   const urlFotoUsuario = user ? user.getProfilePicture() : require("@/screenAssets/icon-perfil.png"); 
   const urlPinFundo = require("@/screenAssets/pin-user.svg"); 
 
-  const createUserPin = (profilePicUrl: string) => {
-    return L.divIcon({
-      className: "custom-user-marker", 
-      html: `
-        <div style="position: relative; width: 55px; height: 70px; display: flex; justify-content: center;">
-          <img src="${urlPinFundo}" style="width: 100%; height: 100%; position: absolute; z-index: 1;" />
-          <img src="${profilePicUrl}" style="
-            width: 30px; height: 30px; border-radius: 50%; position: absolute; 
-            top: 7px; z-index: 2; object-fit: cover; border: 3px solid #000000;
-          " />
-        </div>
-      `,
-      iconSize: [55, 70],      
-      iconAnchor: [27.5, 70],  
-      popupAnchor: [0, -70],   
-    });
-  };
+  
+const createUserPin = (profilePicUrl: string) => {
+  return L.divIcon({
+    className: "custom-user-marker", 
+    html: `
+      <div style="width: 55px; height: 70px; display: flex; justify-content: center; align-items: center;">
+         <img src="${urlPinFundo}" style="position: absolute; width: 55px; height: 70px;" />
+         <img src="${profilePicUrl}" style="width: 30px; height: 30px; border-radius: 50%; border: 3px solid #000; position: absolute; top: 7px; object-fit: cover;" />
+      </div>
+    `,
+    iconSize: [55, 70],      
+    iconAnchor: [27.5, 70],  
+  });
+};
 
   const userLocationIcon = createUserPin(urlFotoUsuario);
 
@@ -151,7 +148,7 @@ export default function MapaWeb() {
         {userLocation && (
           <>
             <Circle center={userLocation} radius={accuracy || 50} pathOptions={{ color: '#ff0000', fillColor: '#330707', fillOpacity: 0.2 }} />
-            <Marker position={userLocation} icon={userLocationIcon}>
+            <Marker  key={urlFotoUsuario} position={userLocation} icon={userLocationIcon}>
               <Popup>Você está aqui</Popup>
             </Marker>
           </>
@@ -193,9 +190,16 @@ export default function MapaWeb() {
                     >
                       Ver Detalhes
                     </button>
-                    
                   </div>
-                  <img src={cinema.url_imagem} alt={cinema.nome} style={popupStyles.image as React.CSSProperties} />
+                  <img 
+                    src={cinema.url_imagem || cinema.urlImagem || cinema.imagem} 
+                    alt={cinema.nome} 
+                    style={popupStyles.image as React.CSSProperties}
+                    onError={(e) => {
+                      e.currentTarget.src = "https://via.placeholder.com/130x100?text=Sem+Foto";
+                      console.log("Falha ao carregar URL:", cinema.url_imagem);
+                    }}
+                  />
                 </div>
               </Popup>
             </Marker>

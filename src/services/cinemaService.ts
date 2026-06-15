@@ -1,5 +1,5 @@
 import { db } from "@/config/firebase";
-import { collection, addDoc, doc, getDoc, getDocs, deleteDoc, updateDoc, GeoPoint, Timestamp } from "firebase/firestore";
+import { doc, setDoc, collection, updateDoc, increment, DocumentReference, GeoPoint, Timestamp, addDoc, getDocs, deleteDoc, getDoc } from "firebase/firestore";
 import { Cinema } from "@/models/cinema";
 import { Session } from "@/models/session";
 
@@ -16,6 +16,9 @@ export interface CinemaServiceResult {
 
 export async function registerCinema(cinema: Cinema): Promise<CinemaResult> {
   try {
+    const cinemaDocRef = doc(collection(db, "cinemas"));
+    const reviewsDocRef = doc(db, "reviews_cinemas", cinemaDocRef.id);
+
     const firestoreData = {
       nome: cinema.getNome(),
       cidade: cinema.getCidade(),
@@ -23,23 +26,24 @@ export async function registerCinema(cinema: Cinema): Promise<CinemaResult> {
       url_imagem: cinema.getUrlImagem(),
       coordinates: new GeoPoint(cinema.getLatitude(), cinema.getLongitude()),
       created_at: Timestamp.now(),
-      nome_search: cinema.getNome().toLowerCase(),
       filmesEmCartaz: cinema.getFilmesEmCartaz(),
-      sessoes: cinema.getSessoes().map(sessao => ({
-        id_filme: sessao.getIdFilme(),
-        data: sessao.getData(),
-        horario: sessao.getHorario()
-      })),
-      avaliacao: cinema.getAvaliacao(),
-      comentarios: cinema.getComentarios(),
-      is_parceiro: cinema.getIsParceiro()
+      sessoes: cinema.getSessoes().map(s => ({ id_filme: s.getIdFilme(), data: s.getData(), horario: s.getHorario() })),
+      avaliacao: 0,
+      is_parceiro: cinema.getIsParceiro(),
+      reviews_ref: reviewsDocRef,
+      qnt_avaliacoes: cinema.getQntAvaliacoes()
     };
 
-    const docRef = await addDoc(collection(db, "cinemas"), firestoreData);
-    return { valid: true, error: "", id: docRef.id };
+    await setDoc(cinemaDocRef, firestoreData);
+
+    await setDoc(reviewsDocRef, {
+      cinemaId: cinemaDocRef.id,
+      initializedAt: Timestamp.now()
+    });
+
+    return { valid: true, error: "", id: cinemaDocRef.id };
   } catch (error) {
-    console.error("Erro ao cadastrar cinema:", error);
-    return { valid: false, error: "Ocorreu um erro ao salvar o cinema." };
+    return { valid: false, error: "Erro ao cadastrar." };
   }
 }
 
@@ -129,25 +133,42 @@ export async function getCinemaById(id: string): Promise<any | null> {
   try {
     const docRef = doc(db, "cinemas", id);
     const snap = await getDoc(docRef);
-    if (snap.exists()) {
-      const data = snap.data();
-      return {
-        id: snap.id,
-        ...data,
-        coordinates: data.coordinates ? {
-          latitude: data.coordinates.latitude,
-          longitude: data.coordinates.longitude
-        } : null,
-        sessoes: (data.sessoes || []).map((s: any) => ({
-          idFilme: s.id_filme,
-          data: s.data,
-          horario: s.horario
-        }))
-      };
+    if (!snap.exists()) return null;
+
+    const data = snap.data();
+    let viewComments: any[] = [];
+
+    const reviewsCollectionRef = collection(db, "reviews_cinemas", id, "reviews");
+    const reviewsSnap = await getDocs(reviewsCollectionRef);
+
+    for (const reviewDoc of reviewsSnap.docs) {
+        const c = reviewDoc.data();
+        let currentProfilePic = "";
+        
+        if (c.user_ref) {
+          const userSnap = await getDoc(c.user_ref) as any;
+          if (userSnap.exists()) {
+            currentProfilePic = userSnap.data().profile_picture || "";
+          }
+        }
+      
+      viewComments.push({
+        id: reviewDoc.id,
+        user: c.author || "Usuário",
+        rating: c.rating || 0,
+        comment: c.text || "",
+        createdAt: c.createdAt ? c.createdAt.toDate().toISOString() : new Date().toISOString(),
+        profilePic: currentProfilePic
+      });
     }
-    return null;
+
+    return {
+      id: snap.id,
+      ...data,
+      comentarios: viewComments
+    };
   } catch (error) {
-    console.error("Erro ao buscar cinema por ID no service:", error);
+    console.error("Erro ao buscar cinema:", error);
     return null;
   }
 }

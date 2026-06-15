@@ -1,5 +1,5 @@
 import { db } from "@/config/firebase";
-import { collection, getDocs, query, orderBy, addDoc, doc, getDoc, deleteDoc, Timestamp } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, doc, getDoc, deleteDoc, Timestamp, setDoc, DocumentReference } from "firebase/firestore";
 import { Movie } from "@/models/movie";
 import { Comment } from "@/models/comment";
 
@@ -18,6 +18,10 @@ export async function registerMovie(payload: any): Promise<MovieServiceResult> {
       ? payload.tags.split(',').map((g: string) => g.trim().toUpperCase()) 
       : [];
       
+    const movieDocRef = doc(collection(db, "movies"));
+    const movieId = movieDocRef.id;
+    const reviewsDocRef = doc(db, "reviews_movies", movieId);
+
     const computedYear = payload.year || new Date().getFullYear();
 
     const movieInstance = Movie.createMovie({
@@ -47,12 +51,18 @@ export async function registerMovie(payload: any): Promise<MovieServiceResult> {
       ratingCount: movieInstance.getRatingCount(),
       synopsis: movieInstance.getSynopsis(),
       created_at: Timestamp.fromDate(movieInstance.getCreatedAt()),
-      comments: []
+      comments: [],
+      reviews_ref: reviewsDocRef
     };
 
-    const docRef = await addDoc(collection(db, "movies"), firestoreMovieData);
+    await setDoc(movieDocRef, firestoreMovieData);
 
-    return { valid: true, error: "", id: docRef.id };
+    await setDoc(reviewsDocRef, {
+      movieId: movieId,
+      initializedAt: Timestamp.now()
+    });
+
+    return { valid: true, error: "", id: movieDocRef.id };
   } catch (error) {
     console.error("Erro na camada de serviço ao cadastrar filme:", error);
     return { valid: false, error: "Falha ao registrar o filme no banco de dados." };
@@ -71,18 +81,45 @@ export async function getMovieById(id: string): Promise<any | null> {
 
     const data = docSnap.data();
 
-    const instancedComments = (data.comments || []).map((c: any) => 
-      Comment.createComment({
-        id: c.id,
-        author: c.author || c.user || "Usuário",
-        rating: c.rating,
-        movie: c.movie || id,
+    let instancedComments: Comment[] = [];
+    let viewComments: any[] = []; 
+    const reviewsCollectionRef = collection(db, "reviews_movies", id, "reviews");
+    const reviewsSnap = await getDocs(reviewsCollectionRef);
+
+    for (const reviewDoc of reviewsSnap.docs) {
+        const c = reviewDoc.data();
+        let currentProfilePic = "";
+        
+        if (c.user_ref) {
+          const userSnap = await getDoc(c.user_ref);
+          if (userSnap.exists()) {
+            const userData = userSnap.data() as any; 
+            currentProfilePic = userData.profile_picture || "";
+        }
+      };
+      
+      const commentModel = Comment.createComment({
+        id: reviewDoc.id,
+        author: c.author || "Usuário",
+        rating: c.rating || 0,
+        movie: id,
         cinema: c.cinema || "",
-        date: c.date || c.createdAt,
-        text: c.text || c.comment,
+        date: c.date || (c.createdAt ? c.createdAt.toDate().toISOString() : new Date().toISOString()),
+        text: c.text || "",
         status: c.status || 'Aprovado'
-      })
-    );
+      });
+
+      instancedComments.push(commentModel);
+
+      viewComments.push({
+        id: commentModel.getId(),
+        user: commentModel.getAuthor(),
+        rating: commentModel.getRating(),
+        comment: commentModel.getText(),
+        createdAt: commentModel.getDate(),
+        profilePic: currentProfilePic
+      });
+    }
 
     const movieModel = Movie.createMovie({
       title: data.title,
@@ -111,13 +148,7 @@ export async function getMovieById(id: string): Promise<any | null> {
       rating: movieModel.getRating(),
       ratingCount: movieModel.getRatingCount(),
       synopsis: movieModel.getSynopsis(),
-      comentarios: movieModel.getAllComments().map(c => ({
-        id: c.getId(),
-        user: c.getAuthor(),
-        rating: c.getRating(),
-        comment: c.getText(),
-        createdAt: c.getDate()
-      }))
+      comentarios: viewComments 
     };
   } catch (error) {
     console.error("Erro ao buscar filme por ID:", error);

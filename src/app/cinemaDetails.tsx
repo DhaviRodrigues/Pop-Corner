@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, FlatList, ActivityIndicator, Platform, TextInput } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, FlatList, ActivityIndicator, Platform, TextInput, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons'; 
 import BottomNavbar from '@/components/Navbar';
@@ -8,7 +8,8 @@ import { AdminEditButton } from '@/components/AdminEditButton';
 import { AdminDeleteButton } from '@/components/AdminDeleteButton';
 import { BackButton } from '@/components/BackButton';
 import { useAuth } from '@/contexts/UserContext';
-import { getCinemaById, deleteCinema, updateCinemaReviews } from '@/services/cinemaService';
+import { getCinemaById, deleteCinema } from '@/services/cinemaService';
+import { addReviewToCinema } from '@/services/reviewservice';
 import { getMovieById } from '@/services/movieservice';
 import { movieStyle } from '@/styles/movie'; 
 import { textStyle } from '@/styles/text';
@@ -44,137 +45,71 @@ const DynamicStarsDisplay = ({ rating }: { rating: number }) => {
 export default function CinemaDetailsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const { user, refreshUser, isAdmin } = useAuth();
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
   
-  const { user, isAdmin } = useAuth();
-
   const [cinema, setCinema] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
   const [myReview, setMyReview] = useState('');
-  const [userRating, setUserRating] = useState(0); 
+  const [userRating, setUserRating] = useState(0);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  
   const [filmesCartazReal, setFilmesCartazReal] = useState<any[]>([]);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
-  useEffect(() => {
-    const fetchCinemaData = async () => {
-      if (!id) return;
-      try {
-        const data = await getCinemaById(id as string);
-        if (data) {
-          setCinema(data);
-        }
-      } catch (error) {
-        console.error("Erro ao carregar o cinema através do service:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchCinema = async () => {
+    if (!id) return;
+    const data = await getCinemaById(id as string);
+    setCinema(data);
+    setLoading(false);
+  };
 
-    fetchCinemaData();
-
+  useEffect(() => { 
+    fetchCinema(); 
     if (typeof window !== "undefined" && "geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
-        (err) => console.warn("Erro de geolocalização", err)
-      );
+        navigator.geolocation.getCurrentPosition(
+          (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+          (err) => console.warn("Erro de geolocalização", err)
+        );
     }
   }, [id]);
 
-  useEffect(() => {
-    const fetchFilmesDetalhados = async () => {
-      const listaFilmesIds = cinema?.filmesEmCartaz || cinema?.moviesInTheaters || [];
-      
-      if (listaFilmesIds.length > 0) {
-        try {
-          const listaFilmesBuscados = [];
-          for (const filmeId of listaFilmesIds) {
-            const dadosFilme = await getMovieById(filmeId);
-            if (dadosFilme) {
-              let pathImg = dadosFilme.image || dadosFilme.url_imagem || dadosFilme.poster_path || null;
-              if (pathImg && pathImg.startsWith('/')) {
-                 pathImg = `https://image.tmdb.org/t/p/w500${pathImg}`;
-              }
-              const movieTitle = dadosFilme.title || dadosFilme.titulo || dadosFilme.nome || "Filme sem título";
-
-              listaFilmesBuscados.push({
-                id: filmeId,
-                nome: movieTitle,
-                image: pathImg
-              });
-            }
-          }
-          setFilmesCartazReal(listaFilmesBuscados);
-        } catch (error) {
-          console.error("Erro ao carregar os filmes do cartaz pelo service:", error);
-        }
-      } else {
-        setFilmesCartazReal([]);
-      }
-    };
-
-    fetchFilmesDetalhados();
-  }, [cinema]);
-
-  const handleDeleteCinema = async (password: string) => {
-    if (!isAdmin) {
-      throw new Error("Not authorized");
-    }
-
-    try {
-      const result = await deleteCinema(id as string, password);
-      if (result.valid) {
-        router.replace('/cinemas');
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error("Erro ao deletar via service:", error);
-      throw error;
-    }
-  };
-
   const handleSubmitReview = async () => {
-    if (userRating === 0 || !myReview.trim() || !user) return;
+  if (!user || userRating === 0 || !myReview.trim()) return;
 
-    try {
+  try {
         setIsSubmittingReview(true);
         
-        const userName = typeof (user as any)?.getName === 'function' ? (user as any).getName() : ((user as any)?.name || "Usuário");
-        const userPic = typeof (user as any)?.getProfilePicture === 'function' ? (user as any).getProfilePicture() : ((user as any)?.profile_picture || "");
+        const userName = (user as any)?.name || "Usuário"; 
 
-        const newComment = { 
-          user: userName, 
-          profilePic: userPic, 
-          rating: userRating, 
-          comment: myReview.trim(), 
-          createdAt: new Date().toISOString() 
+        const reviewPayload = {
+            author: userName,
+            rating: userRating,
+            text: myReview.trim(),
+            date: new Date().toISOString()
         };
-        
-        const currentComments = cinema.comentarios || cinema.comments || [];
-        const updatedComments = [newComment, ...currentComments]; 
-        
-        const totalRating = updatedComments.reduce((acc, curr) => acc + curr.rating, 0);
-        const newAverage = totalRating / updatedComments.length;
 
-        // Delega a atualização do documento e cálculos de média para o cinemaService
-        const result = await updateCinemaReviews(id as string, updatedComments, newAverage);
+        const result = await addReviewToCinema(id as string, reviewPayload);
 
-        if (result.valid) {
-          setCinema({ ...cinema, comentarios: updatedComments, avaliacao: newAverage });
-          setMyReview('');
-          setUserRating(0);
-        } else {
-          console.error("Falha ao salvar comentários:", result.error);
+        if (!result.valid) {
+            setPopupMessage(result.error);
+            setPopupVisible(true);
+            return;
         }
 
-    } catch (error) {
-        console.error("Erro ao submeter avaliação para o service:", error);
+        setMyReview('');
+        setUserRating(0);
+        setPopupMessage("Avaliação enviada com sucesso! Você ganhou 250 pipokas!");
+        setPopupVisible(true);
+        
+        await refreshUser();
+    } catch (error: any) {
+        setPopupMessage("Erro ao enviar avaliação.");
+        setPopupVisible(true);
     } finally {
         setIsSubmittingReview(false);
     }
-  };
+};
 
   const navigateToMap = () => { router.push({ pathname: '/map', params: { focusId: id } }); };
 
@@ -208,7 +143,16 @@ export default function CinemaDetailsScreen() {
               {isAdmin && (
                   <>
                     <AdminEditButton onPress={() => router.push({ pathname: '/addTheater', params: { editId: id } })} />
-                    <AdminDeleteButton itemName="cinema" onConfirmDelete={handleDeleteCinema} />
+                    <AdminDeleteButton 
+                        onConfirmDelete={async (password: string) => {
+                            const result = await deleteCinema(id as string, password);
+                            if (!result.valid) {
+                                alert(result.error || "Erro ao deletar cinema.");
+                            } else {
+                                router.replace('/(tabs)/cinemas'); // Ou a rota correta de listagem
+                            }
+                        }} 
+                    />
                   </>
               )}
           </View>

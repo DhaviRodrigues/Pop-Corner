@@ -1,119 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import { logoStyle } from "@/styles/logo";
+import { miscStyle } from "@/styles/misc";
+import { textStyle } from "@/styles/text";
+import { componentStyle } from "@/styles/component";
+import { style} from "@/styles/cinema";
+import { COLORS } from "@/constants/colors";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
+  Alert,
   Image,
-  TextInput,
-  ScrollView,
-  StatusBar,
+  Text,
   useWindowDimensions,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
   Switch,
-  ActivityIndicator,
-} from 'react-native';
-import { miscStyle } from '@/styles/misc';
-import { textStyle } from '@/styles/text';
-import { COLORS } from '@/constants/colors';
-import { CouponTypeDropdown } from '@/components/CouponTypeDropdown';
-import BottomNavbar from '@/components/Navbar';
-import { createCoupon, getCoupon, updateCoupon } from '@/services/couponService';
-import { couponFormStyle, placeholderColor } from '@/styles/couponForm';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { BackButton } from '@/components/BackButton';
-import { ButtonY } from '@/components/ButtonY';
+} from "react-native";
 
-export default function CouponFormScreen() {
-  const router = useRouter();
-  const { width, height } = useWindowDimensions();
-  const { couponId } = useLocalSearchParams();
-  const isEditing = !!couponId;
+import { Session } from "@/models/session";
+import { ButtonY } from "../components/ButtonY";
+import BottomNavbar from "../components/Navbar";
+import { BackButton } from "@/components/BackButton";
 
-  const [nome, setNome] = useState('');
-  const [valorPipokas, setValorPipokas] = useState('');
-  const [urlIcone, setUrlIcone] = useState('');
-  const [tipo, setTipo] = useState('');
-  const [valorBeneficios, setValorBeneficios] = useState('');
-  const [dataExpiracao, setDataExpiracao] = useState('');
-  const [tempoValidade, setTempoValidade] = useState('');
-  const [observacoes, setObservacoes] = useState('');
-  const [limitada, setLimitada] = useState(false);
-  const [temporaria, setTemporaria] = useState(false);
-  const [qtdCupons, setQtdCupons] = useState('');
-  const [loading, setLoading] = useState(isEditing);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [statusType, setStatusType] = useState<'success' | 'error'>('success');
+import { getCinemaById, saveOrUpdateCinema } from "@/services/cinemaService";
+import { getAllMovies } from "@/services/movieservice";
 
-  useEffect(() => {
-    if (isEditing && couponId) {
-      loadCouponData();
-    }
-  }, [couponId]);
-
-  const loadCouponData = async () => {
-    try {
-      const result = await getCoupon(couponId as string);
-      
-      if (!result.valid || !result.data) {
-        setStatusType('error');
-        setStatusMessage('Cupom não encontrado.');
-        setLoading(false);
-        return;
-      }
-
-      const data = result.data;
-      setNome(data.nome || data.nome_cupom || '');
-      setValorPipokas(String(data.valorPipokas || data.valor_pipokas || ''));
-      setUrlIcone(data.urlIcone || data.url_icone || '');
-      setTipo(data.tipo || data.tipo_cupom || '');
-      setValorBeneficios(String(data.valorBeneficios || data.valor_beneficio || ''));
-      setTempoValidade(String(data.tempoValidade || data.validade_pos_resgate || ''));
-      setObservacoes(data.observacoes || '');
-      setLimitada(data.limitada || data.is_limitada || false);
-      setTemporaria(data.temporaria || data.is_tempo_limitado || false);
-      setQtdCupons(String(data.qtdCupons || data.quantidade_disponivel || ''));
-      
-      if (data.dataExpiracao || data.data_expiracao_resgate) {
-        const dateField = data.dataExpiracao || data.data_expiracao_resgate;
-        const date = dateField.toDate?.() || new Date(dateField);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        setDataExpiracao(`${day}/${month}/${year}`);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar cupom:", error);
-      setStatusType('error');
-      setStatusMessage('Erro ao carregar cupom.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  function LocalInput({
+function LocalInput({
   text,
   value,
   onChangeText,
-  keyboardType = "default",
-  editable = true,
 }: {
   text: string;
   value: string;
   onChangeText: (v: string) => void;
-  keyboardType?: any;
-  editable?: boolean;
 }) {
   return (
-    <View 
-      style={[
-        couponFormStyle.inputWrapper, 
-        !editable ? couponFormStyle.inputDisabled : null
-      ]}
-    >
+    <View style={[componentStyle.inputContainer, { width: "100%", overflow: "hidden" }]}>
       <TextInput
         placeholder={text}
-        placeholderTextColor={placeholderColor}
-        keyboardType={keyboardType}
-        editable={editable}
-        style={couponFormStyle.inputText}
+        placeholderTextColor="#A9A9A9"
+        style={[
+          componentStyle.inputText,
+          {
+            flex: 1,
+            flexShrink: 1,
+            minWidth: 0,
+            width: "100%",
+            outlineStyle: "none",
+            fontFamily: "Poppins-Regular",
+          } as any,
+        ]}
         value={value}
         onChangeText={onChangeText}
       />
@@ -121,314 +58,363 @@ export default function CouponFormScreen() {
   );
 }
 
-  const validateForm = () => {
-    if (
-      !nome.trim() ||
-      !tipo.trim() ||
-      !valorPipokas.trim() ||
-      !valorBeneficios.trim() ||
-      !urlIcone.trim() ||
-      !tempoValidade.trim()
-    ) {
-      setStatusType('error');
-      setStatusMessage('Preencha todos os campos obrigatórios.');
-      return false;
-    }
+export default function CreateCinema() {
+  const router = useRouter();
+  const { height } = useWindowDimensions(); 
+  const { editId } = useLocalSearchParams();
 
-    if (temporaria && !dataExpiracao.trim()) {
-      setStatusType('error');
-      setStatusMessage('Informe a data de expiração quando a oferta for temporária.');
-      return false;
-    }
+  const [nome, setNome] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+  const [urlImagem, setUrlImagem] = useState("");
+  const [isParceiro, setIsParceiro] = useState(false);
 
-    if (Number.isNaN(Number(valorPipokas))) {
-      setStatusType('error');
-      setStatusMessage('Valor em Pipokas deve ser um número válido.');
-      return false;
-    }
+  const [searchMovieQuery, setSearchMovieQuery] = useState("");
+  const [availableMovies, setAvailableMovies] = useState<any[]>([]);
+  const [filmesEmCartaz, setFilmesEmCartaz] = useState<string[]>([]);
 
-    const isValidDateDMY = (s: string) => {
-      const trimmed = s.trim();
-      const match = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      if (!match) return false;
-      const day = Number(match[1]);
-      const month = Number(match[2]);
-      const year = Number(match[3]);
-      if (month < 1 || month > 12) return false;
-      const maxDay = new Date(year, month, 0).getDate();
-      if (day < 1 || day > maxDay) return false;
-      return true;
+  const [filmeSessao, setFilmeSessao] = useState("");
+  const [dataSessao, setDataSessao] = useState("");
+  const [horarioSessao, setHorarioSessao] = useState("");
+  const [dropdownAberto, setDropdownAberto] = useState(false);
+  const [sessoes, setSessoes] = useState<{ idFilme: string; data: string; horario: string }[]>([]);
+  const [erroSessao, setErroSessao] = useState("");
+  const [erroCinema, setErroCinema] = useState("");
+
+  const isCinemaPronto = !!(
+    nome.trim() &&
+    cidade.trim() &&
+    endereco.trim() &&
+    latitude.trim() &&
+    longitude.trim() &&
+    urlImagem.trim()
+  );
+
+  useEffect(() => {
+    const fetchMoviesAndCinema = async () => {
+      try {
+        const movies = await getAllMovies();
+        setAvailableMovies(movies);
+
+        if (editId) {
+          const data = await getCinemaById(editId as string);
+          if (data) {
+            setNome(data.nome || "");
+            setCidade(data.cidade || "");
+            setEndereco(data.endereco || "");
+            if (data.coordinates) {
+              setLatitude(String(data.coordinates.latitude || ""));
+              setLongitude(String(data.coordinates.longitude || ""));
+            }
+            setUrlImagem(data.url_imagem || data.imagem || "");
+            setIsParceiro(data.is_parceiro || data.isParceiro || false);
+            setFilmesEmCartaz(data.filmesEmCartaz || []);
+            setSessoes(data.sessoes || []);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      }
     };
+    fetchMoviesAndCinema();
+  }, [editId]);
 
-    if (temporaria && dataExpiracao && !isValidDateDMY(dataExpiracao)) {
-      setStatusType('error');
-      setStatusMessage('Data de Expiração inválida. Use o formato dd/mm/aaaa.');
-      return false;
+  const getMovieTitle = (movie: any) => {
+    if (!movie) return "Filme Desconhecido";
+    return movie.title || movie.nome || movie.titulo || movie.original_title || "Filme sem Título";
+  };
+
+  const getMovieImage = (movie: any) => {
+    if (!movie) return null;
+    const path = movie.image || movie.url_imagem || movie.imagem || movie.poster_path || movie.backdrop_path;
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    if (path.startsWith("/")) return `https://image.tmdb.org/t/p/w500${path}`;
+    return null;
+  };
+
+  const getMovieData = (id: string) => {
+    return availableMovies.find((m) => m.id === id);
+  };
+
+  const handleAdicionarSessao = () => {
+    setErroSessao("");
+    if (!filmeSessao || filmesEmCartaz.length === 0) {
+      setErroSessao("Selecione um filme válido do cartaz.");
+      return;
     }
-
-    if (limitada) {
-      if (!qtdCupons.trim()) {
-        setStatusType('error');
-        setStatusMessage('Informe a quantidade de cupons quando a oferta for limitada.');
-        return false;
-      }
-      if (Number.isNaN(Number(qtdCupons)) || Number(qtdCupons) <= 0) {
-        setStatusType('error');
-        setStatusMessage('Quantidade de cupons deve ser um número maior que zero.');
-        return false;
-      }
+    try {
+      Session.createSessao({
+        idFilme: filmeSessao,
+        data: dataSessao,
+        horario: horarioSessao,
+      });
+      setSessoes((prev) => [
+        ...prev,
+        { idFilme: filmeSessao, data: dataSessao, horario: horarioSessao },
+      ]);
+      setDataSessao("");
+      setHorarioSessao("");
+    } catch (error: any) {
+      setErroSessao(error.message);
     }
-
-    return true;
   };
 
   const handleConfirmar = async () => {
-    if (!validateForm()) {
+    setErroCinema("");
+    if (!isCinemaPronto) {
+      setErroCinema("Preencha todos os dados básicos.");
       return;
     }
 
-    setLoading(true);
-    setStatusMessage('');
-
-    let expDateObj: Date | null = null;
-    if (temporaria && dataExpiracao) {
-      const [dStr, mStr, yStr] = dataExpiracao.trim().split('/');
-      expDateObj = new Date(Number(yStr), Number(mStr) - 1, Number(dStr));
-    }
-
-    const couponData = {
-      nome: nome.trim(),
-      tipo: tipo.trim(),
-      valorPipokas: Number(valorPipokas),
-      valorBeneficios: valorBeneficios.trim(),
-      urlIcone: urlIcone.trim(),
-      tempoValidade: tempoValidade.trim(),
-      limitada,
-      temporaria,
-      observacoes: observacoes.trim(),
-      ...(temporaria && expDateObj ? { dataExpiracao: expDateObj } : {}),
-      ...(limitada ? { qtdCupons: Number(qtdCupons) } : {}),
-    };
-
     try {
-      if (isEditing && couponId) {
-        const result = await updateCoupon(couponId as string, couponData);
-        
-        if (!result.valid) {
-          setStatusType('error');
-          setStatusMessage(result.error || 'Erro ao atualizar o cupom.');
-          setLoading(false);
-          return;
-        }
-        
-        setStatusType('success');
-        setStatusMessage('Cupom atualizado com sucesso!');
-        
-        setTimeout(() => {
-          router.back();
-        }, 1500);
-      } else {
-        const result = await createCoupon(couponData);
-        
-        if (!result.valid) {
-          setStatusType('error');
-          setStatusMessage(result.error || 'Erro ao salvar o cupom.');
-          setLoading(false);
-          return;
-        }
+      const dadosCrus = {
+        nome,
+        cidade,
+        endereco,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        urlImagem,
+        filmesEmCartaz,
+        sessoes,
+        isParceiro,
+      };
 
-        setStatusType('success');
-        setStatusMessage('Cupom criado com sucesso!');
-        setNome('');
-        setValorPipokas('');
-        setUrlIcone('');
-        setTipo('');
-        setValorBeneficios('');
-        setDataExpiracao('');
-        setTempoValidade('');
-        setObservacoes('');
-        setLimitada(false);
-        setTemporaria(false);
-        setQtdCupons('');
-        
-        setTimeout(() => {
-          router.back();
-        }, 1500);
+      const success = await saveOrUpdateCinema(dadosCrus, editId as string);
+
+      if (success) {
+        Alert.alert("Sucesso!", editId ? "Cinema atualizado." : "Cinema cadastrado.");
+        if (router.canGoBack()) router.back();
+        else router.replace("/cinemas");
+      } else {
+        setErroCinema("Falha ao salvar o cinema. Verifique os dados e tente novamente.");
       }
-    } catch (error) {
-      console.error("Erro ao salvar cupom:", error);
-      setStatusType('error');
-      setStatusMessage('Erro ao salvar o cupom. Tente novamente.');
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      setErroCinema(error.message);
     }
   };
 
-return (
+  const filteredMovies = availableMovies.filter((m) => {
+    const title = getMovieTitle(m);
+    return title.toLowerCase().includes(searchMovieQuery.toLowerCase());
+  });
+
+  return (
     <View style={miscStyle.background}>
-      <StatusBar barStyle="light-content" backgroundColor="#922B21" />
+      <View style={style.backButtonContainer}>
+        <BackButton 
+          onPress={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace("/cinemas");
+          }}
+        />
+      </View>
 
-      {loading && isEditing ? (
-        <View style={miscStyle.center}>
-          <ActivityIndicator size="large" color="#FFFEB2" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={style.scrollContent}>
+        <View style={[miscStyle.center, { marginTop: height * 0.05 }]}>
+          <Image
+            source={require("../screenAssets/logo/full-logo.png")}
+            style={logoStyle.escudo}
+            resizeMode="contain"
+          />
         </View>
-      ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={couponFormStyle.scrollContent}
-        >
-          <View style={couponFormStyle.headerContainer}>
-            <Image
-              source={require('../../assets/images/Logo.png')}
-              style={couponFormStyle.logoImage}
-            />
+        <View style={style.formContainer}>
+          <Text style={[textStyle.outBoxMessage, style.titleText]}>
+            Escreva as Informações do Cinema
+          </Text>
+
+          <View style={style.row}>
+            <View style={style.halfInput}>
+              <LocalInput text="Nome" value={nome} onChangeText={setNome} />
+            </View>
+            <View style={style.halfInput}>
+              <LocalInput text="Cidade" value={cidade} onChangeText={setCidade} />
+            </View>
           </View>
 
-          <View style={couponFormStyle.formContainer}>
-            <Text style={[textStyle.outBoxMessage, couponFormStyle.titleText]}>
-              {isEditing ? 'Editar Cupom' : 'Escreva as Informações do Cupom'}
-            </Text>
+          <View style={style.fullInput}>
+            <LocalInput text="Endereço" value={endereco} onChangeText={setEndereco} />
+          </View>
 
-            <View style={couponFormStyle.fullInput}>
-              <LocalInput
-                text="Nome"
-                value={nome}
-                onChangeText={setNome}
+          <View style={style.row}>
+            <View style={style.halfInput}>
+              <LocalInput text="Latitude" value={latitude} onChangeText={setLatitude} />
+            </View>
+            <View style={style.halfInput}>
+              <LocalInput text="Longitude" value={longitude} onChangeText={setLongitude} />
+            </View>
+          </View>
+
+          <View style={style.fullInput}>
+            <LocalInput text="URL da Imagem (Link HTTP)" value={urlImagem} onChangeText={setUrlImagem} />
+            {urlImagem ? (
+              <Image
+                source={{ uri: urlImagem }}
+                style={{ width: "100%", height: 180, borderRadius: 12, marginTop: 15 }}
+                resizeMode="cover"
               />
-            </View>
-
-            <View style={couponFormStyle.row}>
-              <View style={couponFormStyle.halfInput}>
-                <LocalInput
-                  text="Valor em Pipokas"
-                  value={valorPipokas}
-                  onChangeText={setValorPipokas}
-                  keyboardType="numeric"
-                />
-              </View>
-              <View style={couponFormStyle.halfInput}>
-                <LocalInput
-                  text="URL do Ícone"
-                  value={urlIcone}
-                  onChangeText={setUrlIcone}
-                  keyboardType="url"
-                />
-              </View>
-            </View>
-
-            <View style={couponFormStyle.dropdownWrapper}>
-              <CouponTypeDropdown
-                value={tipo}
-                onSelect={setTipo}
-              />
-            </View>
-
-            <View style={couponFormStyle.fullInput}>
-              <LocalInput
-                text="Valor dos benefícios"
-                value={valorBeneficios}
-                onChangeText={setValorBeneficios}
-                keyboardType="numeric"
-              />
-            </View>
-
-            <View style={couponFormStyle.fullInput}>
-              <LocalInput
-                text="Quantidade de cupons"
-                value={qtdCupons}
-                onChangeText={setQtdCupons}
-                keyboardType="numeric"
-                editable={limitada}
-              />
-            </View>
-
-            <View style={couponFormStyle.row}>
-              <View style={couponFormStyle.halfInput}>
-                <LocalInput
-                  text="Data Exp. (dd/mm/aaaa)"
-                  value={dataExpiracao}
-                  onChangeText={setDataExpiracao}
-                  editable={temporaria}
-                />
-              </View>
-              <View style={couponFormStyle.halfInput}>
-                <LocalInput
-                  text="Tempo de Validade"
-                  value={tempoValidade}
-                  onChangeText={setTempoValidade}
-                />
-              </View>
-            </View>
-
-            <View style={couponFormStyle.sliderRow}>
-              <View style={couponFormStyle.sliderItem}>
-                <Text style={couponFormStyle.sliderLabel}>Limitada</Text>
-                <Switch
-                  value={limitada}
-                  onValueChange={(v) => {
-                    setLimitada(v);
-                    if (!v) setQtdCupons('');
-                  }}
-                  trackColor={{ false: "#555", true: COLORS.gold }}
-                  thumbColor={limitada ? COLORS.primary : "#f4f3f4"}
-                />
-              </View>
-              <View style={couponFormStyle.sliderItem}>
-                <Text style={couponFormStyle.sliderLabel}>Temporária</Text>
-                <Switch
-                  value={temporaria}
-                  onValueChange={(v) => {
-                    setTemporaria(v);
-                    if (!v) setDataExpiracao('');
-                  }}
-                  trackColor={{ false: "#555", true: COLORS.gold }}
-                  thumbColor={temporaria ? COLORS.primary : "#f4f3f4"}
-                />
-              </View>
-            </View>
-
-            <View style={couponFormStyle.grayBoxContainer}>
-              <Text style={couponFormStyle.grayBoxTitle}>Observações</Text>
-              <View style={couponFormStyle.textAreaWrapper}>
-                <TextInput
-                  style={couponFormStyle.textAreaInput}
-                  value={observacoes}
-                  onChangeText={setObservacoes}
-                  multiline
-                  placeholder="Digite as observações..."
-                  placeholderTextColor={placeholderColor}
-                />
-              </View>
-            </View>
-
-            {statusMessage ? (
-              <Text style={couponFormStyle.errorText}>
-                {statusMessage}
-              </Text>
             ) : null}
-
-            <ButtonY 
-               title={loading ? 'Enviando...' : isEditing ? 'Atualizar' : 'Confirmar'} 
-               onPress={handleConfirmar} 
-            />
-
           </View>
-        </ScrollView>
-      )}
 
+          <View style={{ flexDirection: "row", alignItems: "center", width: "100%", marginTop: 5, marginBottom: 15, justifyContent: "space-between" }}>
+            <Text style={{ color: "#FFF", fontSize: 16, fontFamily: "Poppins-Regular" }}>
+              Cinema Parceiro Pop-Corner
+            </Text>
+            <Switch
+              value={isParceiro}
+              onValueChange={setIsParceiro}
+              trackColor={{ false: "#555", true: COLORS.gold }}
+              thumbColor={isParceiro ? COLORS.primary : "#f4f3f4"}
+              ios_backgroundColor="#3e3e3e"
+            />
+          </View>
+
+          <View style={[style.grayBoxContainer, !isCinemaPronto && { opacity: 0.4 }]} pointerEvents={isCinemaPronto ? "auto" : "none"}>
+            <Text style={style.grayBoxTitle}>Adicionar Filmes em Cartaz</Text>
+
+            <View style={{ width: "100%" }}>
+              <LocalInput text="Pesquisar filme..." value={searchMovieQuery} onChangeText={setSearchMovieQuery} />
+
+              <View style={{ width: "100%", height: 220, backgroundColor: "#FFF", borderRadius: 8, borderWidth: 0, borderColor: COLORS.primary, marginTop: 10, overflow: "hidden" }}>
+                <ScrollView nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+                  {filteredMovies.map((movie) => {
+                    const isAdded = filmesEmCartaz.includes(movie.id);
+                    const mImg = getMovieImage(movie);
+                    const mTitle = getMovieTitle(movie);
+
+                    return (
+                      <TouchableOpacity
+                        key={movie.id}
+                        style={{ flexDirection: "row", padding: 10, borderBottomWidth: 1, borderColor: "#EEE", alignItems: "center", backgroundColor: isAdded ? "#F9F9F9" : "#FFF" }}
+                        onPress={() => {
+                          if (!isAdded) setFilmesEmCartaz((prev) => [...prev, movie.id]);
+                          else setFilmesEmCartaz((prev) => prev.filter((id) => id !== movie.id));
+                        }}
+                      >
+                        {mImg ? (
+                          <Image source={{ uri: mImg }} style={{ width: 40, height: 60, borderRadius: 4, marginRight: 10 }} />
+                        ) : (
+                          <Image source={require("@/screenAssets/movie-tape.svg")} style={{ width: 40, height: 60, borderRadius: 4, marginRight: 10 }} />
+                        )}
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ color: "#000", fontFamily: "Poppins-Bold" }}>{mTitle}</Text>
+                          <Text style={{ color: "#666", fontSize: 12, fontFamily: "Poppins-Regular" }}>
+                            ★ {movie.rating || movie.avaliacao || movie.vote_average || 0}
+                          </Text>
+                        </View>
+                        {isAdded && (
+                          <Text style={{ color: COLORS.textMuted, fontSize: 12, fontFamily: "Poppins-Bold" }}>
+                            ✓ Adicionado
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                  {filteredMovies.length === 0 && (
+                    <Text style={{ textAlign: "center", padding: 20, color: "#999", fontFamily: "Poppins-Regular" }}>
+                      Nenhum filme encontrado no banco.
+                    </Text>
+                  )}
+                </ScrollView>
+              </View>
+            </View>
+
+            <View style={{ marginTop: 15, gap: 10 }}>
+              {filmesEmCartaz.map((id) => {
+                const movie = getMovieData(id);
+                if (!movie) return null;
+                const mImg = getMovieImage(movie);
+                const mTitle = getMovieTitle(movie);
+
+                return (
+                  <View key={id} style={{ flexDirection: "row", backgroundColor: "#FFF", padding: 8, borderRadius: 8, alignItems: "center" }}>
+                    {mImg ? (
+                      <Image source={{ uri: mImg }} style={{ width: 35, height: 50, borderRadius: 4, marginRight: 10 }} />
+                    ) : (
+                      <Image source={require("@/screenAssets/movie-tape.svg")} style={{ width: 35, height: 50, borderRadius: 4, marginRight: 10 }} />
+                    )}
+                    <Text style={{ flex: 1, color: "#000", fontFamily: "Poppins-Bold" }}>{mTitle}</Text>
+                    <TouchableOpacity onPress={() => setFilmesEmCartaz((prev) => prev.filter((x) => x !== id))}>
+                      <Text style={{ color: "#B22300", padding: 5, fontFamily: "Poppins-Bold" }}>Remover</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={[style.grayBoxContainer, { zIndex: 50, elevation: 5 }, !isCinemaPronto && { opacity: 0.4 }]} pointerEvents={isCinemaPronto ? "auto" : "none"}>
+            <Text style={style.grayBoxTitle}>Adicionar Sessões</Text>
+
+            <View style={[style.sessionRow, { zIndex: 100, elevation: 10 }]}>
+              <View style={{ flex: 2, zIndex: 999, elevation: 15 }}>
+                <TouchableOpacity style={[componentStyle.inputContainer, style.dropdownBox]} onPress={() => setDropdownAberto(!dropdownAberto)}>
+                  <Text style={style.dropdownText} numberOfLines={1}>
+                    {filmeSessao ? getMovieTitle(getMovieData(filmeSessao)) : "Selecione..."}
+                  </Text>
+                  <Text style={style.dropdownIcon}>{dropdownAberto ? "▲" : "▼"}</Text>
+                </TouchableOpacity>
+
+                {dropdownAberto && filmesEmCartaz.length > 0 && (
+                  <ScrollView style={style.dropdownListaBox} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+                    {filmesEmCartaz.map((filmeId, index) => {
+                      const mTitle = getMovieTitle(getMovieData(filmeId));
+                      return (
+                        <TouchableOpacity
+                          key={index}
+                          style={style.dropdownItem}
+                          onPress={() => {
+                            setFilmeSessao(filmeId);
+                            setDropdownAberto(false);
+                          }}
+                        >
+                          <Text style={style.dropdownItemText}>{mTitle}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+              </View>
+
+              <View style={style.sessionSmallInput}>
+                <LocalInput text="Data" value={dataSessao} onChangeText={setDataSessao} />
+              </View>
+              <View style={style.sessionSmallInput}>
+                <LocalInput text="Hora" value={horarioSessao} onChangeText={setHorarioSessao} />
+              </View>
+            </View>
+            {erroSessao ? <Text style={style.errorText}>{erroSessao}</Text> : null}
+            <View style={[style.buttonWrapper, { zIndex: -1, elevation: 0 }]}>
+              <ButtonY title="Adicionar" onPress={handleAdicionarSessao} />
+            </View>
+          </View>
+
+          <View style={style.grayBoxContainer}>
+            <Text style={style.grayBoxTitle}>Sessões Atuais:</Text>
+            <ScrollView style={style.sessionsContainer} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
+              {sessoes.length === 0 ? (
+                <Text style={style.sessionListText}>Nenhuma sessão adicionada ainda.</Text>
+              ) : (
+                sessoes.map((sessao, index) => {
+                  const mTitle = getMovieTitle(getMovieData(sessao.idFilme));
+                  return (
+                    <Text key={index} style={style.sessionListText}>
+                      {mTitle} - Data: {sessao.data} - Horário: {sessao.horario}
+                    </Text>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+          {erroCinema ? <Text style={style.errorText}>{erroCinema}</Text> : null}
+          <View style={{ marginTop: height * 0.03 }}>
+            <ButtonY title="Confirmar" onPress={handleConfirmar} />
+          </View>
+        </View>
+      </ScrollView>
       <BottomNavbar />
-
-      {/* Mantive o BackButton aqui no final garantindo que ele não seja bloqueado */}
-      <BackButton 
-        style={couponFormStyle.backButtonContainer}
-        onPress={() => {
-          if (router.canGoBack()) {
-            router.back();
-          } else {
-            router.replace("/mycoupons"); 
-          }
-        }}
-      />
     </View>
   );
 }

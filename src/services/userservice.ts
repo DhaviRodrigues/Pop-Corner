@@ -69,13 +69,13 @@ export async function fetchUserData(): Promise<User | null> {
       }
 
       return new User(
-        currentUser.uid,
         userData.name || '',
         userData.email || '',
         userData.profile_picture || '',
         userData.favorite_genres || [],
         userData.pipoka || 0,
-        watchlistArr
+        watchlistArr,
+        userData.coupons || []
       );
     }
 

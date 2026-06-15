@@ -2,7 +2,6 @@ import { Comment } from '@/models/comment';
 import { IMoviePayload } from '@/types/IMoviePayload';
 
 export class Movie {
-  private comments: Comment[];
 
   constructor(
     private title: string,
@@ -16,7 +15,7 @@ export class Movie {
     private ratingCount: number = 0,
     private synopsis: string,
     private createdAt: Date = new Date(),
-    comments: Comment[] = []
+    private comments: Comment[] = []
   ) {
     this.comments = comments;
   }
