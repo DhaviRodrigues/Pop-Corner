@@ -19,22 +19,24 @@ export default function WatchlistScreen() {
   const [sortCriterion, setSortCriterion] = useState<string>('addition');
 
   useEffect(() => {
-    const loadWatchlistData = async () => {
-      try {
-        setLoadingMovies(true);
+  const loadWatchlistData = async () => {
+    if (!user?.uid) return; 
 
-        const moviesData = await fetchWatchlistMoviesForView();
-        setWatchlistMovies(moviesData);
-        
-      } catch (error) {
-        console.error("Erro ao carregar lista de filmes na View:", error);
-      } finally {
-        setLoadingMovies(false);
-      }
-    };
+    try {
+      setLoadingMovies(true);
 
-    loadWatchlistData();
-  }, [user]);
+      const moviesData = await fetchWatchlistMoviesForView(user.uid); 
+      setWatchlistMovies(moviesData);
+      
+    } catch (error) {
+      console.error("Erro ao carregar lista de filmes na View:", error);
+    } finally {
+      setLoadingMovies(false);
+    }
+  };
+
+  loadWatchlistData();
+}, [user]);
 
   const sortedMoviesWithAdd = useMemo(() => {
     let result = [...watchlistMovies];
@@ -89,7 +91,7 @@ export default function WatchlistScreen() {
           onPress={() => router.push('/movies')}
         >
           <Image
-            source={require('@/screenAssets/icons/button-add.svg')}
+            source={require('@/screenAssets/icons/button-add.png')}
             style={{ width: height * 0.06, height: height * 0.06 }}
           />
         </TouchableOpacity>

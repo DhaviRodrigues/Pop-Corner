@@ -25,7 +25,7 @@ export function ConfirmPopup({ visible, message, onClose, onConfirm }: Validatio
       <View style={componentStyle.popupOverlay}>
         <View style={componentStyle.popup}>
             <Image 
-            source={require('@/screenAssets/exclamation.svg')} 
+            source={require('@/screenAssets/exclamation.png')} 
             style={componentStyle.exclamationIcon} 
             />
           <Text style={componentStyle.popupText}>{message}</Text> 

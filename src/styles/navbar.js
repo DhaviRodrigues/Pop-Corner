@@ -62,6 +62,7 @@ export const navBarStyle = StyleSheet.create({
     paddingVertical: 5,
   },
   activeTabContent: {
+    top: height * 0.03,
     backgroundColor: COLORS.gold,
     width: height * 0.08,
     height: height * 0.08,
@@ -75,6 +76,7 @@ export const navBarStyle = StyleSheet.create({
     elevation: 6,
   },
   iconWrapper: {
+    top: height * 0.023,
     width: height * 0.06, 
     height: height * 0.06, 
     borderRadius: height * 0.03,
@@ -84,10 +86,9 @@ export const navBarStyle = StyleSheet.create({
   imageIcon: {
     width: height * 0.035, 
     height: height * 0.035, 
-    tintColor: COLORS.gold,
   },
   activeImageIcon: {
-    tintColor: COLORS.primary,
+    bottom: height * 0.02,
   },
   label: {
     fontSize: height * 0.01, 
@@ -96,6 +97,7 @@ export const navBarStyle = StyleSheet.create({
     marginTop: 2,
   },
   activeLabel: {
+    bottom: height * 0.02,
     color: COLORS.primary,
     fontFamily: 'Poppins-SemiBold',
 },

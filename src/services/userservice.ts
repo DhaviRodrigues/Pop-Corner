@@ -1,47 +1,17 @@
 import { auth, db } from "@/config/firebase";
 import { AuthError, deleteUser, signOut } from "firebase/auth";
 import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  serverTimestamp, 
-  query, 
-  getDocs, 
-  collection, 
-  where
+  doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, 
+  query, addDoc, getDocs, collection, where
 } from "firebase/firestore";
-import { WatchlistEntry } from '@/models/userWatchlist';
 import { getMovieById } from "@/services/movieservice";
 import { User } from "@/models/user";
 import { IUser } from "@/types/IUser";
 
-export interface UpdateResult {
-  valid: boolean;
-  error: string;
-}
-
-export interface AdminVerificationResult {
-  valid: boolean;
-  isAdmin: boolean;
-  error?: string;
-}
-
-export interface AdminUserResult {
-  id: string;
-  name: string;
-  email: string;
-}
-
-export interface WatchlistFetchResult {
-  id: string;
-  image: string | null;
-  title: string;
-  genres: string[];
-  releaseDate: any;
-  addedAt: string | number;
-}
+export interface UpdateResult { valid: boolean; error: string; }
+export interface AdminVerificationResult { valid: boolean; isAdmin: boolean; error?: string; }
+export interface AdminUserResult { id: string; name: string; email: string; }
+export interface WatchlistFetchResult { id: string; image: string | null; title: string; genres: string[]; releaseDate: any; addedAt: string | number; }
 
 export async function fetchUserData(): Promise<User | null> {
   try {
@@ -53,20 +23,8 @@ export async function fetchUserData(): Promise<User | null> {
 
     if (userSnapshot.exists()) {
       const userData = userSnapshot.data() as IUser;
-      let watchlistArr: WatchlistEntry[] = [];
-
-      try {
-        if (Array.isArray(userData.watchlist)) {
-          watchlistArr = userData.watchlist.map((w: any) => {
-            const idFilme = w.id_filme || w.idFilme || w.id || '';
-            const added = w.added_at || w.addedAt || w.dataAdicionado || w.added || '';
-            return WatchlistEntry.createEntry({ idFilme: String(idFilme), dataAdicionado: String(added) });
-          }).filter(Boolean);
-        }
-      } catch (e) {
-        console.warn('Erro ao converter watchlist do Firestore no Service:', e);
-        watchlistArr = [];
-      }
+      const watchlistPath = typeof userData.watchlist === 'string' ? userData.watchlist : `watchlist/${currentUser.uid}/filmes`;
+      const couponsPath = typeof userData.coupons === 'string' ? userData.coupons : `user_coupons/${currentUser.uid}/coupons`;
 
       return new User(
         userData.name || '',
@@ -74,51 +32,18 @@ export async function fetchUserData(): Promise<User | null> {
         userData.profile_picture || '',
         userData.favorite_genres || [],
         userData.pipoka || 0,
-        watchlistArr,
-        userData.coupons || []
+        watchlistPath,
+        couponsPath,
+        currentUser.uid
       );
     }
-
     return null;
   } catch (error) {
-    console.error("Erro ao buscar e instanciar dados do usuário:", error);
+    console.error("Erro ao buscar dados do usuário:", error);
     return null;
   }
 }
 
-export async function addMovieToWatchlist(userId: string, idFilme: string): Promise<UpdateResult> {
-  try {
-    const userInstance = await fetchUserData(); 
-    
-    if (!userInstance) {
-      return { valid: false, error: 'Perfil do usuário não encontrado ou deslogado.' };
-    }
-
-    const localResult = userInstance.addMovieToLocalWatchlist(idFilme);
-    if (!localResult.valid) return localResult;
-
-    return updateUserWatchlist(userId, userInstance.getWatchlist());
-  } catch (error) {
-    console.error("Erro ao adicionar filme no service:", error);
-    return { valid: false, error: "Erro interno ao processar a requisição." };
-  }
-}
-
-export async function removeMovieFromWatchlist(userId: string, idFilme: string): Promise<UpdateResult> {
-  try {
-    const userInstance = await fetchUserData(); 
-    
-    if (!userInstance) {
-      return { valid: false, error: 'Perfil do usuário não encontrado ou deslogado.' };
-    }
-    const localResult = userInstance.removeMovieFromLocalWatchlist(idFilme);
-    if (!localResult.valid) return localResult;
-    return updateUserWatchlist(userId, userInstance.getWatchlist());
-  } catch (error) {
-    console.error("Erro ao remover filme no service:", error);
-    return { valid: false, error: "Erro interno ao processar a requisição." };
-  }
-}
 
 export async function verifyAdmin(): Promise<AdminVerificationResult> {
   try {
@@ -233,12 +158,20 @@ export async function createUserProfile(
       profile_picture: '',
       pipoka: 0,
       uid: userId,
+      watchlist: `watchlist/${userId}/filmes`,
+      coupons: `user_coupons/${userId}/coupons`,
     });
+
+    const initDocRefWatchlist = doc(collection(db, `watchlist/${userId}/filmes`), 'init');
+    await setDoc(initDocRefWatchlist, { created_at: serverTimestamp(), isPlaceholder: true });
+
+    const initDocRefCoupons = doc(collection(db, `user_coupons/${userId}/coupons`), 'init');
+    await setDoc(initDocRefCoupons, { created_at: serverTimestamp(), isPlaceholder: true });
 
     return { valid: true, error: '' };
   } catch (error) {
     console.error('Erro ao criar documento do usuário:', error);
-    return { valid: false, error: 'Erro ao criar perfil do usuário.' };
+    return { valid: false, error: 'Erro ao criar perfil.' };
   }
 }
 
@@ -259,15 +192,14 @@ export async function updateUserProfileField(fieldsOb: Record<string, any>): Pro
   }
 }
 
-export async function updateUserWatchlist(userId: string, watchlist: WatchlistEntry[]): Promise<UpdateResult> {
+export async function updateUserWatchlist(userId: string, watchlistPath: string): Promise<UpdateResult> {
   try {
     const userDocRef = doc(db, 'users', userId);
-    const watchlistData = watchlist.map(item => item.toFirestore());
-    await setDoc(userDocRef, { watchlist: watchlistData }, { merge: true });
+    await updateDoc(userDocRef, { watchlist: watchlistPath }); 
     return { valid: true, error: '' };
   } catch (error) {
-    console.error('Erro ao atualizar watchlist do usuário:', error);
-    return { valid: false, error: 'Erro ao atualizar watchlist do usuário.' };
+    console.error('Erro ao atualizar caminho da watchlist:', error);
+    return { valid: false, error: 'Erro ao atualizar referência da watchlist.' };
   }
 }
 
@@ -327,56 +259,91 @@ export async function deleteUserProfile(): Promise<UpdateResult> {
     return { valid: false, error: "Erro ao desativar/excluir perfil do usuário" };
   }
 }
-export async function fetchWatchlistMoviesForView(): Promise<WatchlistFetchResult[]> {
+export async function addMovieToWatchlist(userId: string, idFilme: string): Promise<UpdateResult> {
+  if (!userId) return { valid: false, error: "Usuário não identificado." };
   try {
-    const userInstance = await fetchUserData();
-    if (!userInstance) return [];
-
-    const userWatchlist = userInstance.getWatchlist() ?? [];
-
-    const fetchedMovies = await Promise.all(
-      userWatchlist.map(async (watchlistItem, index) => {
-        const movieId = watchlistItem.getIdFilme();
-        const dataAdicionado = (watchlistItem as any).dataAdicionado || String(index);
-        
-        try {
-          const movieDataFromService = await getMovieById(movieId);
-          
-          if (movieDataFromService) {
-            return {
-              id: movieId,
-              image: movieDataFromService.image ?? null,
-              title: movieDataFromService.title ?? '',
-              // Captura e repassa as propriedades necessárias para a ordenação na View
-              genres: movieDataFromService.genres ?? movieDataFromService.generos ?? [],
-              releaseDate: movieDataFromService.releaseDate?.toDate?.() || movieDataFromService.releaseDate || 0,
-              addedAt: dataAdicionado,
-              missing: false,
-            };
-          }
-        } catch (error) {
-          console.warn(`Erro ao buscar filme ${movieId} no service de Watchlist:`, error);
-        }
-
-        // Objeto de fallback caso o filme falhe, mantendo a estrutura do tipo correspondente
-        return { 
-          id: movieId, 
-          image: null, 
-          title: '', 
-          genres: [], 
-          releaseDate: 0, 
-          addedAt: String(index), 
-          missing: true 
-        };
-      })
-    );
-
-    // Agora o filtro remove os itens inválidos e o TypeScript aceita o cast perfeitamente
-    const validMovies = fetchedMovies.filter(m => !m.missing && m.image);
-    
-    return validMovies as WatchlistFetchResult[];
+    const watchlistPath = `watchlist/${userId}/filmes`; 
+    await addDoc(collection(db, watchlistPath), { 
+      idFilme: idFilme, 
+      addedAt: serverTimestamp() 
+    });
+    return { valid: true, error: '' };
   } catch (error) {
-    console.error("Erro no fluxo do service da watchlist:", error);
+    console.error("Erro ao adicionar filme:", error);
+    return { valid: false, error: "Erro ao adicionar filme." };
+  }
+}
+
+
+export async function fetchWatchlistMoviesForView(userId: string): Promise<WatchlistFetchResult[]> {
+  try {
+    const snapshot = await getDocs(collection(db, `watchlist/${userId}/filmes`));
+    const validDocs = snapshot.docs.filter(doc => doc.id !== 'init');
+
+    return await Promise.all(validDocs.map(async (doc) => {
+      const data = doc.data();
+      const movie = await getMovieById(data.idFilme);
+      return { ...movie, id: data.idFilme };
+    }));
+  } catch (e) {
+    console.error("Erro ao buscar watchlist:", e);
     return [];
+  }
+}
+
+export async function removeMovieFromWatchlist(userId: string, idFilme: string): Promise<UpdateResult> {
+  try {
+    const colRef = collection(db, `watchlist/${userId}/filmes`);
+    const q = query(colRef, where("idFilme", "==", idFilme));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) return { valid: false, error: "Filme não encontrado." };
+    await deleteDoc(snapshot.docs[0].ref);
+    return { valid: true, error: '' };
+  } catch (error) {
+    console.error("Erro ao remover filme:", error);
+    return { valid: false, error: "Erro ao remover filme." };
+  }
+}
+
+export const checkIfMovieInWatchlist = async (userId: string, movieId: string) => {
+  try {
+
+    const colRef = collection(db, "watchlist", userId, "filmes");
+    const q = query(colRef, where("idFilme", "==", movieId));
+
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  } catch (error) {
+    console.error("Erro ao verificar watchlist:", error);
+    return false;
+  }
+};
+
+export async function fetchUserCoupons(userId: string) {
+  try {
+    const colRef = collection(db, `user_coupons/${userId}/coupons`);
+    const snapshot = await getDocs(colRef);
+    
+    // Filtramos o documento 'init' de placeholder que criamos no createUserProfile
+    return snapshot.docs
+      .filter(doc => doc.id !== 'init')
+      .map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (e) {
+    console.error("Erro ao buscar cupons:", e);
+    return [];
+  }
+}
+
+export async function addCouponToUser(userId: string, couponData: any) {
+  try {
+    const colRef = collection(db, `user_coupons/${userId}/coupons`);
+    await addDoc(colRef, {
+      ...couponData,
+      addedAt: serverTimestamp()
+    });
+    return { valid: true, error: '' };
+  } catch (error) {
+    return { valid: false, error: 'Erro ao resgatar cupom.' };
   }
 }

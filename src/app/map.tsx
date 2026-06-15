@@ -113,14 +113,14 @@ export default function MapaWeb() {
   };
 
   const customIcon = new L.Icon({
-    iconUrl: "https://raw.githubusercontent.com/DhaviRodrigues/Pop-Corner/e63d33c613bef08c923a14e758fd10eda1f1b608/src/screenAssets/pin-localizacao.svg",
+    iconUrl: "https://raw.githubusercontent.com/DhaviRodrigues/Pop-Corner/e63d33c613bef08c923a14e758fd10eda1f1b608/src/screenAssets/pin-localizacao.png",
     iconSize: [35, 45],
     iconAnchor: [17, 45],
     popupAnchor: [1, -34],
   });
 
   const urlFotoUsuario = user ? user.getProfilePicture() : require("@/screenAssets/icon-perfil.png"); 
-  const urlPinFundo = require("@/screenAssets/pin-user.svg"); 
+  const urlPinFundo = require("@/screenAssets/pin-user.png"); 
 
   
 const createUserPin = (profilePicUrl: string) => {

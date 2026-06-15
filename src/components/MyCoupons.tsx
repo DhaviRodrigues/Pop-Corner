@@ -19,7 +19,7 @@ export function MyCoupons({ onPress }: MyCouponsProps) {
             <Text style={componentStyle.coupomSubtitle}>Veja seus benefícios e descontos resgatados</Text>
           </View>
           <View style={componentStyle.coupomIconContainer}>
-            <Image style={componentStyle.coupomIcon} source={require('@/screenAssets/icons/ticket.svg')} />
+            <Image style={componentStyle.coupomIcon} source={require('@/screenAssets/icons/ticket.png')} />
           </View>
         </View>
       </View>

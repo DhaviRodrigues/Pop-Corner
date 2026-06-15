@@ -69,7 +69,7 @@ export function Pencil({ onPress, onPhotoSelecting, onPhotoSelected, isLoading =
         <ActivityIndicator size="small" color="#FFD60A" />
       ) : (
         <Image 
-          source={require('@/screenAssets/icons/pencil.svg')} 
+          source={require('@/screenAssets/icons/pencil.png')} 
           style={componentStyle.editButtonIcon} 
         />
       )}

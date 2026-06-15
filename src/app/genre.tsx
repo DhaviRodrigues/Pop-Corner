@@ -71,7 +71,6 @@ export default function Genre(){
                 return;
             }
 
-            // Se caiu aqui, o service retornou algum erro tratado (ex: e-mail já existe).
             setValidationMessage(result.error || "Falha ao concluir o cadastro.");
             setShowValidationPopup(true);
         } catch (error) {

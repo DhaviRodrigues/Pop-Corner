@@ -11,8 +11,7 @@ import { UserPipoka } from "@/components/UserPipoka";
 import { MovieCard } from '@/components/MovieCard';
 import { ButtonY } from '@/components/ButtonY';
 import { useAuth } from "@/contexts/UserContext";
-import { fetchUserData } from '@/services/userservice';
-import { getMovieById } from '@/services/movieservice';
+import { fetchUserData, fetchWatchlistMoviesForView, WatchlistFetchResult } from '@/services/userservice';
 import { miscStyle } from "@/styles/misc";
 import { profileStyle } from "@/styles/profile";
 import { textStyle } from "@/styles/text";
@@ -23,53 +22,39 @@ const cardWidth = SCREEN_WIDTH * 0.42;
 const cardHeight = cardWidth * 1.5;
 
 interface ProfileMovie {
-  id: string;
-  image: string;
+    id: string;
+    image: string;
 }
 
-export default function Profile(){
+const cardSpacing = height * 0.015;
+
+export default function Profile() {
     const { user, setUser, logout, loading: authLoading } = useAuth();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [recentMovies, setRecentMovies] = useState<ProfileMovie[]>([]);
-    
+
     useFocusEffect(
         useCallback(() => {
             if (authLoading) return;
-            
+
             const syncProfileAndWatchlist = async () => {
                 try {
                     const updatedUser = await fetchUserData();
                     if (updatedUser) {
                         setUser(updatedUser);
-                        const userWatchlist = updatedUser.getWatchlist() ?? [];
-
-                        const sortedWatchlist = [...userWatchlist].sort((a, b) => {
-                            const dateA = new Date(a.getDataAdicionado()).getTime();
-                            const dateB = new Date(b.getDataAdicionado()).getTime();
-                            return dateB - dateA; 
-                        });
-
-                        const top10Entries = sortedWatchlist.slice(0, 10);
-                        const fetchedMovies = await Promise.all(
-                            top10Entries.map(async (watchlistItem) => {
-                                const movieId = watchlistItem.getIdFilme();
-                                try {
-                                    const movieData = await getMovieById(movieId);
-                                    if (movieData) {
-                                        return {
-                                            id: movieId,
-                                            image: movieData.image ?? null,
-                                        };
-                                    }
-                                } catch (error) {
-                                    console.warn(`Erro ao buscar dados do filme ${movieId} via service no perfil:`, error);
-                                }
-                                return { id: movieId, image: null };
-                            })
-                        );
                         
-                        const validMovies = fetchedMovies.filter(m => m.image !== null) as ProfileMovie[];
+                        const userId = (updatedUser as any).id || (updatedUser as any).uid;
+                        const fetchedMovies = await fetchWatchlistMoviesForView(userId);
+                        
+                        // Filtra nulos e garante que a imagem seja tratada como string
+                        const validMovies = fetchedMovies
+                            .filter((m): m is (WatchlistFetchResult & { image: string }) => m.image !== null)
+                            .map(m => ({ 
+                                id: m.id, 
+                                image: m.image
+                            }));
+                                        
                         setRecentMovies(validMovies);
                     } else {
                         setUser(null);
@@ -81,41 +66,26 @@ export default function Profile(){
                     setIsLoading(false);
                 }
             };
-            
-            syncProfileAndWatchlist();
-        }, [authLoading])
-    );
 
-    const handleEditProfile = () => {
-        router.push('/updateProfile');
-    };
+        syncProfileAndWatchlist();
+    }, [authLoading])
+);
 
-    const handleChangePassword = () => {
-        router.push({
-            pathname: '/passwordConfirmation',
-            params: { from: 'profile' }
-        });
-    };
+    const handleEditProfile = () => router.push('/updateProfile');
+    const handleChangePassword = () => router.push({ pathname: '/passwordConfirmation', params: { from: 'profile' } });
 
     const handleLogout = async () => {
         try {
-            if (user && logout) {
-                await logout();
-            }
+            if (user && logout) await logout();
         } catch (error) {
-            console.warn('Erro ao deslogar na camada de serviço:', error);
+            console.warn('Erro ao deslogar:', error);
         } finally {
             if (setUser) setUser(null);
             router.replace('/');
         }
     };
 
-    const cardSpacing = height * 0.015;
-
-    const renderMovieCard = ({ item }: { item: ProfileMovie }) => (
-        <MovieCard movie={item} />
-    );
-
+    const renderMovieCard = ({ item }: { item: any }) => <MovieCard movie={item} />;
     return(
         <View style={miscStyle.background}>
         <ScrollView showsVerticalScrollIndicator={false} 
@@ -128,19 +98,19 @@ export default function Profile(){
                 <UserPipoka user={user} />
                 <Text style={textStyle.profileName}>{user?.getName()}</Text>
                 <Text style={[textStyle.message, { fontFamily: 'Poppins-Light' }]}>{user?.getEmail()}</Text>
-                <MyCoupons/>
+                <MyCoupons onPress={() => router.push('/userCoupons')}/>
                 
                 <BoxDark vw={0.75} padTop={height * 0.02}>
                     <Text style={profileStyle.configTitle}>Configurações</Text>
                     <BoxDarkSelection
-                        iconSource={require('@/screenAssets/icons/profile-icon.svg')}
+                        iconSource={require('@/screenAssets/icons/profile-icon.png')}
                         title="Editar Perfil"
                         description="Alterar Nome, Gêneros Preferidos, Foto de Perfil"
                         onPress={handleEditProfile}
                     />
 
                     <BoxDarkSelection
-                        iconSource={require('@/screenAssets/icons/password-icon.svg')}
+                        iconSource={require('@/screenAssets/icons/password-icon.png')}
                         title="Alterar Senha"
                         description="Melhore sua segurança"
                         onPress={handleChangePassword}
@@ -185,7 +155,7 @@ export default function Profile(){
                                         onPress={() => router.push('/movies')}
                                     >
                                         <Image
-                                            source={require('@/screenAssets/icons/button-add.svg')}
+                                            source={require('@/screenAssets/icons/button-add.png')}
                                             style={{ width: height * 0.06, height: height * 0.06 }}
                                         />
                                     </TouchableOpacity>

@@ -25,7 +25,7 @@ export function BackButton({ onPress, style, ...rest }: BackButtonProps) {
       {...rest}
     >
       <Image 
-        source={require("@/screenAssets/back-icon-buttom.svg")} 
+        source={require("@/screenAssets/back-icon-buttom.png")} 
         style={{ width: 40, height: 40 }} 
         resizeMode="contain"
       />

@@ -10,14 +10,33 @@ import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/UserContext";
 import { fetchCoupons, deleteCoupon } from "@/services/couponService";
 import { verifyAdmin } from "@/services/userservice";
+import { purchaseCoupon } from "@/services/couponService";
+import { UserPipoka } from "@/components/UserPipoka";
+import { ValidationPopup } from "@/components/ValidationPopup";
 
 export default function Coupons() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [couponsList, setCouponsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handlePurchase = async (coupon: any) => {
+  if (!user) return alert("Você precisa estar logado!");
+  
+  const userId = (user as any).uid || (user as any).id;
+  const userPipokas = user.pipoka || 0;
+
+  const result = await purchaseCoupon(userId, coupon, userPipokas);
+  
+  await refreshUser();
+  setPopupMessage(result.valid ? "Cupom resgatado com sucesso!" : result.error);
+  setShowPopup(true);
+};
 
   useEffect(() => {
     const loadData = async () => {
@@ -83,6 +102,7 @@ export default function Coupons() {
         onEdit={handleEditCoupon}
         onDelete={handleDeleteCoupon}
         urlIcone={item.urlIcone}
+        onPurchase={handlePurchase}
       />
     );
   };
@@ -97,13 +117,17 @@ export default function Coupons() {
 
   return (
     <SafeAreaView style={[movieStyle.filmesContainer, { flex: 1, backgroundColor: COLORS.primary }]}>
-      <View style={[movieStyle.filmesHeader, { position: 'relative' }]}>
+      <View style={[movieStyle.filmesHeader, { position: 'relative', paddingBottom: 10 }]}>
         <Image source={require("@/screenAssets/logo/full-logo.png")} style={movieStyle.filmesLogo} />
 
         {isAdmin && (
           <AdminAddButton onPress={() => router.push("/addCoupons")} />
         )}
       </View>
+      <View style={{ alignItems: 'center' }}>
+      <UserPipoka user={user} ></UserPipoka>
+      </View>
+
 
       {couponsList.length === 0 ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 }}>
@@ -126,6 +150,12 @@ export default function Coupons() {
                   </View>
                 ))}
             </View>
+
+            <ValidationPopup
+            visible={showPopup}
+            message={popupMessage}
+            onClose={() => setShowPopup(false)}
+          />
 
             <View style={{ flex: 1, marginLeft: 5 }}>
               {couponsList

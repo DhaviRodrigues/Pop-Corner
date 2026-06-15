@@ -20,7 +20,7 @@ export function Box({ vw, padTop, children }: BoxProps) {
   return (
     // Passamos o style como um array. Isso permite juntar as configurações fixas (bordas, cores) que vêm do componentStyle.box com as dimensões dinâmicas que acabamos de calcular.
     // O minHeight de 40% (0.4) da tela garante que a caixa não fique "esmagada" se tiver pouco texto dentro dela.
-    <View style={[componentStyle.box,{ width: boxWidth, minHeight: screenHeight * 0.4, paddingTop: padTop}]}>
+    <View style={[componentStyle.box,{ width: boxWidth, minHeight: screenHeight * 0.4 , paddingTop: padTop}]}>
       {/* O children renderiza o que quer que a gente jogue dentro da tag <Box> lá nas telas (inputs, textos, botões) */}
       {children}
     </View>

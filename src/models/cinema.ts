@@ -1,6 +1,5 @@
 import { ICinema, ICinemaPayload } from "@/types/ICinema";
 import { Session } from "./session";
-import { Comment } from "@/models/comment";
 
 export class Cinema implements ICinema {
   constructor(
@@ -13,12 +12,12 @@ export class Cinema implements ICinema {
     public filmesEmCartaz: string[],
     public sessoes: Session[],
     public avaliacao: number = 0,
-    public comments: Comment[] = [],
+    public comments: string, // Agora é uma string (caminho)
     public isParceiro: boolean = false,
-    public qnt_avaliacoes: number = 0,
+    public qnt_avaliacoes: number = 0 // Adicionado para manter consistência com o constructor
   ) {}
 
-  // Getters estruturados (POO)
+  // Getters estruturados
   getNome(): string { return this.nome; }
   getCidade(): string { return this.cidade; }
   getEndereco(): string { return this.endereco; }
@@ -28,14 +27,10 @@ export class Cinema implements ICinema {
   getFilmesEmCartaz(): string[] { return this.filmesEmCartaz; }
   getSessoes(): Session[] { return this.sessoes; }
   getAvaliacao(): number { return this.avaliacao; }
-  getComentarios(): Comment[] { return this.comments; }
+  getComentarios(): string { return this.comments; }
   getIsParceiro(): boolean { return this.isParceiro; }
   getQntAvaliacoes(): number { return this.qnt_avaliacoes; }
 
-  /**
-   * Fábrica Estática (Factory Pattern):
-   * Centraliza as regras de consistência de domínio de um Cinema antes de permitir sua instanciação.
-   */
   static createCinema(payload: ICinemaPayload): Cinema {
     const nomeLimpo = (payload.nome || '').trim();
     const cidadeLimpa = (payload.cidade || '').trim();
@@ -43,38 +38,20 @@ export class Cinema implements ICinema {
     const urlLimpa = (payload.urlImagem || '').trim() || "https://placehold.co/600x400/D9D9D9/A62103?text=Sem+Imagem";
 
     if (!nomeLimpo || !cidadeLimpa || !enderecoLimpo) {
-      throw new Error("Classe Cinema recusou a criação: Nome, Cidade e Endereço são obrigatórios.");
+      throw new Error("Nome, Cidade e Endereço são obrigatórios.");
     }
 
-    // Normalização das coordenadas geográficas
-    const lat = typeof payload.latitude === "string" 
-      ? parseFloat(payload.latitude.replace(',', '.')) 
-      : payload.latitude;
-      
-    const lng = typeof payload.longitude === "string" 
-      ? parseFloat(payload.longitude.replace(',', '.')) 
-      : payload.longitude;
+    const lat = typeof payload.latitude === "string" ? parseFloat(payload.latitude.replace(',', '.')) : payload.latitude;
+    const lng = typeof payload.longitude === "string" ? parseFloat(payload.longitude.replace(',', '.')) : payload.longitude;
 
-    if (isNaN(lat) || lat < -90 || lat > 90) {
-      throw new Error("Latitude inválida. Deve ser um número real entre -90 e 90.");
-    }
-    if (isNaN(lng) || lng < -180 || lng > 180) {
-      throw new Error("Longitude inválida. Deve ser um número real entre -180 e 180.");
-    }
+    if (isNaN(lat) || lat < -90 || lat > 90) throw new Error("Latitude inválida.");
+    if (isNaN(lng) || lng < -180 || lng > 180) throw new Error("Longitude inválida.");
 
     const listaFilmes = payload.filmesEmCartaz || [];
     const listaSessoes = payload.sessoes || [];
 
-    // Validações de Regra de Negócio Pura (Agnósticas a Banco de Dados)
-    if (listaSessoes.length > 0 && listaFilmes.length === 0) {
-      throw new Error("Regra de Negócio: Um cinema não pode ter sessões se não há filmes em cartaz.");
-    }
-
-    for (const sessao of listaSessoes) {
-      if (!listaFilmes.includes(sessao.getIdFilme())) {
-        throw new Error(`Incoerência: A sessão aponta para o filme '${sessao.getIdFilme()}', mas ele não está no catálogo deste cinema.`);
-      }
-    }
+    // Garante que o campo de comentários seja tratado como string (caminho)
+    const caminhoComentarios = typeof payload.comentarios === 'string' ? payload.comentarios : "";
 
     return new Cinema(
       nomeLimpo,
@@ -86,8 +63,9 @@ export class Cinema implements ICinema {
       listaFilmes,
       listaSessoes,
       payload.avaliacao || 0,
-      payload.comentarios || [],
-      payload.isParceiro || false
+      caminhoComentarios,
+      payload.isParceiro || false,
+      payload.qnt_avaliacoes || 0
     );
   }
 }

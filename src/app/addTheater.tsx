@@ -296,7 +296,7 @@ export default function CreateCinema() {
                         {mImg ? (
                           <Image source={{ uri: mImg }} style={{ width: 40, height: 60, borderRadius: 4, marginRight: 10 }} />
                         ) : (
-                          <Image source={require("@/screenAssets/movie-tape.svg")} style={{ width: 40, height: 60, borderRadius: 4, marginRight: 10 }} />
+                          <Image source={require("@/screenAssets/movie-tape.png")} style={{ width: 40, height: 60, borderRadius: 4, marginRight: 10 }} />
                         )}
                         <View style={{ flex: 1 }}>
                           <Text style={{ color: "#000", fontFamily: "Poppins-Bold" }}>{mTitle}</Text>
@@ -333,7 +333,7 @@ export default function CreateCinema() {
                     {mImg ? (
                       <Image source={{ uri: mImg }} style={{ width: 35, height: 50, borderRadius: 4, marginRight: 10 }} />
                     ) : (
-                      <Image source={require("@/screenAssets/movie-tape.svg")} style={{ width: 35, height: 50, borderRadius: 4, marginRight: 10 }} />
+                      <Image source={require("@/screenAssets/movie-tape.png")} style={{ width: 35, height: 50, borderRadius: 4, marginRight: 10 }} />
                     )}
                     <Text style={{ flex: 1, color: "#000", fontFamily: "Poppins-Bold" }}>{mTitle}</Text>
                     <TouchableOpacity onPress={() => setFilmesEmCartaz((prev) => prev.filter((x) => x !== id))}>

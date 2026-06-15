@@ -18,7 +18,8 @@ type StoreCouponProps = {
   timer?: Date;
   amount?: number;
   isAdmin?: boolean;
-  urlIcone?: string; // <-- Propriedade do ícone adicionada aqui
+  urlIcone?: string; //
+  onPurchase?: (coupon: any) => Promise<void>;
   onEdit?: (id: string) => void;
   onDelete?: (id: string, password: string) => Promise<void>;
 };
@@ -35,7 +36,8 @@ export function StoreCoupon({
   isAdmin,
   urlIcone,
   onEdit,
-  onDelete
+  onDelete,
+  onPurchase,
 }: StoreCouponProps) {
   const { height } = useWindowDimensions();
   const dynamicPadTop = height * 0.02;
@@ -81,39 +83,45 @@ export function StoreCoupon({
   };
 
   const renderTopBadge = () => {
-    const iconSize = height * 0.018;
+  const iconSize = height * 0.035; 
 
-    if (timer) {
-      return (
-        <View style={componentStyle.badgeWrapper}>
-          <View style={componentStyle.badgePill}>
-            <Text style={componentStyle.badgeText}>
-              Acaba em: <Text style={{fontWeight: '400'}}>{timeLeft}</Text>
-            </Text>
-          </View>
-          <View style={componentStyle.badgeCircle}>
-            <FontAwesome5 name="stopwatch" size={iconSize} color={COLORS.gold} />
-          </View>
+  if (timer) {
+    return (
+      <View style={componentStyle.badgeWrapper}>
+        <View style={componentStyle.badgePill}>
+          <Text style={componentStyle.badgeText}>
+            Acaba em: <Text style={{fontWeight: '400'}}>{timeLeft}</Text>
+          </Text>
         </View>
-      );
-    } 
-    else if (amount !== undefined && amount !== null) {
-      return (
-        <View style={componentStyle.badgeWrapper}>
-          <View style={componentStyle.badgePill}>
-            <Text style={componentStyle.badgeText}>
-              Restam: <Text style={{fontWeight: '400'}}>{amount} unidades</Text>
-            </Text>
-          </View>
-          <View style={componentStyle.badgeCircle}>
-            <FontAwesome5 name="exclamation" size={iconSize} color={COLORS.gold} />
-          </View>
+        <View style={componentStyle.badgeCircle}>
+          <Image 
+            source={require('@/screenAssets/cronometro.png')} 
+            style={{ width: 20, height: 20, tintColor: COLORS.gold }} 
+          />
         </View>
-      );
-    }
-    return null;
-  };
-
+      </View>
+    );
+  } 
+  else if (amount !== undefined && amount !== null) {
+    return (
+      <View style={componentStyle.badgeWrapper}>
+        <View style={componentStyle.badgePill}>
+          <Text style={componentStyle.badgeText}>
+            Restam: <Text style={{fontWeight: '400'}}>{amount} unidades</Text>
+          </Text>
+        </View>
+        <View style={componentStyle.badgeCircle}>
+          {/* SUBSTITUÍDO POR PNG LOCAL */}
+          <Image 
+            source={require('@/screenAssets/exclamacao.png')} 
+            style={{ width: iconSize, height: iconSize, tintColor: COLORS.gold }} 
+          />
+        </View>
+      </View>
+    );
+  }
+  return null;
+};
   // Verifica se o cupom é de um tipo que deve renderizar a imagem
   const isImageCoupon = type.toLowerCase() === 'dois por um' || type.toLowerCase() === 'produto grátis' || type === 'DOIS_POR_UM' || type === 'PRODUTO_GRATIS';
 
@@ -147,7 +155,10 @@ export function StoreCoupon({
               {isImageCoupon && urlIcone ? (
                 <Image 
                   source={{ uri: urlIcone }} 
-                  style={{ width: '65%', height: '65%', resizeMode: 'contain' }} 
+                  style={{ width: '65%', height: '65%' }} 
+                  resizeMode="contain"
+                  // Adicione o onError para debug caso ela continue invisível
+                  onError={(e) => console.log("Erro ao carregar imagem:", e.nativeEvent.error)}
                 />
               ) : (
                 <Text style={componentStyle.coupomCircleValue}>
@@ -168,6 +179,7 @@ export function StoreCoupon({
               w={height * 0.13}
               h={height * 0.06}
               textSize={height * 0.016}
+              onPress={() => onPurchase?.({ id, title, pipokaCost, circleText, description })}
             />
         </View>
       </BoxDark>

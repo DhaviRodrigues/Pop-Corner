@@ -48,7 +48,7 @@ export default function CodeInput({ onCodeChange }: CodeInputProps) {
           ref={(ref) => {
             inputRefs.current[index] = ref;
           }}
-          style={componentStyle.codeInputBox}
+          style={[componentStyle.codeInputBox, componentStyle.codeText]}
           // maxLength 1 garante que cada quadrado só receba 1 dígito, evitando bugar o layout.
           maxLength={1}
           keyboardType="numeric"

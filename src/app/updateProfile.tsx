@@ -155,7 +155,7 @@ export default function UpdateProfile() {
 
         <BoxDark vw={0.8} padTop={height * 0.03}>
           <BoxDarkSelection
-            iconSource={require('@/screenAssets/icons/profile-icon.svg')}
+            iconSource={require('@/screenAssets/icons/profile-icon.png')}
             title="Alterar Nome de Usuário"
             description="Renomeia o nome do usuário"
             color={COLORS.white}
@@ -163,7 +163,7 @@ export default function UpdateProfile() {
           />
 
           <BoxDarkSelection
-            iconSource={require('@/screenAssets/trashbin.svg')}
+            iconSource={require('@/screenAssets/trashbin.png')}
             title="Remover Foto de Perfil"
             description="Restaura a foto de perfil para a imagem padrão"
             color={COLORS.white}
@@ -171,21 +171,21 @@ export default function UpdateProfile() {
           />
 
           <BoxDarkSelection
-            iconSource={require('@/screenAssets/arrows.svg')}
+            iconSource={require('@/screenAssets/arrows.png')}
             title="Mudar Foto de Perfil"
             description="Troca sua foto de perfil pela imagem selecionada"
             onPress={handleChangePhoto}
           />
 
           <BoxDarkSelection
-            iconSource={require('@/screenAssets/movie-tape.svg')}
+            iconSource={require('@/screenAssets/movie-tape.png')}
             title="Gerenciar Gêneros Favoritos"
             description="Permite a adição e remoção de gêneros aos favoritos"
             onPress={() => null}
           />
 
           <BoxDarkSelection
-            iconSource={require('@/screenAssets/trashbin.svg')}
+            iconSource={require('@/screenAssets/trashbin.png')}
             title="Deletar Perfil"
             description="Remova sua conta permanentemente"
             onPress={() => setShowDeletePopup(true)}

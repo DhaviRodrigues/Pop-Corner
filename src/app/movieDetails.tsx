@@ -1,8 +1,6 @@
     import React, { useState, useMemo, useEffect } from 'react';
     import { View, Text, ScrollView, Image, ActivityIndicator, TouchableOpacity, Modal, TextInput, Alert, Platform, Dimensions } from 'react-native';
-    import { useLocalSearchParams, useRouter } from 'expo-router';
-    import { Feather } from '@expo/vector-icons'; 
-
+    import { useLocalSearchParams, useRouter } from 'expo-router'; 
     import { COLORS } from '@/constants/colors';
     import { useAuth } from '@/contexts/UserContext';
 
@@ -21,7 +19,7 @@
 
     import { getMovieById, deleteMovie } from '@/services/movieservice';
     import { addReviewToMovie } from '@/services/reviewservice';
-    import { addMovieToWatchlist, removeMovieFromWatchlist } from '@/services/userservice';
+    import { addMovieToWatchlist, removeMovieFromWatchlist, checkIfMovieInWatchlist } from '@/services/userservice';
 
     export default function MovieDetailsScreen() {
       const { id } = useLocalSearchParams();
@@ -44,7 +42,7 @@
       const [popupVisible, setPopupVisible] = useState(false);
       const [popupMessage, setPopupMessage] = useState('');
       const [popupOnClose, setPopupOnClose] = useState<(() => void) | null>(null);
-
+      const [isFavorite, setIsFavorite] = useState(false);
 
       const { height, width: screenWidth } = Dimensions.get('window');
 
@@ -61,7 +59,8 @@
         }
         try {
           setIsSavingWatchlist(true);
-          const result = await addMovieToWatchlist(user.id, movie.id);
+          const userId = (user as any).uid || (user as any).id;
+          const result = await addMovieToWatchlist(userId, movie.id);
           
           if (!result.valid) {
             setPopupMessage(result.error || 'Erro ao adicionar à watchlist.');
@@ -95,7 +94,8 @@
         }
         try {
           setIsSavingWatchlist(true);
-          const result = await removeMovieFromWatchlist(user.id, movie.id);
+          const userId = (user as any).uid || (user as any).id;
+          const result = await removeMovieFromWatchlist(userId, movie.id); 
           
           if (!result.valid) {
             setPopupMessage(result.error || 'Erro ao remover da watchlist.');
@@ -117,21 +117,37 @@
       };
 
       useEffect(() => {
-        const fetchMovieData = async () => {
-          if (!id) return;
-          try {
+  const checkWatchlist = async () => {
+    if (user && id) {
+      const userId = (user as any).uid || (user as any).id;
+      const status = await checkIfMovieInWatchlist(userId, id as string);
+      setIsFavorite(status);
+    }
+  };
+  checkWatchlist();
+}, [user, id]);
+
+      useEffect(() => {
+    const fetchMovieData = async () => {
+        if (!id) return;
+        try {
+            setLoading(true); // Garante que comece carregando
             const fetchedMovie = await getMovieById(id as string);
+            console.log("DADOS DO FILME RECEBIDOS:", fetchedMovie); // <-- OLHE O CONSOLE
+            
             if (fetchedMovie) {
-              setMovie(fetchedMovie);
+                setMovie(fetchedMovie);
+            } else {
+                console.warn("Nenhum filme retornado pelo serviço.");
             }
-          } catch (error) {
-            console.error("Erro ao buscar detalhes do filme:", error);
-          } finally {
-            loading && setLoading(false);
-          }
-        };
-        fetchMovieData();
-      }, [id]);
+        } catch (error) {
+            console.error("Erro ao buscar detalhes:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    fetchMovieData();
+}, [id]);
 
       const handleDeleteMovie = async () => {
         if (!adminPassword) {
@@ -223,11 +239,28 @@
 
       const isInWatchlist = useMemo(() => {
         try {
-          return !!user?.getWatchlist?.().some((w: any) => String(w.getIdFilme()) === String(movie?.id));
+          if (!user || !user.watchlist || !movie?.id) return false;
+
+          const currentMovieId = String(movie.id);
+          const watchlist = user.watchlist;
+
+          if (Array.isArray(watchlist)) {
+            return watchlist.some((w: any) => {
+              const watchId = typeof w.getIdFilme === 'function' ? w.getIdFilme() : (w.idFilme || w);
+              return String(watchId) === currentMovieId;
+            });
+          }
+
+          if (typeof watchlist === 'string') {
+            return watchlist.includes(currentMovieId);
+          }
+
+          return false;
         } catch (e) {
+          console.error("Erro ao verificar watchlist:", e);
           return false;
         }
-      }, [user, movie?.id]);
+      }, [user?.watchlist, movie?.id]);
 
       const paginatedReviews = useMemo(() => {
         return currentMovieReviews.slice(0, visibleCount);
@@ -239,62 +272,68 @@
       };
 
       if (loading) {
-        return (
-          <View style={[movieStyle.detailsMainContainer, { justifyContent: 'center', alignItems: 'center' }]}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-          </View>
-        );
+    return (
+      <View style={[movieStyle.detailsMainContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (!movie) {
+    return (
+      <View style={movieStyle.detailsMainContainer}>
+        <Text style={textStyle.text}>Filme não encontrado.</Text>
+        <BottomNavbar />
+      </View>
+    );
+  }
+  return (
+  <View style={movieStyle.detailsMainContainer}>
+    {/* HEADER ORIGINAL */}
+    <View style={[
+      movieStyle.detailsTopBar, 
+      { 
+        backgroundColor: COLORS.primary, 
+        zIndex: 9999, 
+        position: 'relative', 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        paddingHorizontal: 10
       }
-
-      if (!movie) {
-        return (
-          <View style={movieStyle.detailsMainContainer}>
-            <Text style={textStyle.text}>Filme não encontrado.</Text>
-            <BottomNavbar />
-          </View>
-        );
-      }
-
-      return (
-        <View style={movieStyle.detailsMainContainer}> 
-          
-          {/* HEADER DINÂMICO */}
-          <View style={[movieStyle.detailsTopBar, { 
-            flexDirection: 'row', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
-            paddingHorizontal: 15, 
-            height: 90, 
-            paddingTop: Platform.OS === 'android' ? 25 : 0, 
-          }]}>
-            <View style={{ width: 60, alignItems: 'flex-start' }}>
-              <BackButton onPress={() => router.back()}/>
-            </View>
-
-            <Text style={[textStyle.detailsTitleText, { flex: 1, textAlign: 'center' }]} numberOfLines={1}>
-              {movie.title}
-            </Text>
-
-            <View style={{ width: 100, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
-              {isAdmin && (
-                <>
-                  <TouchableOpacity 
-                    onPress={() => router.push({ pathname: '/addMovie', params: { editId: id } })}
-                    style={movieStyle.adminHeaderButton}
-                  >
-                    <Feather name="edit" size={18} color="#FFFEB2" />
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    onPress={() => setShowDeleteModal(true)}
-                    style={movieStyle.adminHeaderButton}
-                  >
-                    <Feather name="trash-2" size={18} color="#FFFEB2" />
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          </View>
+    ]}>
+      <View style={{ width: 80, alignItems: 'flex-start' }}>
+        <BackButton onPress={() => router.back()}/>
+      </View>
+      
+      {/* TÍTULO COM COR FORÇADA PARA APARECER NO VERMELHO */}
+      <View style={{ flex: 1 }}>
+        <Text style={[
+          textStyle.detailsTitleText, 
+          { 
+            color: COLORS.gold, 
+            textAlign: 'center', 
+            fontSize: 18,
+            fontWeight: 'bold' 
+          }
+        ]}>
+          {movie?.title || "Carregando..."}
+        </Text>
+      </View>
+      
+      <View style={{ width: 80, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+        {isAdmin && (
+          <>
+            <TouchableOpacity onPress={() => router.push({ pathname: '/addMovie', params: { editId: id } })}>
+              <Image source={require('@/screenAssets/icons/pencil.png')} style={{ width: 18, height: 18, tintColor: '#FFFEB2' }} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowDeleteModal(true)}>
+              <Image source={require('@/screenAssets/trashbin.png')} style={{ width: 18, height: 18, tintColor: '#FFFEB2' }} />
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+    </View>
 
           <Image 
             source={{ uri: movie.image }} 
@@ -321,11 +360,11 @@
 
               <View style={movieStyle.detailsInfoGroup}>
                 <View style={movieStyle.detailsWatchlistBtnWrapper}>
-                  {isInWatchlist ? (
+                  {isFavorite ? (
                     <ButtonB title="Remover da Watchlist" h={height * 0.065} w={screenWidth * 0.65} textSize={height * 0.02} onPress={handleRemoveFromWatchlist} />
                   ) : (
                     <ButtonAddWatchlist onPress={handleAddToWatchlist} />
-                  )}
+                  )}  
                 </View>
 
                 <View style={movieStyle.detailsSynopsisCard}>
@@ -438,8 +477,7 @@
               }
             }}
           />
-
           <BottomNavbar />
         </View>
       );
-    }
+  }

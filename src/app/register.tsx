@@ -141,7 +141,7 @@ export default function Register() {
                         <Text style={textStyle.text}>Insira suas informações pessoais</Text>
                         
                         <Input
-                            icon={require('@/screenAssets/Navbar/perfil-icon.svg')}
+                            icon={require('@/screenAssets/icons/profile-icon-gray.png')}
                             text="Nome:"
                             value={name}
                             onChangeText={setName}

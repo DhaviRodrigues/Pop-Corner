@@ -16,7 +16,8 @@
     "src/**/*.tsx",
     "src/**/*.js",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "declarations.d.ts"
   ],
   "exclude": [
     "node_modules",

@@ -18,9 +18,7 @@ export const miscStyle = StyleSheet.create({
   formContainer: {
     paddingTop: height * 0.02,
     width: "100%",
-    height: "75%",
     alignItems: "center",
-    paddingBottom: 20,
   },
   popcorn: {
     position: "absolute",

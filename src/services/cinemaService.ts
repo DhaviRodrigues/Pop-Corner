@@ -63,11 +63,14 @@ export async function saveOrUpdateCinema(dadosCrus: any, editId?: string): Promi
       endereco: dadosCrus.endereco,
       latitude: dadosCrus.latitude,
       longitude: dadosCrus.longitude,
-      urlImagem: dadosCrus.urlImagem || dadosCrus.url_imagem,
+      urlImagem: dadosCrus.urlImagem,
       filmesEmCartaz: dadosCrus.filmesEmCartaz,
-      sessoes: sessoesInstanciadas,
-      isParceiro: dadosCrus.isParceiro ?? dadosCrus.is_parceiro,
-    });
+      sessoes: dadosCrus.sessoes,
+      isParceiro: dadosCrus.isParceiro,
+      qnt_avaliacoes: dadosCrus.qnt_avaliacoes || 0,
+      avaliacao: dadosCrus.avaliacao || 0,
+      comentarios: dadosCrus.comentarios || ""
+      });
 
     if (editId) {
       const docRef = doc(db, "cinemas", editId);

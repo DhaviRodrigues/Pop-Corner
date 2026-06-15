@@ -179,7 +179,7 @@ export default function Cinemas() {
             </View>
             
             <TouchableOpacity activeOpacity={0.7} style={{ marginTop: 40, alignItems: "center" }} onPress={() => router.push("/map")}>
-              <Image source={require("@/screenAssets/Map-Buttom.svg")} style={cinemaStyle.mapButtom} />
+              <Image source={require("@/screenAssets/Map-Buttom.png")} style={cinemaStyle.mapButtom} />
               <Text style={{ color: COLORS.gold, fontSize: 12, fontFamily: "Poppins-Bold", marginTop: 10 }}>Ver Cinemas no Mapa</Text>
             </TouchableOpacity>
           </View>

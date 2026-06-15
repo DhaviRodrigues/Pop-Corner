@@ -110,6 +110,7 @@ export const textStyle = StyleSheet.create({
   detailsTitleText: {
     color: COLORS.gold,
     fontSize: height * 0.022,
+    alignSelf: "center",
     fontWeight: "bold",
     textAlign: "center",
     fontFamily: "Poppins-Bold",

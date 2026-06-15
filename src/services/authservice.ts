@@ -64,48 +64,32 @@ export async function registerUser(
   profilePhotoFileName?: string
 ): Promise<AuthResult> {
   try {
-    // Cria a credencial de acesso na camada do Firebase Auth
+
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Delega a criação do documento base do banco de dados para o userService
     const createResult = await createUserProfile(user.uid, name, email, favoriteGenres);
     if (!createResult.valid) {
-      return {
-        valid: false,
-        error: createResult.error
-      };
+      throw new Error(createResult.error);
     }
 
-    // Processa o upload da imagem de perfil se ela foi capturada no fluxo
     if (profilePhotoUri) {
-      const uploadResult = await uploadUserPhoto(
-        profilePhotoUri,
-        'perfil_foto',
-        user.uid,
-        profilePhotoFileName
-      );
-
-      // Se o upload gerou uma URL assinada com sucesso, atualiza o documento no Firestore
-      if (uploadResult.success && uploadResult.signedUrl) {
-        await updateDoc(doc(db, 'users', user.uid), {
-          profile_picture: uploadResult.signedUrl,
-        });
-      } else if (!uploadResult.success) {
-        console.warn("Usuário criado, mas ocorreu uma falha ao subir a foto de perfil:", uploadResult.error);
+      try {
+        const uploadResult = await uploadUserPhoto(profilePhotoUri, 'perfil_foto', user.uid, profilePhotoFileName);
+        if (uploadResult.success && uploadResult.signedUrl) {
+          await updateDoc(doc(db, 'users', user.uid), { profile_picture: uploadResult.signedUrl });
+        }
+      } catch (photoError) {
+        console.warn("Falha no upload da foto (não fatal):", photoError);
       }
     }
 
-    return {
-      valid: true,
-      error: "",
-      uid: user.uid,
-    };
-  } catch (error) {
-    const authError = error as AuthError;
+    return { valid: true, error: "", uid: user.uid };
+  } catch (error: any) {
+    console.error("Erro detalhado no registro:", error);
     return {
       valid: false,
-      error: getRegisterErrorMessage(authError.code)
+      error: getRegisterErrorMessage(error.code)
     };
   }
 }
@@ -365,7 +349,6 @@ export function getRegisterErrorMessage(errorCode: string): string {
     case "auth/invalid-email":
       return "Email inválido";
     default:
-      return "Erro ao registrar usuário. Tente novamente";
   }
 }
 

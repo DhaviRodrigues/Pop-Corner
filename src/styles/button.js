@@ -58,7 +58,7 @@ export const buttonStyle = StyleSheet.create({
   },
   logoutText: {
     color: COLORS.black,
-    fontFamily: "Poppins-Semibold",
+    fontFamily: "Poppins-SemiBold",
   },
   buttonAddWatchlist: {
     backgroundColor: COLORS.gold,

@@ -15,20 +15,19 @@ const BottomNavbar = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   
   const navbarBackground = width >= 510
-    ? require('../screenAssets/Navbar/Navbar-Expandida.svg')
-    : require('../screenAssets/Navbar/Navbar.svg');
+    ? require('../screenAssets/Navbar/Navbar-Expandida.png')
+    : require('../screenAssets/Navbar/Navbar.png');
 
+    
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (user) {
-        // Utiliza o serviço unificado para verificar a role no Firestore
         const result = await verifyAdmin();
         setIsAdmin(result.isAdmin);
       } else {
         setIsAdmin(false);
       }
     };
-
     checkAdminStatus();
   }, [user]);
 
@@ -36,27 +35,32 @@ const BottomNavbar = () => {
     {
       name: 'Home',
       route: '/home',
-      icon: require('@/screenAssets/Navbar/home-icon.svg'),
+      icon: require('@/screenAssets/Navbar/home-icon.png'),
+      activeIcon: require('@/screenAssets/Navbar/home-icon-red.png'),
     },
     {
       name: 'Cinemas',
       route: '/cinemas',
-      icon: require('@/screenAssets/Navbar/cinema-icon.svg'),
+      icon: require('@/screenAssets/Navbar/cinema-icon.png'),
+      activeIcon: require('@/screenAssets/Navbar/cinema-icon-red.png'),
     },
     {
       name: 'Filmes',
       route: '/movies',
-      icon: require('@/screenAssets/Navbar/filme-icon.svg'),
+      icon: require('@/screenAssets/Navbar/filme-icon.png'),
+      activeIcon: require('@/screenAssets/Navbar/filme-icon-red.png'),
     },
     {
       name: 'Cupons',
       route: '/coupons',
-      icon: require('@/screenAssets/Navbar/ticktet-icon.svg'),
+      icon: require('@/screenAssets/Navbar/ticktet-icon.png'),
+      activeIcon: require('@/screenAssets/Navbar/ticktet-icon-red.png'),
     },
     {
       name: isAdmin ? 'Admin' : 'Perfil',
       route: isAdmin ? '/adminControl' : '/profile',
-      icon: require('../screenAssets/Navbar/perfil-icon.svg'),
+      icon: require('@/screenAssets/Navbar/perfil-icon.png'),
+      activeIcon: require('@/screenAssets/Navbar/perfil-icon-red.png'),
     },
   ];
 
@@ -82,7 +86,7 @@ const BottomNavbar = () => {
                   <View style={[navBarStyle.tabContent, isActive && navBarStyle.activeTabContent]}>
                     <View style={navBarStyle.iconWrapper}>
                       <Image
-                        source={tab.icon}
+                        source={isActive ? tab.activeIcon : tab.icon}
                         style={[navBarStyle.imageIcon, isActive && navBarStyle.activeImageIcon]}
                         resizeMode="contain"
                       />

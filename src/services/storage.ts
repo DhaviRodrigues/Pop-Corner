@@ -1,5 +1,6 @@
 import { supabase } from '@/config/supabase';
 
+
 export const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png'];
 
 interface UploadResponse {
@@ -11,42 +12,21 @@ interface UploadResponse {
 
 export async function uploadUserPhoto(
   fileUri: string, 
-  folder: 'perfil_foto' | 'cinema_foto' |'filme_foto', 
+  folder: 'perfil_foto' | 'cinema_foto' | 'filme_foto', 
   identifier: string,
   fileName?: string
-): Promise<UploadResponse> {
+): Promise<{ success: boolean; signedUrl?: string; path?: string; error?: string }> {
+  try {
     const response = await fetch(fileUri);
     const blob = await response.blob();
     
-    // Tentar extrair extensão da fileName primeiro, depois da URI
-    let fileExtension = fileName?.split('.').pop()?.split('?')[0] || '';
-    if (!fileExtension) {
-      fileExtension = fileUri.split('.').pop()?.split('?')[0] || '';
-    }
-    let normalizedExtension = fileExtension.toLowerCase();
-
-    // Se extensão não for válida, tentar extrair do blob.type (mime type)
-    if (!ALLOWED_IMAGE_EXTENSIONS.includes(normalizedExtension)) {
-      const mimeType = blob.type.toLowerCase();
-      if (mimeType.includes('png')) {
-        normalizedExtension = 'png';
-      } else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) {
-        normalizedExtension = 'jpg';
-      } else {
-        return {
-          success: false,
-          error: 'Formato inválido. Use apenas JPG, JPEG ou PNG.',
-        };
-      }
-    }
-
-    const cleanExtension = normalizedExtension;
-    const filePath = `${identifier}.${cleanExtension}`;
+    const fileExtension = fileName?.split('.').pop()?.split('?')[0].toLowerCase() || 'jpg';
+    const filePath = `${folder}/${identifier}/${Date.now()}.${fileExtension}`;
 
     const { data, error: uploadError } = await supabase.storage
       .from(folder)
       .upload(filePath, blob, {
-        contentType: `image/${cleanExtension}`,
+        contentType: `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`,
         upsert: true,
       });
 
@@ -54,7 +34,7 @@ export async function uploadUserPhoto(
 
     const { data: signedData, error: signedError } = await supabase.storage
       .from(folder)
-      .createSignedUrl(filePath, 2592000);
+      .createSignedUrl(data.path, 2592000);
 
     if (signedError) throw signedError;
 
@@ -62,8 +42,12 @@ export async function uploadUserPhoto(
       success: true,
       path: data.path,
       signedUrl: signedData.signedUrl,
-    }
-};
+    };
+  } catch (error: any) {
+    console.error("Erro no upload para Supabase:", error);
+    return { success: false, error: error.message };
+  }
+}
 
 export async function getPhotoUrl(
     filePath: string,

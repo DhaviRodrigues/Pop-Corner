@@ -3,6 +3,7 @@ import { View, Text, useWindowDimensions } from "react-native";
 import { COLORS } from "@/constants/colors";
 import { ButtonY } from "@/components/ButtonY";
 import { componentStyle } from "@/styles/component";
+import { router, useRouter } from 'expo-router';
 
 type UserCouponProps = {
   title: string;
@@ -18,7 +19,16 @@ export function UserCoupon({title,discountAmount,description,status,validity,onS
   const { height } = useWindowDimensions();
 
   const handleShowCode = () => {
-    setShowCode(!showCode);
+      router.push({
+      pathname: '/couponQRCode',
+      params: {
+        id: "CUPOM2026", // ID ou código real do cupom
+        titulo: title,
+        desc: description,
+        status: status,
+      }
+    });
+    
     onShowCode?.();
   };
 
@@ -55,7 +65,7 @@ export function UserCoupon({title,discountAmount,description,status,validity,onS
             <ButtonY
               title={showCode ? "Ocultar Código" : "Mostrar Código"}
               w="100%"
-              h={height * 0.05} 
+              h={height * 0.07  } 
               textSize={14}
               onPress={handleShowCode}
             />

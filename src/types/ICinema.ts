@@ -1,4 +1,5 @@
 import { Session } from "@/models/session";
+import { DocumentReference } from "firebase/firestore";
 import { Comment } from "@/models/comment";
 
 export interface ICinema {
@@ -11,7 +12,7 @@ export interface ICinema {
   filmesEmCartaz: string[];
   sessoes: Session[];
   avaliacao: number;
-  comments: Comment[];
+  comments: DocumentReference | string;
   isParceiro: boolean;
   qnt_avaliacoes: number;
 }
@@ -28,4 +29,5 @@ export interface ICinemaPayload {
   avaliacao?: number;
   comentarios?: any[];
   isParceiro?: boolean;
+  qnt_avaliacoes: number;
 }

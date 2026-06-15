@@ -23,7 +23,7 @@ export function ValidationPopup({ visible, message, onClose }: ValidationPopupPr
       <View style={componentStyle.popupOverlay}>
         <View style={componentStyle.popup}>
             <Image 
-            source={require('@/screenAssets/exclamation.svg')} 
+            source={require('@/screenAssets/exclamation.png')} 
             style={componentStyle.exclamationIcon} 
             />
           <Text style={componentStyle.popupText}>{message}</Text>

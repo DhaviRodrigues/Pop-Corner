@@ -18,7 +18,10 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.DSI_2026"
+      "package": "com.anonymous.DSI_2026",
+      "navigationBar": {
+        "visible": "leanback"
+      }
     },
     "web": {
       "output": "static",

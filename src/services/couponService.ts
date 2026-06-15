@@ -1,5 +1,6 @@
 import { db } from "@/config/firebase";
-import { addDoc, collection, serverTimestamp, getDocs, doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, getDocs, doc, getDoc, updateDoc, deleteDoc, runTransaction} from "firebase/firestore";
+import { UpdateResult } from "@/services/userservice";
 
 export interface CouponPayload {
   nome: string;
@@ -182,5 +183,37 @@ export async function deleteCoupon(couponId: string): Promise<ServiceResult> {
       valid: false,
       error: "Não foi possível deletar o cupom."
     };
+  }
+}
+
+export async function purchaseCoupon(userId: string, coupon: any, userPipokas: number): Promise<UpdateResult> {
+  try {
+    if (userPipokas < coupon.pipokaCost) {
+      return { valid: false, error: "Pipokas insuficientes!" };
+    }
+
+    let dataValidade = "Indeterminado";
+    if (coupon.diasValidade && typeof coupon.diasValidade === 'number') {
+      const date = new Date();
+      date.setDate(date.getDate() + coupon.diasValidade);
+      dataValidade = date.toLocaleDateString('pt-BR');
+    }
+
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, { pipoka: userPipokas - coupon.pipokaCost });
+
+    const couponRef = collection(db, `user_coupons/${userId}/coupons`);
+    await addDoc(couponRef, {
+      title: coupon.title,
+      discountAmount: coupon.circleText,
+      description: coupon.description,
+      status: "Ativo",
+      validity: dataValidade,
+      addedAt: serverTimestamp()
+    });
+
+    return { valid: true, error: "" };
+  } catch (error) {
+    return { valid: false, error: "Erro ao realizar troca." };
   }
 }

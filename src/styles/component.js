@@ -102,12 +102,12 @@ export const componentStyle = StyleSheet.create({
       zIndex: -1,
   },
   welcomeTitle: {
-      fontSize: height * 0.035,
+      fontSize: height * 0.028,
       fontFamily: 'Poppins-SemiBold',
       color: COLORS.gold,
       textAlign: 'center',
       zIndex: 1,
-      paddingTop: 10,
+      paddingTop: 30,
   },
     codeInputContainer: {
     flexDirection: "row",
@@ -128,7 +128,16 @@ export const componentStyle = StyleSheet.create({
     fontSize: height * 0.03,
     textAlign: "center",
     fontFamily: "Poppins-SemiBold",
+    padding: 0, 
+    margin: 0,
+    includeFontPadding: false,
+    textAlignVertical: "center",
+    lineHeight: height * 0.03,
   },
+  
+  codeText:{
+  },
+
   box: {
     backgroundColor: COLORS.primary,
     borderRadius: 30,
@@ -336,7 +345,7 @@ export const componentStyle = StyleSheet.create({
   userCouponContainer: {
     position: "relative",
     marginVertical: height * 0.02,
-    width: "90%",
+    width: "100%",
     alignSelf: "center",
   },
   userCouponTicketWrapper: {
@@ -458,25 +467,25 @@ export const componentStyle = StyleSheet.create({
     marginBottom: height * 0.01,
   },
   userCouponDetailLabel: {
-    fontSize: height * 0.017,
+    fontSize: height * 0.014,
     fontWeight: "600",
     color: COLORS.gold,
     fontFamily: "Poppins-SemiBold",
     marginRight: 4, 
   },
   userCouponDetailValue: {
-    fontSize: height * 0.017,
+    fontSize: height * 0.014,
     color: COLORS.gold, 
     fontFamily: "Poppins-Regular",
   },
   userCouponStatusActive: {
-    fontSize: height * 0.017,
+    fontSize: height * 0.014,
     fontWeight: "600",
     color: COLORS.gold, 
     fontFamily: "Poppins-SemiBold",
   },
   userCouponStatusInactive: {
-    fontSize: height * 0.017,
+    fontSize: height * 0.014,
     fontWeight: "600",
     color: COLORS.red,
     fontFamily: "Poppins-SemiBold",

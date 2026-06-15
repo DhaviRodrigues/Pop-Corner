@@ -1,11 +1,13 @@
 import { WatchlistEntry } from '@/models/userWatchlist';
 import { Coupon } from '@/models/coupon'
+import { DocumentReference } from 'firebase/firestore';
 export interface IUser {
   name: string;
   email: string;
   profile_picture: string;
   favorite_genres: string[];
   pipoka: number;
-  watchlist: WatchlistEntry[];
-  coupons: Coupon[];
+  watchlist: DocumentReference | string; 
+  coupons: DocumentReference | string;
+  uid: string;
 }

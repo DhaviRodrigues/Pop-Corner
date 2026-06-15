@@ -13,6 +13,7 @@
   "dependencies": {
     "@expo-google-fonts/poppins": "^0.4.1",
     "@expo/vector-icons": "^15.1.1",
+    "@react-native-async-storage/async-storage": "^3.1.1",
     "@react-navigation/bottom-tabs": "^7.7.3",
     "@react-navigation/elements": "^2.8.1",
     "@react-navigation/native": "^7.1.28",
@@ -20,7 +21,7 @@
     "expo": "^56.0.11",
     "expo-constants": "~56.0.17",
     "expo-device": "~56.0.4",
-    "expo-font": "~56.0.5",
+    "expo-font": "~56.0.6",
     "expo-glass-effect": "~56.0.4",
     "expo-image": "~56.0.11",
     "expo-image-picker": "~56.0.17",
@@ -31,7 +32,7 @@
     "expo-symbols": "~56.0.6",
     "expo-system-ui": "~56.0.5",
     "expo-web-browser": "~56.0.5",
-    "firebase": "^12.12.0",
+    "firebase": "^12.14.0",
     "leaflet": "^1.9.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -44,6 +45,7 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
     "react-native-svg": "15.15.4",
+    "react-native-svg-transformer": "^1.5.3",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.8.3"
   },

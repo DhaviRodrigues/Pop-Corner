@@ -38,7 +38,7 @@ export function DropdownY({ selectedValue, onValueChange }: DropdownYProps) {
       >
         <Text style={componentStyle.dropButtonText}>Ordenar por</Text>
         <Image
-          source={require('@/screenAssets/seta-baixo.svg')}
+          source={require('@/screenAssets/seta-baixo.png')}
           style={{
             width: height * 0.014,
             height: height * 0.014,

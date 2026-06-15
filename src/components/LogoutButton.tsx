@@ -1,7 +1,7 @@
 import { COLORS } from "@/constants/colors";
 import { buttonStyle } from "@/styles/button";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Dimensions, Text, TouchableOpacity } from "react-native";
+import { Dimensions, Text, Image, TouchableOpacity } from "react-native";
 
 // Captura da dimensão vertical do dispositivo para aplicação de escalas responsivas no ícone.
 const { height } = Dimensions.get('window');
@@ -17,8 +17,16 @@ export function LogoutButton({ onPress }: LogoutButtonProps) {
 
   return (
     <TouchableOpacity style={buttonStyle.logoutButton} onPress={onPress}>
-      {/* Implementação do ícone de saída com tamanho calculado proporcionalmente à altura da janela. */}
-      <MaterialCommunityIcons name="logout" size={iconSize} color={COLORS.black} style={{ marginRight: iconMarginRight }} />
+      <Image 
+        source={require('@/screenAssets/logout.png')} 
+        style={{ 
+          width: iconSize, 
+          height: iconSize, 
+          marginRight: iconMarginRight,
+          tintColor: COLORS.black
+        }} 
+        resizeMode="contain"
+      />
       <Text style={buttonStyle.logoutText}>Logout</Text>
     </TouchableOpacity>
   );

@@ -4,6 +4,9 @@ import { COLORS } from '@/constants/colors';
 export const qrCodeStyle = StyleSheet.create({
   mainContainer: {
     flex: 1,
+    width: "100%",
+    height: "100%",
+    overflow: "hidden",
     backgroundColor: COLORS.primary,
   },
   scrollContent: {

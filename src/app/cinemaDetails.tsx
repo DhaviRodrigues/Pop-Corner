@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, FlatList, ActivityIndicator, Platform, TextInput, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons'; 
+
 import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY';
 import { AdminEditButton } from '@/components/AdminEditButton';
@@ -163,7 +163,7 @@ export default function CinemaDetailsScreen() {
             {cinema.url_imagem || cinema.imagem ? (
               <Image source={{ uri: cinema.url_imagem || cinema.imagem }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
             ) : (
-              <Image source={require('@/screenAssets/movie-tape.svg')} style={{ width: '100%', height: '100%', resizeMode: 'cover', opacity: 0.5 }} />
+              <Image source={require('@/screenAssets/movie-tape.png')} style={{ width: '100%', height: '100%', resizeMode: 'cover', opacity: 0.5 }} />
             )}
         </View>
 
@@ -171,7 +171,7 @@ export default function CinemaDetailsScreen() {
             <View style={cinemaDetailsStyle.titleRow}>
                 <Text style={cinemaDetailsStyle.cinemaName} numberOfLines={2}>{cinemaName}</Text>
                 <TouchableOpacity style={cinemaDetailsStyle.mapButton} onPress={navigateToMap}>
-                    <Image source={require("@/screenAssets/Map-Buttom.svg")} style={{ width: 20, height: 20, marginRight: 5 }} resizeMode="contain" />
+                    <Image source={require("@/screenAssets/Map-Buttom.png")} style={{ width: 20, height: 20, marginRight: 5 }} resizeMode="contain" />
                     <Text style={cinemaDetailsStyle.mapDistanceText}>{distanciaText}</Text>
                 </TouchableOpacity>
             </View>

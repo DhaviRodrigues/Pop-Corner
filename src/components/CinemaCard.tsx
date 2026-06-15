@@ -96,7 +96,7 @@ const CinemaCard = ({
     <View style={cinemaStyle.cinemaCardContainer}>
       {cinemaData.is_parceiro && (
         <Image
-          source={require("@/screenAssets/cinema-parceiro.svg")}
+          source={require("@/screenAssets/cinema-parceiro.png")}
           style={{
             position: "absolute",
             top: 92,

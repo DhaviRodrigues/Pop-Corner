@@ -61,7 +61,7 @@ export default function NameUpdate() {
               <Text style={[textStyle.text, { textAlign: "center", width: "100%" }]}>Insira seu Novo Nome:</Text>
 
               <Input
-                icon={require("@/screenAssets/icons/profile-icon.svg")}
+                icon={require("@/screenAssets/icons/profile-icon.png")}
                 text="Nome:"
                 value={newName}
                 onChangeText={setNewName}

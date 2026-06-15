@@ -62,7 +62,7 @@ export default function SearchBar({
             ]}
           >
             <Image 
-              source={require('@/screenAssets/filter.svg')} 
+              source={require('@/screenAssets/filter.png')} 
               style={[
                 styles.filterIcon,
                 { tintColor: filtersVisible ? COLORS.gold : '#A0A0A0' } 
