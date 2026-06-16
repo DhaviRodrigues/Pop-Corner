@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { View, ScrollView, Text, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
+import * as ImagePicker from 'expo-image-picker';
+import { uploadUserPhoto, ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
 import { movieStyle } from "@/styles/movie"; 
@@ -23,10 +25,71 @@ export default function CreateMovie() {
   const [classification, setClassification] = useState("");
   const [image, setImage] = useState("");
   const [synopsis, setSynopsis] = useState("");
+  const [loadingImage, setLoadingImage] = useState(false);
+
+  const getImageExtension = (uri: string) => {
+    return uri.split('.').pop()?.split('?')[0]?.toLowerCase() || '';
+  };
+
+  const handlePickImage = async () => {
+    try {
+      setLoadingImage(true);
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Permissão Negada", "Permissão para acessar galeria é necessária.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [2, 3], // Movie posters are typically 2:3 aspect ratio
+        quality: 1,
+      });
+
+      if (result.canceled || result.assets.length === 0) {
+        setLoadingImage(false);
+        return;
+      }
+
+      const uri = result.assets[0].uri;
+      const fileName = result.assets[0].fileName || '';
+
+      const ext = getImageExtension(fileName) || getImageExtension(uri);
+      const valid = ext && ALLOWED_IMAGE_EXTENSIONS.includes(ext);
+      
+      if (!valid) {
+        Alert.alert("Erro", "Formato de imagem inválido. Use apenas JPG, JPEG ou PNG.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const identifier = `filme_${Date.now()}`;
+      const uploadResponse = await uploadUserPhoto(uri, 'filme_foto', identifier, fileName);
+      if (!uploadResponse.success) {
+        Alert.alert("Erro", uploadResponse.error || "Erro ao fazer upload da imagem.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const signed = uploadResponse.signedUrl;
+      if (signed) {
+        setImage(signed);
+      } else {
+        Alert.alert("Erro", "Erro ao obter URL da imagem.");
+      }
+    } catch (error) {
+      console.error("Erro no upload de imagem:", error);
+      Alert.alert("Erro", "Erro ao processar imagem.");
+    } finally {
+      setLoadingImage(false);
+    }
+  };
 
   const handleConfirmar = async () => {
     if (!title || !image) {
-      Alert.alert("Erro", "Nome e URL da imagem são obrigatórios!");
+      Alert.alert("Erro", "Nome e Imagem são obrigatórios!");
       return;
     }
 
@@ -93,7 +156,19 @@ export default function CreateMovie() {
             <Input text="Duração (Ex: 2h 07min)" value={duration} onChangeText={setDuration} />
             <Input text="Gêneros" value={tags} onChangeText={setTags} />
             <Input text="Classificação indicativa" value={classification} onChangeText={setClassification} />
-            <Input text="URL da Imagem ou Arquivo" value={image} onChangeText={setImage} />
+            <View style={{ width: "100%", alignItems: "center", marginVertical: 15 }}>
+              <ButtonY 
+                title={loadingImage ? "Fazendo Upload..." : image ? "Alterar Imagem do Filme" : "Selecionar Imagem do Filme"} 
+                onPress={handlePickImage} textSize={14 } h={50}
+              />
+              {image ? (
+                <Image
+                  source={{ uri: image }}
+                  style={{ width: 150, height: 225, borderRadius: 12, marginTop: 15 }}
+                  resizeMode="cover"
+                />
+              ) : null}
+            </View>
           </View>
 
           {/* SINOPSE */}
