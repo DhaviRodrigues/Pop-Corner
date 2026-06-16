@@ -66,6 +66,7 @@ export default function CreateCinema() {
   const [nome, setNome] = useState("");
   const [cidade, setCidade] = useState("");
   const [endereco, setEndereco] = useState("");
+  // Mantemos o estado apenas para carregar dados antigos em caso de edição
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [urlImagem, setUrlImagem] = useState("");
@@ -83,12 +84,11 @@ export default function CreateCinema() {
   const [erroSessao, setErroSessao] = useState("");
   const [erroCinema, setErroCinema] = useState("");
 
+  // Validação atualizada: Latitude e Longitude já não são obrigatórias na digitação
   const isCinemaPronto = !!(
     nome.trim() &&
     cidade.trim() &&
     endereco.trim() &&
-    latitude.trim() &&
-    longitude.trim() &&
     urlImagem.trim()
   );
 
@@ -170,12 +170,39 @@ export default function CreateCinema() {
     }
 
     try {
+      // --- ESTRATÉGIA 1: API DO NOMINATIM (OPENSTREETMAP) ---
+      let latGerada = 0;
+      let lonGerada = 0;
+
+      // Junta o endereço e a cidade para a pesquisa
+      const enderecoBusca = `${endereco}, ${cidade}`;
+      // Limita a 1 resultado para ser mais rápido
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoBusca)}&limit=1`;
+
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'PopCornerApp/1.0', // Cabeçalho recomendado pela documentação do Nominatim
+          'Accept-Language': 'pt-BR,pt;q=0.9'
+        }
+      });
+      
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        latGerada = parseFloat(data[0].lat);
+        lonGerada = parseFloat(data[0].lon);
+      } else {
+        setErroCinema("Não achámos as coordenadas deste endereço. Tente ser mais direto (ex: Nome da Rua, Cidade).");
+        return; // Bloqueia a gravação se o endereço for inválido
+      }
+      // ------------------------------------------------------
+
       const dadosCrus = {
         nome,
         cidade,
         endereco,
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
+        latitude: latGerada,
+        longitude: lonGerada,
         urlImagem,
         filmesEmCartaz,
         sessoes,
@@ -192,7 +219,7 @@ export default function CreateCinema() {
         setErroCinema("Falha ao salvar o cinema. Verifique os dados e tente novamente.");
       }
     } catch (error: any) {
-      setErroCinema(error.message);
+      setErroCinema("Erro de rede ao buscar localização: " + error.message);
     }
   };
 
@@ -236,15 +263,6 @@ export default function CreateCinema() {
 
           <View style={style.fullInput}>
             <LocalInput text="Endereço" value={endereco} onChangeText={setEndereco} />
-          </View>
-
-          <View style={style.row}>
-            <View style={style.halfInput}>
-              <LocalInput text="Latitude" value={latitude} onChangeText={setLatitude} />
-            </View>
-            <View style={style.halfInput}>
-              <LocalInput text="Longitude" value={longitude} onChangeText={setLongitude} />
-            </View>
           </View>
 
           <View style={style.fullInput}>
