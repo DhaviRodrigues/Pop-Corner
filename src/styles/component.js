@@ -339,6 +339,7 @@ export const componentStyle = StyleSheet.create({
     fontSize: height * 0.009,
     fontWeight: "bold",
     textAlign: "center",
+    flexShrink: 1,
     marginBottom: 1,
   },
 
@@ -360,6 +361,8 @@ export const componentStyle = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     zIndex: 1,
+    height: height * 0.3,
+    width: width * 0.9,
   },
   userCouponCutoutLeft: {
     position: "absolute",
@@ -443,6 +446,7 @@ export const componentStyle = StyleSheet.create({
     color: COLORS.gold,
     textAlign: "center",
     fontStyle: "italic",
+    flexShrink: 1,
     fontFamily: "Poppins-Regular",
   },
   userCouponRightSection: {

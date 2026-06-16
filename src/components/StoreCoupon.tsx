@@ -169,7 +169,13 @@ export function StoreCoupon({
             Pipokas
           </Text>
           <View style={componentStyle.coupomDivider} />
-          <Text style={componentStyle.coupomDescription}>{description}</Text>
+          <Text 
+            style={componentStyle.coupomDescription} 
+            numberOfLines={3} 
+            ellipsizeMode="tail"
+          >
+            {description}
+          </Text>
             <ButtonY
               title="TROQUE AGORA!"
               w={height * 0.13}

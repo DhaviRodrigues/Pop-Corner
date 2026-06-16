@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; // Importação correta
 import { useAuth } from '@/contexts/UserContext';
 import { fetchUserCoupons } from '@/services/userservice';
@@ -11,9 +11,11 @@ import { textStyle } from '@/styles/text';
 import { COLORS } from '@/constants/colors';
 import BottomNavbar from '@/components/Navbar';
 import { TitleBar } from '@/components/TitleBar';
+import { Dimensions } from 'react-native';
 
 export default function CouponsScreen() {
   const { user } = useAuth();
+  const {height} = useWindowDimensions()
   const [coupons, setCoupons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -66,6 +68,7 @@ export default function CouponsScreen() {
                 status={item.status || "Inativo"}
                 validity={item.validity || "N/A"}
                 urlIcone={item.urlIcone}
+                validationCode={item.validationCode}
               />
             )}
             ListEmptyComponent={
@@ -76,6 +79,7 @@ export default function CouponsScreen() {
           />
         )}
       </View>
+      <View style={[{ marginBottom: height *0.1 }]}></View>
 
       {/* Navbar Fixa no fundo */}
       <BottomNavbar />

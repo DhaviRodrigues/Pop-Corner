@@ -6,6 +6,8 @@ import { style} from "@/styles/cinema";
 import { COLORS } from "@/constants/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
+import * as ImagePicker from 'expo-image-picker';
+import { uploadUserPhoto, ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
 import {
   Alert,
   Image,
@@ -66,10 +68,72 @@ export default function CreateCinema() {
   const [nome, setNome] = useState("");
   const [cidade, setCidade] = useState("");
   const [endereco, setEndereco] = useState("");
+  // Mantemos o estado apenas para carregar dados antigos em caso de edição
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [urlImagem, setUrlImagem] = useState("");
   const [isParceiro, setIsParceiro] = useState(false);
+  const [loadingImage, setLoadingImage] = useState(false);
+
+  const getImageExtension = (uri: string) => {
+    return uri.split('.').pop()?.split('?')[0]?.toLowerCase() || '';
+  };
+
+  const handlePickImage = async () => {
+    try {
+      setLoadingImage(true);
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Permissão Negada", "Permissão para acessar galeria é necessária.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 1,
+      });
+
+      if (result.canceled || result.assets.length === 0) {
+        setLoadingImage(false);
+        return;
+      }
+
+      const uri = result.assets[0].uri;
+      const fileName = result.assets[0].fileName || '';
+
+      const ext = getImageExtension(fileName) || getImageExtension(uri);
+      const valid = ext && ALLOWED_IMAGE_EXTENSIONS.includes(ext);
+      
+      if (!valid) {
+        Alert.alert("Erro", "Formato de imagem inválido. Use apenas JPG, JPEG ou PNG.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const identifier = `cinema_${Date.now()}`;
+      const uploadResponse = await uploadUserPhoto(uri, 'cinema_foto', identifier, fileName);
+      if (!uploadResponse.success) {
+        Alert.alert("Erro", uploadResponse.error || "Erro ao fazer upload da imagem.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const signed = uploadResponse.signedUrl;
+      if (signed) {
+        setUrlImagem(signed);
+      } else {
+        Alert.alert("Erro", "Erro ao obter URL da imagem.");
+      }
+    } catch (error) {
+      console.error("Erro no upload de imagem:", error);
+      Alert.alert("Erro", "Erro ao processar imagem.");
+    } finally {
+      setLoadingImage(false);
+    }
+  };
 
   const [searchMovieQuery, setSearchMovieQuery] = useState("");
   const [availableMovies, setAvailableMovies] = useState<any[]>([]);
@@ -87,8 +151,6 @@ export default function CreateCinema() {
     nome.trim() &&
     cidade.trim() &&
     endereco.trim() &&
-    latitude.trim() &&
-    longitude.trim() &&
     urlImagem.trim()
   );
 
@@ -170,12 +232,39 @@ export default function CreateCinema() {
     }
 
     try {
+      // --- ESTRATÉGIA 1: API DO NOMINATIM (OPENSTREETMAP) ---
+      let latGerada = 0;
+      let lonGerada = 0;
+
+      // Junta o endereço e a cidade para a pesquisa
+      const enderecoBusca = `${endereco}, ${cidade}`;
+      // Limita a 1 resultado para ser mais rápido
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoBusca)}&limit=1`;
+
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'PopCornerApp/1.0', // Cabeçalho recomendado pela documentação do Nominatim
+          'Accept-Language': 'pt-BR,pt;q=0.9'
+        }
+      });
+      
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        latGerada = parseFloat(data[0].lat);
+        lonGerada = parseFloat(data[0].lon);
+      } else {
+        setErroCinema("Não achámos as coordenadas deste endereço. Tente ser mais direto (ex: Nome da Rua, Cidade).");
+        return; // Bloqueia a gravação se o endereço for inválido
+      }
+      // ------------------------------------------------------
+
       const dadosCrus = {
         nome,
         cidade,
         endereco,
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
+        latitude: latGerada,
+        longitude: lonGerada,
         urlImagem,
         filmesEmCartaz,
         sessoes,
@@ -192,7 +281,7 @@ export default function CreateCinema() {
         setErroCinema("Falha ao salvar o cinema. Verifique os dados e tente novamente.");
       }
     } catch (error: any) {
-      setErroCinema(error.message);
+      setErroCinema("Erro de rede ao buscar localização: " + error.message);
     }
   };
 
@@ -238,17 +327,11 @@ export default function CreateCinema() {
             <LocalInput text="Endereço" value={endereco} onChangeText={setEndereco} />
           </View>
 
-          <View style={style.row}>
-            <View style={style.halfInput}>
-              <LocalInput text="Latitude" value={latitude} onChangeText={setLatitude} />
-            </View>
-            <View style={style.halfInput}>
-              <LocalInput text="Longitude" value={longitude} onChangeText={setLongitude} />
-            </View>
-          </View>
-
-          <View style={style.fullInput}>
-            <LocalInput text="URL da Imagem (Link HTTP)" value={urlImagem} onChangeText={setUrlImagem} />
+          <View style={[style.fullInput, { alignItems: "center" }]}>
+            <ButtonY 
+              title={loadingImage ? "Fazendo Upload..." : urlImagem ? "Alterar Imagem do Cinema" : "Selecionar Imagem do Cinema"} 
+              onPress={handlePickImage} textSize={14 } h={50}
+            />
             {urlImagem ? (
               <Image
                 source={{ uri: urlImagem }}

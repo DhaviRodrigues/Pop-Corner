@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Image, FlatList, Platform, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, Image, FlatList, Platform, ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNavbar from "@/components/Navbar";
 import { StoreCoupon } from "@/components/StoreCoupon";
@@ -99,7 +99,7 @@ export default function Coupons() {
         pipokaCost={item.valor_pipokas || item.valorPipokas || 0}
         description={item.descricao_produto || item.observacoes || ""}
         timer={item.data_expiracao_resgate?.toDate?.() || item.dataExpiracao?.toDate?.()}
-        amount={item.quantidade_disponivel}
+        amount={item.limitada ? (item.quantidade_disponivel ?? item.qtdCupons) : undefined}
         isAdmin={isAdmin}
         onEdit={handleEditCoupon}
         onDelete={handleDeleteCoupon}
@@ -109,7 +109,6 @@ export default function Coupons() {
     );
   };
 
-  // LOG DE DEBUG ADICIONADO PARA IDENTIFICAR FILTRAGEM
   const availableCoupons = couponsList.filter(item => {
     const instance = Coupon.fromFirestore(item.id, item);
     const valid = instance.isDisponivelParaResgate();
@@ -128,6 +127,33 @@ export default function Coupons() {
     <SafeAreaView style={[movieStyle.filmesContainer, { flex: 1, backgroundColor: COLORS.primary }]}>
       <View style={[movieStyle.filmesHeader, { position: 'relative', paddingBottom: 10 }]}>
         <Image source={require("@/screenAssets/logo/full-logo.png")} style={movieStyle.filmesLogo} />
+
+        {isAdmin && (
+          <TouchableOpacity
+            onPress={() => router.push("/validarCupom")}
+            style={{
+              position: "absolute",
+              top: Platform.OS === 'web' ? 20 : 40,
+              left: 20,
+              backgroundColor: COLORS.gold,
+              width: 90,
+              height: 55,
+              borderColor: COLORS.primaryDark,
+              borderWidth: 4,
+              borderRadius: 30,
+              justifyContent: "center",
+              alignItems: "center",
+              elevation: 4,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 3,
+              zIndex: 100,
+            }}
+          >
+            <Text style={{ color: COLORS.primary, fontSize: 13, fontFamily: "Poppins-Bold" }}>VALIDAR</Text>
+          </TouchableOpacity>
+        )}
 
         {isAdmin && (
           <AdminAddButton onPress={() => router.push("/addCoupons")} />

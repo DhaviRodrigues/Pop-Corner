@@ -191,24 +191,34 @@ export async function purchaseCoupon(userId: string, couponData: any, userPipoka
     const coupon = Coupon.fromFirestore(couponData.id, couponData);
     const couponRef = doc(db, "cupons", couponData.id);
     const userRef = doc(db, 'users', userId);
+    
+    if (userPipokas < coupon.getValorPipokas()) return { valid: false, error: "Pipokas insuficientes!" };
+
+    const randomChars = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+    const uniqueCode = `PPC-${randomChars()}-${randomChars()}`;
     const dataVencimento = coupon.calcularDataVencimentoUso(new Date());
 
-    await runTransaction(db, async (transaction) => {
+   await runTransaction(db, async (transaction) => {
       const couponDoc = await transaction.get(couponRef);
-      
       if (!couponDoc.exists()) throw new Error("Cupom não encontrado.");
       
       const data = couponDoc.data();
-      if (data.quantidade_disponivel !== null && data.quantidade_disponivel <= 0) {
-        throw new Error("Cupom esgotado!");
+      if (data.limitada === true) {
+        if (data.quantidade_disponivel !== null && data.quantidade_disponivel <= 0) {
+          throw new Error("Cupom esgotado!");
+        }
+        transaction.update(couponRef, {
+          quantidade_disponivel: increment(-1)
+        });
       }
 
-      transaction.update(couponRef, {
-        quantidade_disponivel: increment(-1)
-      });
-
+      // 1. Decremento Atômico
+      transaction.update(couponRef, { quantidade_disponivel: increment(-1) });
+      
+      // 2. Débito de Pipokas
       transaction.update(userRef, { pipoka: userPipokas - coupon.getValorPipokas() });
 
+      // 3. Registro no usuário
       const userCouponRef = doc(collection(db, `user_coupons/${userId}/coupons`));
       transaction.set(userCouponRef, {
         type: coupon.getTipoCupom(),
@@ -216,19 +226,25 @@ export async function purchaseCoupon(userId: string, couponData: any, userPipoka
         circleText: coupon.getValorBeneficio()?.toString(),
         description: coupon.getDescricaoProduto(),
         status: "Ativo",
+        validationCode: uniqueCode,
         urlIcone: coupon.getUrlIcone(),
         validity: dataVencimento.toLocaleDateString('pt-BR'),
         addedAt: serverTimestamp()
       });
+
+      // 4. Registro Global para Validação
+      transaction.set(doc(db, 'cupons_resgatados', uniqueCode), {
+        userId: userId,
+        couponDocId: userCouponRef.id,
+        nome_cupom: coupon.getNomeCupom(),
+        status: "Ativo",
+        resgatadoEm: serverTimestamp(),
+        validadoEm: null
+      });
     });
 
     return { valid: true, error: "" };
-    
   } catch (error) {
-    console.error("Erro crítico na compra:", error);
-    return { 
-      valid: false, 
-      error: `Erro na troca: ${error instanceof Error ? error.message : 'Dados do cupom inválidos.'}` 
-    };
+    return { valid: false, error: error instanceof Error ? error.message : "Erro na troca" };
   }
 }
