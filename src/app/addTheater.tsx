@@ -6,6 +6,8 @@ import { style} from "@/styles/cinema";
 import { COLORS } from "@/constants/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
+import * as ImagePicker from 'expo-image-picker';
+import { uploadUserPhoto, ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
 import {
   Alert,
   Image,
@@ -71,6 +73,67 @@ export default function CreateCinema() {
   const [longitude, setLongitude] = useState("");
   const [urlImagem, setUrlImagem] = useState("");
   const [isParceiro, setIsParceiro] = useState(false);
+  const [loadingImage, setLoadingImage] = useState(false);
+
+  const getImageExtension = (uri: string) => {
+    return uri.split('.').pop()?.split('?')[0]?.toLowerCase() || '';
+  };
+
+  const handlePickImage = async () => {
+    try {
+      setLoadingImage(true);
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Permissão Negada", "Permissão para acessar galeria é necessária.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 1,
+      });
+
+      if (result.canceled || result.assets.length === 0) {
+        setLoadingImage(false);
+        return;
+      }
+
+      const uri = result.assets[0].uri;
+      const fileName = result.assets[0].fileName || '';
+
+      const ext = getImageExtension(fileName) || getImageExtension(uri);
+      const valid = ext && ALLOWED_IMAGE_EXTENSIONS.includes(ext);
+      
+      if (!valid) {
+        Alert.alert("Erro", "Formato de imagem inválido. Use apenas JPG, JPEG ou PNG.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const identifier = `cinema_${Date.now()}`;
+      const uploadResponse = await uploadUserPhoto(uri, 'cinema_foto', identifier, fileName);
+      if (!uploadResponse.success) {
+        Alert.alert("Erro", uploadResponse.error || "Erro ao fazer upload da imagem.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const signed = uploadResponse.signedUrl;
+      if (signed) {
+        setUrlImagem(signed);
+      } else {
+        Alert.alert("Erro", "Erro ao obter URL da imagem.");
+      }
+    } catch (error) {
+      console.error("Erro no upload de imagem:", error);
+      Alert.alert("Erro", "Erro ao processar imagem.");
+    } finally {
+      setLoadingImage(false);
+    }
+  };
 
   const [searchMovieQuery, setSearchMovieQuery] = useState("");
   const [availableMovies, setAvailableMovies] = useState<any[]>([]);
@@ -265,8 +328,11 @@ export default function CreateCinema() {
             <LocalInput text="Endereço" value={endereco} onChangeText={setEndereco} />
           </View>
 
-          <View style={style.fullInput}>
-            <LocalInput text="URL da Imagem (Link HTTP)" value={urlImagem} onChangeText={setUrlImagem} />
+          <View style={[style.fullInput, { alignItems: "center" }]}>
+            <ButtonY 
+              title={loadingImage ? "Fazendo Upload..." : urlImagem ? "Alterar Imagem do Cinema" : "Selecionar Imagem do Cinema"} 
+              onPress={handlePickImage} textSize={14 } h={50}
+            />
             {urlImagem ? (
               <Image
                 source={{ uri: urlImagem }}
