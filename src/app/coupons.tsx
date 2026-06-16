@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Image, FlatList, Platform, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, Image, FlatList, Platform, ActivityIndicator, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNavbar from "@/components/Navbar";
 import { StoreCoupon } from "@/components/StoreCoupon";
@@ -118,6 +118,33 @@ const renderCoupon = ({ item }: { item: any }) => {
     <SafeAreaView style={[movieStyle.filmesContainer, { flex: 1, backgroundColor: COLORS.primary }]}>
       <View style={[movieStyle.filmesHeader, { position: 'relative', paddingBottom: 10 }]}>
         <Image source={require("@/screenAssets/logo/full-logo.png")} style={movieStyle.filmesLogo} />
+
+        {isAdmin && (
+          <TouchableOpacity
+            onPress={() => router.push("/validarCupom")}
+            style={{
+              position: "absolute",
+              top: Platform.OS === 'web' ? 20 : 40,
+              left: 20,
+              backgroundColor: COLORS.gold,
+              width: 90,
+              height: 55,
+              borderColor: COLORS.primaryDark,
+              borderWidth: 4,
+              borderRadius: 30,
+              justifyContent: "center",
+              alignItems: "center",
+              elevation: 4,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 3,
+              zIndex: 100,
+            }}
+          >
+            <Text style={{ color: COLORS.primary, fontSize: 13, fontFamily: "Poppins-Bold" }}>VALIDAR</Text>
+          </TouchableOpacity>
+        )}
 
         {isAdmin && (
           <AdminAddButton onPress={() => router.push("/addCoupons")} />
