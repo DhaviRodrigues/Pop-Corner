@@ -1,5 +1,3 @@
-import { WatchlistEntry } from '@/models/userWatchlist';
-import { Coupon } from '@/models/coupon'
 import { DocumentReference } from 'firebase/firestore';
 export interface IUser {
   name: string;

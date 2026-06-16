@@ -1,35 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, TouchableOpacity, Text, Image, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { navBarStyle } from '@/styles/navbar';
 import { useAuth } from '@/contexts/UserContext';
-import { verifyAdmin } from '@/services/userservice';
 
 const BottomNavbar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
-  
-  const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin } = useAuth();
   
   const navbarBackground = width >= 510
     ? require('../screenAssets/Navbar/Navbar-Expandida.png')
     : require('../screenAssets/Navbar/Navbar.png');
-
-    
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (user) {
-        const result = await verifyAdmin();
-        setIsAdmin(result.isAdmin);
-      } else {
-        setIsAdmin(false);
-      }
-    };
-    checkAdminStatus();
-  }, [user]);
 
   const tabs = [
     {

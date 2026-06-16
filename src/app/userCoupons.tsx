@@ -53,7 +53,7 @@ export default function CouponsScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ 
               paddingHorizontal: 20,
-              paddingBottom: 40,
+              paddingBottom: 160,
               alignItems: 'center' 
             }}
             renderItem={({ item }) => (

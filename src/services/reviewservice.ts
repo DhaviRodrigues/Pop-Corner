@@ -1,13 +1,8 @@
 import { auth, db } from "@/config/firebase";
-import { collection, doc, getDoc, updateDoc, setDoc, Timestamp, DocumentReference, increment } from "firebase/firestore";
+import { collection, doc, getDoc, updateDoc, deleteDoc, setDoc, Timestamp, DocumentReference, increment } from "firebase/firestore";
 import { Movie } from "@/models/movie";
 import { Comment } from "@/models/comment";
-import { Cinema } from "@/models/cinema";
 
-/**
- * Adiciona uma nova avaliação a um filme específico, recalcula as médias 
- * de nota através do Model e atualiza o banco de dados.
- */
 export async function addReviewToMovie(movieId: string, reviewPayload: any): Promise<any | null> {
   try {
     const currentUser = auth.currentUser;
@@ -148,5 +143,82 @@ export async function addReviewToCinema(cinemaId: string, reviewPayload: any) {
     return { valid: true, error: "" };
   } catch (error: any) {
     return { valid: false, error: error.message };
+  }
+}
+
+export async function deleteMovieReview(movieId: string, userId: string): Promise<{ valid: boolean; error: string }> {
+  try {
+    const movieDocRef = doc(db, "movies", movieId);
+    const movieSnap = await getDoc(movieDocRef);
+    if (!movieSnap.exists()) throw new Error("Filme não encontrado.");
+
+    const movieData = movieSnap.data();
+    const reviewsDocRef = movieData.reviews_ref as DocumentReference;
+    const reviewRef = doc(collection(reviewsDocRef, "reviews"), userId);
+    
+    const reviewSnap = await getDoc(reviewRef);
+    if (!reviewSnap.exists()) throw new Error("Avaliação não encontrada.");
+    
+    const reviewRating = reviewSnap.data().rating || 0;
+
+    await deleteDoc(reviewRef);
+
+    const currentRating = movieData.avaliacao || 0;
+    const currentCount = movieData.qnt_avaliacoes || 0;
+    
+    let newCount = currentCount - 1;
+    let newAverage = 0;
+    if (newCount > 0) {
+      newAverage = ((currentRating * currentCount) - reviewRating) / newCount;
+    }
+
+    await updateDoc(movieDocRef, {
+      avaliacao: newAverage,
+      qnt_avaliacoes: newCount
+    });
+
+    return { valid: true, error: "" };
+  } catch (error: any) {
+    console.error("Erro ao deletar avaliação do filme:", error);
+    return { valid: false, error: error.message || "Erro ao deletar comentário." };
+  }
+}
+
+export async function deleteCinemaReview(cinemaId: string, userId: string): Promise<{ valid: boolean; error: string }> {
+  try {
+    const cinemaDocRef = doc(db, "cinemas", cinemaId);
+    const cinemaSnap = await getDoc(cinemaDocRef);
+    if (!cinemaSnap.exists()) throw new Error("Cinema não encontrado.");
+
+    const cinemaData = cinemaSnap.data();
+    const reviewRef = doc(db, "cinemas", cinemaId, "reviews", userId);
+    
+    const reviewSnap = await getDoc(reviewRef);
+    if (!reviewSnap.exists()) throw new Error("Avaliação não encontrada.");
+    
+    const reviewRating = reviewSnap.data().rating || 0;
+
+    // Remove o documento da avaliação
+    await deleteDoc(reviewRef);
+
+    // Recalcula a média e quantidade do cinema
+    const currentRating = cinemaData.avaliacao || 0;
+    const currentCount = cinemaData.qnt_avaliacoes || 0;
+    
+    let newCount = currentCount - 1;
+    let newAverage = 0;
+    if (newCount > 0) {
+      newAverage = ((currentRating * currentCount) - reviewRating) / newCount;
+    }
+
+    await updateDoc(cinemaDocRef, {
+      avaliacao: newAverage,
+      qnt_avaliacoes: newCount
+    });
+
+    return { valid: true, error: "" };
+  } catch (error: any) {
+    console.error("Erro ao deletar avaliação do cinema:", error);
+    return { valid: false, error: error.message || "Erro ao deletar comentário." };
   }
 }

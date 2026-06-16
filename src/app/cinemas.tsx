@@ -174,9 +174,6 @@ export default function Cinemas() {
         contentContainerStyle={{ paddingBottom: 200 }}
         ListFooterComponent={
           <View style={{ alignItems: "center", marginTop: 40, marginBottom: 60 }}>
-            <View style={movieStyle.filmesFooterBtn}>
-              <ButtonY title="Ver mais" />
-            </View>
             
             <TouchableOpacity activeOpacity={0.7} style={{ marginTop: 40, alignItems: "center" }} onPress={() => router.push("/map")}>
               <Image source={require("@/screenAssets/Map-Buttom.png")} style={cinemaStyle.mapButtom} />

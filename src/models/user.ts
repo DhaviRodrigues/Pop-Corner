@@ -12,6 +12,7 @@ export class User implements IUser {
     public uid: string,
   ) {}
   
+  getId(): string { return this.uid; }
   getName(): string { return this.name; }
   getEmail(): string { return this.email; }
   getGenres(): string[] { return this.favorite_genres; }

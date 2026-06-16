@@ -10,8 +10,8 @@ import {
   reauthenticateWithCredential,
   updatePassword
 } from "firebase/auth";
-import { createUserProfile, verifyAdmin } from "@/services/userservice";
-import { uploadUserPhoto } from '@/services/storage'; // Centralizado aqui na camada de infraestrutura
+import { createUserProfile } from "@/services/userservice";
+import { uploadUserPhoto } from '@/services/storage';
 
 export interface AuthResult {
   valid: boolean;
@@ -64,34 +64,38 @@ export async function registerUser(
   profilePhotoFileName?: string
 ): Promise<AuthResult> {
   try {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password); //
+  const user = userCredential.user; //
 
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-
-    const createResult = await createUserProfile(user.uid, name, email, favoriteGenres);
-    if (!createResult.valid) {
-      throw new Error(createResult.error);
+  const createResult = await createUserProfile(user.uid, name, email, favoriteGenres); //
+  if (!createResult.valid) {
+    try {
+      await user.delete(); 
+    } catch (deleteError) {
+      console.error("Não foi possível reverter a criação do usuário no Auth:", deleteError);
     }
-
-    if (profilePhotoUri) {
-      try {
-        const uploadResult = await uploadUserPhoto(profilePhotoUri, 'perfil_foto', user.uid, profilePhotoFileName);
-        if (uploadResult.success && uploadResult.signedUrl) {
-          await updateDoc(doc(db, 'users', user.uid), { profile_picture: uploadResult.signedUrl });
-        }
-      } catch (photoError) {
-        console.warn("Falha no upload da foto (não fatal):", photoError);
-      }
-    }
-
-    return { valid: true, error: "", uid: user.uid };
-  } catch (error: any) {
-    console.error("Erro detalhado no registro:", error);
-    return {
-      valid: false,
-      error: getRegisterErrorMessage(error.code)
-    };
+    throw new Error(createResult.error); //
   }
+
+  if (profilePhotoUri) { //
+    try {
+      const uploadResult = await uploadUserPhoto(profilePhotoUri, 'perfil_foto', user.uid, profilePhotoFileName); //
+      if (uploadResult.success && uploadResult.signedUrl) { //
+        await updateDoc(doc(db, 'users', user.uid), { profile_picture: uploadResult.signedUrl }); //
+      }
+    } catch (photoError) { //
+      console.warn("Falha no upload da foto (não fatal):", photoError); //
+    }
+  }
+
+  return { valid: true, error: "", uid: user.uid }; //
+} catch (error: any) { //
+  console.error("Erro detalhado no registro:", error); //
+  return { //
+    valid: false, //
+    error: getRegisterErrorMessage(error.code) //
+  }; //
+}
 }
 
 export async function initiateRegistration(email: string, code: string): Promise<boolean> {
@@ -349,6 +353,7 @@ export function getRegisterErrorMessage(errorCode: string): string {
     case "auth/invalid-email":
       return "Email inválido";
     default:
+      return "Erro ao realizar o cadastro. Por favor, tente novamente.";
   }
 }
 

@@ -1,5 +1,5 @@
 import { db } from "@/config/firebase";
-import { addDoc, collection, serverTimestamp, getDocs, doc, getDoc, updateDoc, deleteDoc, runTransaction} from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, getDocs, doc, getDoc, updateDoc, deleteDoc, increment, runTransaction} from "firebase/firestore";
 import { UpdateResult } from "@/services/userservice";
 import {Coupon} from "@/models/coupon"
 
@@ -9,7 +9,6 @@ export interface CouponPayload {
   valorPipokas: number;
   valorBeneficios: string;
   urlIcone: string;
-  // opcional: pode ser string no formato dd/mm/yyyy ou um objeto Date (preferível para consultas)
   dataExpiracao?: string | Date;
   tempoValidade: string;
   limitada: boolean;
@@ -190,35 +189,46 @@ export async function deleteCoupon(couponId: string): Promise<ServiceResult> {
 export async function purchaseCoupon(userId: string, couponData: any, userPipokas: number): Promise<UpdateResult> {
   try {
     const coupon = Coupon.fromFirestore(couponData.id, couponData);
-    console.log("DEBUG COUPON DATA:", {
-      tipo: coupon.getTipoCupom(),
-      nome: coupon.getNomeCupom()
-    });
-    
-    if (userPipokas < coupon.getValorPipokas()) {
-      return { valid: false, error: "Pipokas insuficientes!" };
-    }
-
-    const dataVencimento = coupon.calcularDataVencimentoUso(new Date());
+    const couponRef = doc(db, "cupons", couponData.id);
     const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, { pipoka: userPipokas - coupon.getValorPipokas() });
+    const dataVencimento = coupon.calcularDataVencimentoUso(new Date());
 
-    const couponRef = collection(db, `user_coupons/${userId}/coupons`);
-    const tipoCupom = coupon.getTipoCupom();
+    await runTransaction(db, async (transaction) => {
+      const couponDoc = await transaction.get(couponRef);
+      
+      if (!couponDoc.exists()) throw new Error("Cupom não encontrado.");
+      
+      const data = couponDoc.data();
+      if (data.quantidade_disponivel !== null && data.quantidade_disponivel <= 0) {
+        throw new Error("Cupom esgotado!");
+      }
 
-    await addDoc(couponRef, {
-      type: tipoCupom,
-      title: coupon.getNomeCupom(),
-      circleText: coupon.getValorBeneficio()?.toString(),
-      description: coupon.getDescricaoProduto(),
-      status: "Ativo",
-      urlIcone: coupon.getUrlIcone(),
-      validity: dataVencimento.toLocaleDateString('pt-BR'),
-      addedAt: serverTimestamp()
+      transaction.update(couponRef, {
+        quantidade_disponivel: increment(-1)
+      });
+
+      transaction.update(userRef, { pipoka: userPipokas - coupon.getValorPipokas() });
+
+      const userCouponRef = doc(collection(db, `user_coupons/${userId}/coupons`));
+      transaction.set(userCouponRef, {
+        type: coupon.getTipoCupom(),
+        title: coupon.getNomeCupom(),
+        circleText: coupon.getValorBeneficio()?.toString(),
+        description: coupon.getDescricaoProduto(),
+        status: "Ativo",
+        urlIcone: coupon.getUrlIcone(),
+        validity: dataVencimento.toLocaleDateString('pt-BR'),
+        addedAt: serverTimestamp()
+      });
     });
 
     return { valid: true, error: "" };
+    
   } catch (error) {
     console.error("Erro crítico na compra:", error);
-    return { valid: false, error: `Erro na troca: ${error instanceof Error ? error.message : 'Dados do cupom inválidos.'}` };
-  }}
+    return { 
+      valid: false, 
+      error: `Erro na troca: ${error instanceof Error ? error.message : 'Dados do cupom inválidos.'}` 
+    };
+  }
+}

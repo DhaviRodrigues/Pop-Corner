@@ -7,18 +7,26 @@ import BottomNavbar from "@/components/Navbar";
 import { TitleBar } from "@/components/TitleBar";
 import { miscStyle } from "@/styles/misc";
 import { getHomeMovies } from "@/services/recommendationService";
+import { useAuth } from "@/contexts/UserContext";
 
 const { height } = Dimensions.get("window");
 
 export default function Home() {
+  const { user, loading: authLoading } = useAuth();
+  
   const [recommendedMovies, setRecommendedMovies] = useState<any[]>([]);
   const [discoverMovies, setDiscoverMovies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingMovies, setLoadingMovies] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
+
     const fetchMovies = async () => {
       try {
-        const resultado = await getHomeMovies();
+        setLoadingMovies(true);
+        const generosDoUsuario = user?.favorite_genres || user?.getGenres?.() || [];
+        
+        const resultado = await getHomeMovies(generosDoUsuario);
         
         if (resultado.sucesso) {
           setRecommendedMovies(resultado.recomendados);
@@ -29,14 +37,13 @@ export default function Home() {
       } catch (error) {
         console.error("Erro ao carregar filmes na tela Home:", error);
       } finally {
-        setLoading(false);
+        setLoadingMovies(false);
       }
     };
     
     fetchMovies();
-  }, []);
-
-  if (loading) {
+  }, [authLoading, user]);
+  if (authLoading || loadingMovies) {
     return (
       <View style={[miscStyle.background, { justifyContent: 'center' }]}>
         <ActivityIndicator size="large" color={COLORS.gold} />

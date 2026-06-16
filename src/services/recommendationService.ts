@@ -1,28 +1,35 @@
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/config/firebase"; 
-import { Recomendador } from "@/models/recommendation";
-import { fetchUserData } from "@/services/userservice"; 
 import { IMoviePayload } from "@/types/IMoviePayload";
 
 type FilmeComId = IMoviePayload & { id: string };
 
-const shuffleMovies = (movies: FilmeComId[]) => [...movies].sort(() => Math.random() - 0.5);
+const shuffleMovies = (movies: FilmeComId[]): FilmeComId[] => 
+  [...movies].sort(() => Math.random() - 0.5);
 
-export async function getHomeMovies() {
+function gerarRecomendacoes(catalogo: FilmeComId[], favoriteGenres: string[]): FilmeComId[] {
+  const filmesRecomendados = catalogo.filter(filme => {
+    if (!filme.tags || !favoriteGenres) return false;
+    return filme.tags.some((tag: string) => favoriteGenres.includes(tag));
+  });
+
+  if (filmesRecomendados.length === 0) {
+    return catalogo.slice(0, 10);
+  }
+
+  const recomendadosEmbaralhados = [...filmesRecomendados].sort(() => Math.random() - 0.5);
+  return recomendadosEmbaralhados.slice(0, 10);
+}
+
+export async function getHomeMovies(favoriteGenres: string[]) {
   try {
-    const usuarioLogado = await fetchUserData();
-
     const querySnapshot = await getDocs(collection(db, "movies"));
-    
     const todosOsFilmes = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as FilmeComId[]; 
 
-    const recomendador = new Recomendador(todosOsFilmes);
-    const usuarioParaFiltro = usuarioLogado || { favorite_genres: [] };
-    
-    const recomendadosPuros = recomendador.gerarParaUsuario(usuarioParaFiltro as any) as FilmeComId[];
+    const recomendadosPuros = gerarRecomendacoes(todosOsFilmes, favoriteGenres);
 
     const descobrirPuros = todosOsFilmes.filter(
       (filme) => !recomendadosPuros.some((rec) => rec.id === filme.id)
@@ -30,13 +37,13 @@ export async function getHomeMovies() {
 
     return {
       sucesso: true,
-      recomendados: shuffleMovies(recomendadosPuros),
+      recomendados: recomendadosPuros,
       descobrir: shuffleMovies(descobrirPuros),
       erro: null
     };
 
   } catch (error) {
-    console.error("🚨 ERRO NO SERVIÇO DE RECOMENDAÇÃO:", error);
+    console.error("Erron no serviço de recomendação:", error);
     return {
       sucesso: false,
       recomendados: [],

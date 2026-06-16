@@ -9,7 +9,6 @@ import { BackButton } from '@/components/BackButton';
 import { useAuth } from '@/contexts/UserContext';
 import { getCinemaById, deleteCinema } from '@/services/cinemaService';
 import { addReviewToCinema } from '@/services/reviewservice';
-import { getMovieById } from '@/services/movieservice';
 import { movieStyle } from '@/styles/movie'; 
 import { textStyle } from '@/styles/text';
 import { cinemaDetailsStyle } from '@/styles/cinemadetails';

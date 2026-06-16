@@ -261,36 +261,66 @@ export async function deleteUserProfile(): Promise<UpdateResult> {
 }
 export async function addMovieToWatchlist(userId: string, idFilme: string): Promise<UpdateResult> {
   if (!userId) return { valid: false, error: "Usuário não identificado." };
+  
   try {
     const watchlistPath = `watchlist/${userId}/filmes`; 
-    await addDoc(collection(db, watchlistPath), { 
+    const colRef = collection(db, watchlistPath);
+
+    const duplicatedQuery = query(colRef, where("idFilme", "==", idFilme));
+    const checkSnapshot = await getDocs(duplicatedQuery);
+    
+    if (!checkSnapshot.empty) {
+      return { valid: false, error: "Este filme já está na sua watchlist." };
+    }
+
+    await addDoc(colRef, { 
       idFilme: idFilme, 
       addedAt: serverTimestamp() 
     });
+
     return { valid: true, error: '' };
   } catch (error) {
-    console.error("Erro ao adicionar filme:", error);
-    return { valid: false, error: "Erro ao adicionar filme." };
+    console.error("Erro ao adicionar filme no service:", error);
+    return { valid: false, error: "Erro ao adicionar filme à watchlist." };
   }
 }
 
-
 export async function fetchWatchlistMoviesForView(userId: string): Promise<WatchlistFetchResult[]> {
+  if (!userId) return [];
+
   try {
     const snapshot = await getDocs(collection(db, `watchlist/${userId}/filmes`));
     const validDocs = snapshot.docs.filter(doc => doc.id !== 'init');
 
-    return await Promise.all(validDocs.map(async (doc) => {
-      const data = doc.data();
-      const movie = await getMovieById(data.idFilme);
-      return { ...movie, id: data.idFilme };
+    const moviesList = await Promise.all(validDocs.map(async (d) => {
+      const data = d.data();
+      const rawAddedAt = data.addedAt?.toDate?.() ? data.addedAt.toDate().toISOString() : data.addedAt || '';
+      
+      try {
+        const movieDataFromService = await getMovieById(data.idFilme);
+        if (movieDataFromService) {
+          return {
+            id: data.idFilme,
+            image: movieDataFromService.image ?? null,
+            title: movieDataFromService.title ?? '',
+            genres: movieDataFromService.genres ?? movieDataFromService.generos ?? [],
+            releaseDate: movieDataFromService.releaseDate ?? 0,
+            addedAt: rawAddedAt,
+            missing: false
+          };
+        }
+      } catch (err) {
+        console.warn(`Erro ao buscar metadados do filme ${data.idFilme}`);
+      }
+      
+      return { id: data.idFilme, image: null, title: 'Filme Indisponível', genres: [], releaseDate: 0, addedAt: rawAddedAt, missing: true };
     }));
+    return moviesList.filter(m => !m.missing && m.image) as WatchlistFetchResult[];
   } catch (e) {
-    console.error("Erro ao buscar watchlist:", e);
+    console.error("Erro ao buscar watchlist para a View:", e);
     return [];
   }
 }
-
 export async function removeMovieFromWatchlist(userId: string, idFilme: string): Promise<UpdateResult> {
   try {
     const colRef = collection(db, `watchlist/${userId}/filmes`);
@@ -309,7 +339,7 @@ export async function removeMovieFromWatchlist(userId: string, idFilme: string):
 export const checkIfMovieInWatchlist = async (userId: string, movieId: string) => {
   try {
 
-    const colRef = collection(db, "watchlist", userId, "filmes");
+    const colRef = collection(db, `watchlist/${userId}/filmes`);
     const q = query(colRef, where("idFilme", "==", movieId));
 
     const querySnapshot = await getDocs(q);

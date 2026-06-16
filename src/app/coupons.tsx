@@ -6,13 +6,13 @@ import { StoreCoupon } from "@/components/StoreCoupon";
 import { AdminAddButton } from "@/components/AdminAddButton";
 import { movieStyle } from "@/styles/movie";
 import { COLORS } from "@/constants/colors";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "@/contexts/UserContext";
-import { fetchCoupons, deleteCoupon } from "@/services/couponService";
+import { fetchCoupons, deleteCoupon, purchaseCoupon } from "@/services/couponService";
 import { verifyAdmin } from "@/services/userservice";
-import { purchaseCoupon } from "@/services/couponService";
 import { UserPipoka } from "@/components/UserPipoka";
 import { ValidationPopup } from "@/components/ValidationPopup";
+import { Coupon } from "@/models/coupon";
 
 export default function Coupons() {
   const router = useRouter();
@@ -25,38 +25,42 @@ export default function Coupons() {
   const [couponsList, setCouponsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const handlePurchase = async (coupon: any) => {
-  if (!user) return alert("Você precisa estar logado!");
-  
-  const userId = (user as any).uid || (user as any).id;
-  const userPipokas = user.pipoka || 0;
+  const loadData = async () => {
+    setLoading(true);
+    const couponsResult = await fetchCoupons();
+    
+    if (couponsResult.valid && couponsResult.data) {
+      setCouponsList(couponsResult.data);
+    }
 
-  const result = await purchaseCoupon(userId, coupon, userPipokas);
-  
-  await refreshUser();
-  setPopupMessage(result.valid ? "Cupom resgatado com sucesso!" : result.error);
-  setShowPopup(true);
-};
+    const adminResult = await verifyAdmin();
+    if (adminResult.valid) {
+      setIsAdmin(adminResult.isAdmin);
+    }
+    setLoading(false);
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+    }, [])
+  );
+
+  const handlePurchase = async (coupon: any) => {
+    if (!user) return alert("Você precisa estar logado!");
+    
+    const userId = (user as any).uid || (user as any).id;
+    const userPipokas = user.pipoka || 0;
+
+    const result = await purchaseCoupon(userId, coupon, userPipokas);
+    
+    await refreshUser();
+    await loadData();
+    setPopupMessage(result.valid ? "Cupom resgatado com sucesso!" : result.error);
+    setShowPopup(true);
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      
-      // Fetch coupons
-      const couponsResult = await fetchCoupons();
-      if (couponsResult.valid && couponsResult.data) {
-        setCouponsList(couponsResult.data);
-      }
-
-      // Verify admin
-      const adminResult = await verifyAdmin();
-      if (adminResult.valid) {
-        setIsAdmin(adminResult.isAdmin);
-      }
-
-      setLoading(false);
-    };
-
     loadData();
   }, []);
 
@@ -81,12 +85,11 @@ export default function Coupons() {
       
       setCouponsList(prev => prev.filter(c => c.id !== couponId));
     } catch (error) {
-      console.error("Erro ao deletar:", error);
       throw error;
     }
   };
 
-const renderCoupon = ({ item }: { item: any }) => {
+  const renderCoupon = ({ item }: { item: any }) => {
     return (
       <StoreCoupon
         id={item.id}
@@ -96,7 +99,7 @@ const renderCoupon = ({ item }: { item: any }) => {
         pipokaCost={item.valor_pipokas || item.valorPipokas || 0}
         description={item.descricao_produto || item.observacoes || ""}
         timer={item.data_expiracao_resgate?.toDate?.() || item.dataExpiracao?.toDate?.()}
-        amount={item.quantidade_disponivel || item.qtdCupons}
+        amount={item.quantidade_disponivel}
         isAdmin={isAdmin}
         onEdit={handleEditCoupon}
         onDelete={handleDeleteCoupon}
@@ -105,6 +108,13 @@ const renderCoupon = ({ item }: { item: any }) => {
       />
     );
   };
+
+  // LOG DE DEBUG ADICIONADO PARA IDENTIFICAR FILTRAGEM
+  const availableCoupons = couponsList.filter(item => {
+    const instance = Coupon.fromFirestore(item.id, item);
+    const valid = instance.isDisponivelParaResgate();
+    return valid;
+  });
 
   if (loading) {
     return (
@@ -128,7 +138,7 @@ const renderCoupon = ({ item }: { item: any }) => {
       </View>
 
 
-      {couponsList.length === 0 ? (
+      {availableCoupons.length === 0 ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 }}>
           <Text style={{ color: COLORS.gold, fontSize: 16, fontFamily: "Poppins-Regular" }}>
             Nenhum cupom disponível
@@ -141,7 +151,7 @@ const renderCoupon = ({ item }: { item: any }) => {
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <View style={{ flex: 1, marginRight: 5 }}>
-              {couponsList
+              {availableCoupons
                 .filter((_, index) => index % 2 === 0)
                 .map((item, index) => (
                   <View key={`left-${item.id}-${index}`} style={{ marginBottom: 15 }}>
@@ -157,7 +167,7 @@ const renderCoupon = ({ item }: { item: any }) => {
           />
 
             <View style={{ flex: 1, marginLeft: 5 }}>
-              {couponsList
+              {availableCoupons
                 .filter((_, index) => index % 2 !== 0)
                 .map((item, index) => (
                   <View key={`right-${item.id}-${index}`} style={{ marginBottom: 15 }}>
@@ -171,4 +181,5 @@ const renderCoupon = ({ item }: { item: any }) => {
 
       <BottomNavbar />
     </SafeAreaView>
-  );}
+  );
+}

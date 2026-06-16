@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { Dimensions, Image, ScrollView, View } from "react-native";
+import React, { useState, useEffect } from "react";
+import { Dimensions, Image, ScrollView, View, Text, Modal, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import * as ImagePicker from 'expo-image-picker';
 import { BoxDark } from "@/components/BoxDark";
 import { BoxDarkSelection } from "@/components/BoxDarkSelection";
 import { ButtonY } from "@/components/ButtonY";
+import { ButtonGenre } from "@/components/ButtonGenre";
 import { TitleBar } from "@/components/TitleBar";
 import { ConfirmPopup } from "@/components/ConfirmPopup";
 import { ValidationPopup } from "@/components/ValidationPopup";
@@ -13,9 +14,11 @@ import { fetchUserData, updateUserProfileField } from '@/services/userservice';
 import { uploadUserPhoto, ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
 import { COLORS } from "@/constants/colors";
 import { miscStyle } from "@/styles/misc";
-
+import { textStyle } from "@/styles/text";
 
 const { height } = Dimensions.get("window");
+
+const AVAILABLE_GENRES = ['AÇÃO', 'DRAMA', 'COMÉDIA', 'TERROR', 'FICÇÃO CIENTÍFICA', 'SUSPENSE', 'ROMANCE', 'FAROESTE', 'MUSICAL'];
 
 export default function UpdateProfile() {
   const { user, setUser } = useAuth();
@@ -25,6 +28,56 @@ export default function UpdateProfile() {
   const [validationMessage, setValidationMessage] = useState("");
   const [showValidationPopup, setShowValidationPopup] = useState(false);
   const userIdString = String(user?.getId() || '');
+  const [showGenresModal, setShowGenresModal] = useState(false);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [isSavingGenres, setIsSavingGenres] = useState(false);
+
+  useEffect(() => {
+    if (showGenresModal && user) {
+      const currentGenres = user.favorite_genres || (user as any).getGenres?.() || [];
+      setSelectedGenres(currentGenres);
+    }
+  }, [showGenresModal, user]);
+
+  const toggleGenre = (genre: string) => {
+    setSelectedGenres(prev => 
+      prev.includes(genre) 
+        ? prev.filter(g => g !== genre) 
+        : [...prev, genre]
+    );
+  };
+
+  const handleSaveGenres = async () => {
+    if (selectedGenres.length < 2) {
+      setValidationMessage("Selecione no mínimo 2 gêneros.");
+      setShowValidationPopup(true);
+      return;
+    }
+
+    try {
+      setIsSavingGenres(true);
+
+      const response = await updateUserProfileField({ favorite_genres: selectedGenres });
+
+      if (!response.success) {
+        setValidationMessage(response.error || 'Erro ao processar a atualização no servidor.');
+        setShowValidationPopup(true);
+        setIsSavingGenres(false);
+        return;
+      }
+
+      const updated = await fetchUserData();
+      if (updated && setUser) setUser(updated);
+
+      setIsSavingGenres(false);
+      setShowGenresModal(false);
+    } catch (error) {
+      console.error("Erro ao atualizar gêneros favoritos:", error);
+      setValidationMessage("Ocorreu um erro inesperado ao salvar os gêneros.");
+      setShowValidationPopup(true);
+      setIsSavingGenres(false);
+    }
+  };
 
   const handleConfirmDeactivateAccount = () => {
     setShowDeletePopup(false);
@@ -41,8 +94,6 @@ export default function UpdateProfile() {
   const handleRemovePhoto = async () => {
     try {
       setIsChangingPhoto(true);
-
-      // Atualiza o campo na base de dados de forma abstrata através do service
       const response = await updateUserProfileField({ profile_picture: '' });
       
       if (!response.success) {
@@ -52,7 +103,6 @@ export default function UpdateProfile() {
         return;
       }
 
-      // Sincroniza o Context do Usuário reativamente
       const updated = await fetchUserData();
       if (updated && setUser) setUser(updated);
       
@@ -111,7 +161,6 @@ export default function UpdateProfile() {
 
       const signed = uploadResponse.signedUrl;
       if (signed) {
-        // Atualiza a URL assinada gerada no documento do Firestore via userservice
         await updateUserProfileField({ profile_picture: signed });
         
         const updated = await fetchUserData();
@@ -181,7 +230,7 @@ export default function UpdateProfile() {
             iconSource={require('@/screenAssets/movie-tape.png')}
             title="Gerenciar Gêneros Favoritos"
             description="Permite a adição e remoção de gêneros aos favoritos"
-            onPress={() => null}
+            onPress={() => setShowGenresModal(true)}
           />
 
           <BoxDarkSelection
@@ -195,6 +244,61 @@ export default function UpdateProfile() {
 
         <ButtonY title="Voltar" onPress={() => router.push('/profile')} />
       </ScrollView>
+
+      <Modal
+        visible={showGenresModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowGenresModal(false)}
+      >
+        <View style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'rgba(0, 0, 0, 0.75)'
+        }}>
+          <View style={[miscStyle.formContainer, { 
+            backgroundColor: COLORS.primary,
+            borderRadius: 16, 
+            padding: 24, 
+            width: '85%',
+            alignItems: 'center'
+          }]}>
+            <Text style={[textStyle.text, { marginBottom: height * 0.02, fontWeight: 'bold' }]}>
+              Gerenciar Gêneros Favoritos
+            </Text>
+
+            <View style={miscStyle.genresContainer}>
+              {AVAILABLE_GENRES.map(genre => (
+                <ButtonGenre 
+                  key={genre}
+                  title={genre}
+                  selected={selectedGenres.includes(genre)}
+                  onToggle={() => toggleGenre(genre)}
+                />
+              ))}
+            </View>
+
+            <View style={{ marginTop: height * 0.02, marginBottom: height * 0.02, width: '100%' }}>
+              <Text style={[textStyle.message, { textAlign: 'center' }]}>
+                *Selecione no mínimo 2 gêneros
+              </Text>
+            </View>
+
+            {isSavingGenres ? (
+              <ActivityIndicator size="large" color={COLORS.gold} style={{ marginVertical: height * 0.02 }} />
+            ) : (
+              <>
+                <ButtonY title="Salvar" onPress={handleSaveGenres} />
+                <ButtonY 
+                  title="Cancelar" 
+                  onPress={() => setShowGenresModal(false)} 
+                />
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
       
       <ConfirmPopup 
         visible={showDeletePopup}

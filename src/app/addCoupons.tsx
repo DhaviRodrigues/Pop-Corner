@@ -207,7 +207,7 @@ export default function CouponFormScreen() {
       temporaria,
       observacoes: observacoes.trim(),
       ...(temporaria && expDateObj ? { dataExpiracao: expDateObj } : {}),
-      ...(limitada ? { qtdCupons: Number(qtdCupons) } : {}),
+      ...(limitada ? { quantidade_disponivel: Number(qtdCupons) } : {}),
     };
 
     try {
