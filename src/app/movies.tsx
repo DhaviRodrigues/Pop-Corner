@@ -6,8 +6,8 @@ import { ButtonY } from '@/components/ButtonY';
 import SearchBar from '@/components/SearchBar';
 import SortFilterBar from '@/components/SortFilterBar';
 import GenreFilter from '@/components/GenreFilter';
+import { AdminAddButton } from '@/components/AdminAddButton'; // <-- IMPORTAÇÃO DO BOTÃO PADRÃO
 import { movieStyle } from '@/styles/movie';
-import { textStyle } from '@/styles/text';
 import { COLORS } from '@/constants/colors';
 import { useAuth } from '@/contexts/UserContext';
 import { getAllMovies } from '@/services/movieservice';
@@ -129,7 +129,8 @@ export default function MoviesScreen() {
     return (
       <View style={movieStyle.filmesCard}>
         <Image source={{ uri: imagemUrl }} style={movieStyle.filmesPoster} resizeMode="cover" />
-        <Text style={textStyle.filmesMovieTitle} numberOfLines={1}>{titulo}</Text>
+        
+        <Text style={movieStyle.filmesMovieTitle} numberOfLines={1}>{titulo}</Text>
         
         <View style={movieStyle.filmesRatingContainer}>
           <Text style={movieStyle.filmesRatingLabel}>Avaliação: {rating.toFixed(1)}</Text>
@@ -159,7 +160,7 @@ export default function MoviesScreen() {
             params: { id: item.id } 
           })}
         >
-          <Text style={textStyle.filmesDetailsButtonText}>Detalhes</Text>
+          <Text style={movieStyle.filmesDetailsButtonText}>Detalhes</Text>
         </TouchableOpacity>
       </View>
     );
@@ -167,21 +168,32 @@ export default function MoviesScreen() {
 
   return (
     <View style={[movieStyle.filmesContainer, { flex: 1, backgroundColor: COLORS.primary }]}>
-      <View style={[movieStyle.filmesHeader, { position: 'relative' }]}>
-        <Image 
-          source={require('@/screenAssets/logo/full-logo.png')}
-          style={movieStyle.filmesLogo} 
-        />
       
-        <View style={movieStyle.filmesSearchContainer}>
+      {/* HEADER ATUALIZADO COM O BOTÃO DE ADMIN */}
+      <View style={{ paddingHorizontal: "2%" }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 10 }}>
+          {/* Espaçador vazio para manter o logo centralizado */}
+          <View style={{ width: 40 }} /> 
+          
+          <Image 
+            source={require('@/screenAssets/logo/full-logo.png')}
+            style={[movieStyle.filmesLogo, { marginBottom: 0 }]} 
+          />
+          
+          {/* O Botão de Admin Padronizado */}
+          <View style={{ width: 40, alignItems: 'center' }}>
+            {isAdmin && <AdminAddButton onPress={() => router.push("/addMovie")} />}
+          </View>
+        </View>
+      
+        <View style={[movieStyle.filmesSearchContainer, { marginVertical: 0 }]}>
            <SearchBar 
              value={searchText} 
              onChangeText={(txt) => { setSearchText(txt); setVisibleCount(10); }} 
              placeholder="Buscar um filme" 
              onToggleFilters={() => setShowFilters(!showFilters)}
              filtersVisible={showFilters}
-             showAddButton={isAdmin} 
-             onAddPress={() => router.push("/addMovie")}
+             // As propriedades antigas de showAddButton foram removidas daqui
            />
         </View>
       </View>
@@ -209,7 +221,7 @@ export default function MoviesScreen() {
         keyExtractor={item => item.id.toString()}
         numColumns={2}
         columnWrapperStyle={movieStyle.filmesRow}
-        contentContainerStyle={[movieStyle.filmesListContent, { paddingBottom: 150 }]}
+        contentContainerStyle={[movieStyle.filmesListContent, { paddingTop: 15, paddingBottom: 150 }]}
         bounces={false}
         overScrollMode="never"
         ListFooterComponent={

@@ -11,9 +11,10 @@ type UserCouponProps = {
   circleText: string;
   discountAmount: string;
   description: string;
-  status: "Ativo" | "Expirado" | "Inativo";
+  status: string;
   validity: string;
   urlIcone?: string;
+  validationCode?: string;
   onShowCode?: () => void;
 };
 
@@ -26,6 +27,7 @@ export function UserCoupon({
   status,
   validity,
   urlIcone,
+  validationCode,
   onShowCode,
 }: UserCouponProps) {
   const [showCode, setShowCode] = useState(false);
@@ -41,10 +43,11 @@ export function UserCoupon({
       router.push({
       pathname: '/couponQRCode',
       params: {
-        id: "CUPOM2026",
+        id: validationCode || "PPC-8899-X7T",
         titulo: title,
         desc: description,
         status: status,
+        url_icone: urlIcone || "",
       }
     });
     
@@ -114,7 +117,7 @@ export function UserCoupon({
               }}
             >
               <Text style={{ fontSize: 14, color: COLORS.gold, fontWeight: "bold", letterSpacing: 1 }}>
-                CUPOM2026
+                {validationCode || "PPC-8899-X7T"}
               </Text>
             </View>
           )}

@@ -8,7 +8,10 @@ import {
   StatusBar,
   ActivityIndicator,
   Switch,
+  Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadUserPhoto, ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
 import { miscStyle } from '@/styles/misc';
 import { textStyle } from '@/styles/text';
 import { COLORS } from '@/constants/colors';
@@ -73,6 +76,67 @@ export default function CouponFormScreen() {
   const [qtdCupons, setQtdCupons] = useState('');
   const [loading, setLoading] = useState(isEditing);
   const [statusMessage, setStatusMessage] = useState('');
+  const [loadingImage, setLoadingImage] = useState(false);
+
+  const getImageExtension = (uri: string) => {
+    return uri.split('.').pop()?.split('?')[0]?.toLowerCase() || '';
+  };
+
+  const handlePickImage = async () => {
+    try {
+      setLoadingImage(true);
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Permissão Negada", "Permissão para acessar galeria é necessária.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (result.canceled || result.assets.length === 0) {
+        setLoadingImage(false);
+        return;
+      }
+
+      const uri = result.assets[0].uri;
+      const fileName = result.assets[0].fileName || '';
+
+      const ext = getImageExtension(fileName) || getImageExtension(uri);
+      const valid = ext && ALLOWED_IMAGE_EXTENSIONS.includes(ext);
+      
+      if (!valid) {
+        Alert.alert("Erro", "Formato de imagem inválido. Use apenas JPG, JPEG ou PNG.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const identifier = `cupom_${Date.now()}`;
+      const uploadResponse = await uploadUserPhoto(uri, 'cinema_foto', identifier, fileName);
+      if (!uploadResponse.success) {
+        Alert.alert("Erro", uploadResponse.error || "Erro ao fazer upload da imagem.");
+        setLoadingImage(false);
+        return;
+      }
+
+      const signed = uploadResponse.signedUrl;
+      if (signed) {
+        setUrlIcone(signed);
+      } else {
+        Alert.alert("Erro", "Erro ao obter URL da imagem.");
+      }
+    } catch (error) {
+      console.error("Erro no upload de imagem:", error);
+      Alert.alert("Erro", "Erro ao processar imagem.");
+    } finally {
+      setLoadingImage(false);
+    }
+  };
 
   useEffect(() => {
     if (isEditing && couponId) {
@@ -136,7 +200,7 @@ export default function CouponFormScreen() {
     const exigeUrl = tipoNormalizado === 'dois por um' || tipoNormalizado === 'produto grátis';
     
     if (exigeUrl && !urlIcone.trim()) {
-      setStatusMessage('A URL do Ícone é obrigatória para cupons do tipo Dois por Um ou Produto Grátis.');
+      setStatusMessage('O Ícone é obrigatório para cupons do tipo Dois por Um ou Produto Grátis.');
       return false;
     }
 
@@ -292,23 +356,27 @@ export default function CouponFormScreen() {
               />
             </View>
 
-            <View style={couponFormStyle.row}>
-              <View style={couponFormStyle.halfInput}>
-                <LocalInput
-                  text="Valor em Pipokas"
-                  value={valorPipokas}
-                  onChangeText={setValorPipokas}
-                  keyboardType="numeric"
+            <View style={couponFormStyle.fullInput}>
+              <LocalInput
+                text="Valor em Pipokas"
+                value={valorPipokas}
+                onChangeText={setValorPipokas}
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={[couponFormStyle.fullInput, { alignItems: "center", marginVertical: 15 }]}>
+              <ButtonY 
+                title={loadingImage ? "Fazendo Upload..." : urlIcone ? "Alterar Ícone do Cupom" : "Selecionar Ícone do Cupom"} 
+                onPress={handlePickImage} 
+              />
+              {urlIcone ? (
+                <Image
+                  source={{ uri: urlIcone }}
+                  style={{ width: 120, height: 120, borderRadius: 12, marginTop: 15 }}
+                  resizeMode="contain"
                 />
-              </View>
-              <View style={couponFormStyle.halfInput}>
-                <LocalInput
-                  text="URL do Ícone"
-                  value={urlIcone}
-                  onChangeText={setUrlIcone}
-                  keyboardType="url"
-                />
-              </View>
+              ) : null}
             </View>
 
             <View style={couponFormStyle.dropdownWrapper}>

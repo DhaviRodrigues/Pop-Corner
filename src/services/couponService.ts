@@ -1,5 +1,5 @@
 import { db } from "@/config/firebase";
-import { addDoc, collection, serverTimestamp, getDocs, doc, getDoc, updateDoc, deleteDoc, runTransaction} from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, getDocs, doc, getDoc, updateDoc, deleteDoc, runTransaction, setDoc } from "firebase/firestore";
 import { UpdateResult } from "@/services/userservice";
 import {Coupon} from "@/models/coupon"
 
@@ -124,7 +124,7 @@ export async function updateCoupon(couponId: string, payload: Partial<CouponPayl
 
 export async function validateRedeemedCoupon(codigoCupom: string): Promise<ServiceResult<{ nome_cupom: string }>> {
   try {
-    const docRef = doc(db, 'cupons_resgatados', codigoCupom.trim());
+    const docRef = doc(db, 'cupons_resgatados', codigoCupom.trim().toUpperCase());
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -143,11 +143,28 @@ export async function validateRedeemedCoupon(codigoCupom: string): Promise<Servi
       };
     }
 
-    if (dadosCupom.status === 'DISPONIVEL' || dadosCupom.status === 'DISPONÍVEL') {
+    if (
+      dadosCupom.status === 'Ativo' || 
+      dadosCupom.status === 'ATIVO' || 
+      dadosCupom.status === 'DISPONIVEL' || 
+      dadosCupom.status === 'DISPONÍVEL'
+    ) {
       await updateDoc(docRef, { 
         status: 'USADO',
         validadoEm: serverTimestamp()
       });
+
+      // Atualiza o cupom na subcoleção do usuário
+      if (dadosCupom.userId && dadosCupom.couponDocId) {
+        try {
+          const userCouponRef = doc(db, `user_coupons/${dadosCupom.userId}/coupons`, dadosCupom.couponDocId);
+          await updateDoc(userCouponRef, {
+            status: 'USADO'
+          });
+        } catch (err) {
+          console.error("Erro ao atualizar cupom na subcoleção do usuário:", err);
+        }
+      }
 
       return {
         valid: true,
@@ -206,19 +223,37 @@ export async function purchaseCoupon(userId: string, couponData: any, userPipoka
     const couponRef = collection(db, `user_coupons/${userId}/coupons`);
     const tipoCupom = coupon.getTipoCupom();
 
-    await addDoc(couponRef, {
+    // 1. Gera o código único inato (ex: PPC-4839-A1B9)
+    const randomChars = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+    const uniqueCode = `PPC-${randomChars()}-${randomChars()}`;
+
+    // 2. Salva na subcoleção de cupons do usuário
+    const docRef = await addDoc(couponRef, {
       type: tipoCupom,
       title: coupon.getNomeCupom(),
       circleText: coupon.getValorBeneficio()?.toString(),
       description: coupon.getDescricaoProduto(),
       status: "Ativo",
+      validationCode: uniqueCode,
       urlIcone: coupon.getUrlIcone(),
       validity: dataVencimento.toLocaleDateString('pt-BR'),
       addedAt: serverTimestamp()
+    });
+
+    // 3. Salva na coleção global de cupons resgatados para permitir a validação pelo admin
+    const globalResgateRef = doc(db, 'cupons_resgatados', uniqueCode);
+    await setDoc(globalResgateRef, {
+      userId: userId,
+      couponDocId: docRef.id,
+      nome_cupom: coupon.getNomeCupom(),
+      status: "Ativo",
+      resgatadoEm: serverTimestamp(),
+      validadoEm: null
     });
 
     return { valid: true, error: "" };
   } catch (error) {
     console.error("Erro crítico na compra:", error);
     return { valid: false, error: `Erro na troca: ${error instanceof Error ? error.message : 'Dados do cupom inválidos.'}` };
-  }}
+  }
+}

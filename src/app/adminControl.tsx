@@ -6,6 +6,7 @@ import BottomNavbar from '@/components/Navbar';
 import { Input } from '@/components/Input'; 
 import { ButtonY } from '@/components/ButtonY';
 import { useAuth } from '@/contexts/UserContext';
+import { useRouter } from 'expo-router';
 import { adminControlStyle } from '@/styles/adminControl'; 
 import { COLORS } from '@/constants/colors';
 import { fetchAllAdmins, addAdmin, removeAdmin } from '@/services/userservice';
@@ -17,6 +18,7 @@ interface AdminUser {
 }
 
 export default function AdminControl() {
+  const router = useRouter();
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [emailInput, setEmailInput] = useState('');
   const [loading, setLoading] = useState(true);

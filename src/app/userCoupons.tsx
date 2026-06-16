@@ -66,6 +66,7 @@ export default function CouponsScreen() {
                 status={item.status || "Inativo"}
                 validity={item.validity || "N/A"}
                 urlIcone={item.urlIcone}
+                validationCode={item.validationCode}
               />
             )}
             ListEmptyComponent={
