@@ -47,7 +47,7 @@ export const movieStyle = StyleSheet.create({
   filmesMovieTitle: {
     color: COLORS.gold,
     fontSize: height * 0.015,
-    fontWeight: "bold",
+    fontFamily: "Poppins-Bold", // <-- Adicionado Poppins-Bold
     marginTop: height * 0.01,
     textAlign: "center",
   },
@@ -59,7 +59,7 @@ export const movieStyle = StyleSheet.create({
   filmesRatingLabel: {
     color: COLORS.gold,
     fontSize: height * 0.011,
-    fontWeight: "bold",
+    fontFamily: "Poppins-Bold", // <-- Adicionado Poppins-Bold
   },
   filmesTagRow: {
     flexDirection: "row",
@@ -71,7 +71,6 @@ export const movieStyle = StyleSheet.create({
     borderRadius: height * 0.02,
     paddingHorizontal: "4%",
     paddingVertical: "1%",
-    color: "#000",
   },
   filmesTagRed: {
     backgroundColor: COLORS.primary,
@@ -81,7 +80,7 @@ export const movieStyle = StyleSheet.create({
   },
   filmesTagText: {
     fontSize: height * 0.01,
-    fontWeight: "bold",
+    fontFamily: "Poppins-Bold", // <-- Adicionado Poppins-Bold
   },
   filmesTagYellowText: {
     color: COLORS.black,
@@ -114,7 +113,7 @@ export const movieStyle = StyleSheet.create({
     color: COLORS.gold,
     textAlign: "center",
     fontSize: height * 0.014,
-    fontWeight: "bold",
+    fontFamily: "Poppins-Bold", // <-- Adicionado Poppins-Bold
   },
   filmesFooterBtn: {
     alignItems: "center",
@@ -288,7 +287,7 @@ export const movieStyle = StyleSheet.create({
   detailsInfoText: {
     color: COLORS.gold,
     marginLeft: width * 0.03,
-    fontWeight: "bold",
+    fontFamily: "Poppins-Bold", // <-- Adicionado Poppins-Bold
     fontSize: height * 0.019,
     flex: 1,
   },
@@ -300,6 +299,7 @@ export const movieStyle = StyleSheet.create({
     textAlignVertical: "top",
     marginBottom: height * 0.015,
     width: "100%",
+    fontFamily: "Poppins-Regular", // <-- Adicionado Poppins-Regular
   },
   detailsButtonWrapper: {
     alignItems: "center",
@@ -348,7 +348,7 @@ export const movieStyle = StyleSheet.create({
   detailsTagText: {
     color: COLORS.gold,
     fontSize: 12,
-    fontWeight: "bold",
+    fontFamily: "Poppins-Bold", // <-- Adicionado Poppins-Bold
   },
   formContainer: {
     flex: 1,
