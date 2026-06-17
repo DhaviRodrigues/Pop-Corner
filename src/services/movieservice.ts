@@ -17,12 +17,11 @@ export async function registerMovie(payload: any): Promise<MovieServiceResult> {
     const tagsArray = payload.tags 
       ? payload.tags.split(',').map((g: string) => g.trim().toUpperCase()) 
       : [];
-      
+    const computedYear = payload.year || new Date().getFullYear();
+
     const movieDocRef = doc(collection(db, "movies"));
     const movieId = movieDocRef.id;
     const reviewsDocRef = doc(db, "reviews_movies", movieId);
-
-    const computedYear = payload.year || new Date().getFullYear();
 
     const movieInstance = Movie.createMovie({
       title: payload.title,
@@ -36,7 +35,7 @@ export async function registerMovie(payload: any): Promise<MovieServiceResult> {
       rating: 0,
       ratingCount: 0,
       createdAt: new Date(),
-      comments: []
+      reviewRef: reviewsDocRef.path
     });
 
     const firestoreMovieData = {
@@ -51,8 +50,7 @@ export async function registerMovie(payload: any): Promise<MovieServiceResult> {
       ratingCount: movieInstance.getRatingCount(),
       synopsis: movieInstance.getSynopsis(),
       created_at: Timestamp.fromDate(movieInstance.getCreatedAt()),
-      comments: [],
-      reviews_ref: reviewsDocRef
+      reviews_ref: reviewsDocRef 
     };
 
     await setDoc(movieDocRef, firestoreMovieData);
@@ -64,8 +62,8 @@ export async function registerMovie(payload: any): Promise<MovieServiceResult> {
 
     return { valid: true, error: "", id: movieDocRef.id };
   } catch (error) {
-    console.error("Erro na camada de serviço ao cadastrar filme:", error);
-    return { valid: false, error: "Falha ao registrar o filme no banco de dados." };
+    console.error("Erro no registerMovie:", error);
+    return { valid: false, error: "Falha ao registrar o filme." };
   }
 }
 
@@ -79,49 +77,34 @@ export async function getMovieById(id: string): Promise<any | null> {
 
     if (!docSnap.exists()) return null;
 
-    const data = docSnap.data();
+    const data = docSnap.data() as any;
 
-    let instancedComments: Comment[] = [];
-    let viewComments: any[] = []; 
-    const reviewsCollectionRef = collection(db, "reviews_movies", id, "reviews");
-    const reviewsSnap = await getDocs(reviewsCollectionRef);
-
-    for (const reviewDoc of reviewsSnap.docs) {
-        const c = reviewDoc.data();
-        let currentProfilePic = "";
-        
-        if (c.user_ref) {
-          const userSnap = await getDoc(c.user_ref);
-          if (userSnap.exists()) {
-            const userData = userSnap.data() as any; 
-            currentProfilePic = userData.profile_picture || "";
+    const reviewsPath = data.review_ref?.path || `reviews_movies/${id}/reviews`;
+    const reviewsSnap = await getDocs(collection(db, reviewsPath));
+    
+    const viewComments = await Promise.all(reviewsSnap.docs.map(async (reviewDoc) => {
+      const c = reviewDoc.data() as any;
+      let profilePic = "";
+      if (c.user_ref) {
+        const userSnap = await getDoc(c.user_ref);
+        if (userSnap.exists()) {
+          const userData = userSnap.data() as any;
+          profilePic = userData.profile_picture || "";
         }
-      };
-      
-      const commentModel = Comment.createComment({
+      }
+      return {
         id: reviewDoc.id,
-        author: c.author || "Usuário",
+        user: c.author || "Usuário",
         rating: c.rating || 0,
-        movie: id,
-        cinema: c.cinema || "",
-        date: c.date || (c.createdAt ? c.createdAt.toDate().toISOString() : new Date().toISOString()),
-        text: c.text || "",
-        status: c.status || 'Aprovado'
-      });
+        comment: c.text || "",
+        createdAt: c.createdAt ? c.createdAt.toDate().toISOString() : new Date().toISOString(),
+        profilePic
+      };
+    }));
 
-      instancedComments.push(commentModel);
-
-      viewComments.push({
-        id: commentModel.getId(),
-        user: commentModel.getAuthor(),
-        rating: commentModel.getRating(),
-        comment: commentModel.getText(),
-        createdAt: commentModel.getDate(),
-        profilePic: currentProfilePic
-      });
-    }
-
-    const movieModel = Movie.createMovie({
+    // Retorno explícito, sem spread operator para evitar sujeira de dados
+    return {
+      id: docSnap.id,
       title: data.title,
       director: data.director,
       year: data.year,
@@ -132,23 +115,8 @@ export async function getMovieById(id: string): Promise<any | null> {
       rating: data.rating,
       ratingCount: data.ratingCount,
       synopsis: data.synopsis,
-      createdAt: data.created_at ? data.created_at.toDate() : new Date(),
-      comments: instancedComments
-    });
-
-    return {
-      id: docSnap.id,
-      title: movieModel.getTitle(),
-      director: movieModel.getDirector(),
-      year: movieModel.getYear(),
-      duration: movieModel.getDuration(),
-      classification: movieModel.getClassification(),
-      tags: movieModel.getTags(),
-      image: movieModel.getImage(),
-      rating: movieModel.getRating(),
-      ratingCount: movieModel.getRatingCount(),
-      synopsis: movieModel.getSynopsis(),
-      comentarios: viewComments 
+      reviewRef: data.review_ref?.path || "",
+      comentarios: viewComments
     };
   } catch (error) {
     console.error("Erro ao buscar filme por ID:", error);
@@ -197,7 +165,7 @@ export async function getAllMovies(): Promise<any[]> {
         ratingCount: data.ratingCount || 0,
         synopsis: data.synopsis,
         createdAt: data.created_at ? data.created_at.toDate() : new Date(),
-        comments: [] // Não precisamos carregar a árvore inteira de comentários na listagem da Home
+        reviewRef: ""
       });
 
       // Retorna o objeto plano mapeado no padrão exato que a UI/MovieCard consome

@@ -1,93 +1,32 @@
 import { auth, db } from "@/config/firebase";
-import { collection, doc, getDoc, updateDoc, deleteDoc, setDoc, Timestamp, DocumentReference, increment } from "firebase/firestore";
+import { collection, doc, addDoc, getDoc, updateDoc, deleteDoc, setDoc, Timestamp, DocumentReference, increment } from "firebase/firestore";
 import { Movie } from "@/models/movie";
 import { Comment } from "@/models/comment";
 
-export async function addReviewToMovie(movieId: string, reviewPayload: any): Promise<any | null> {
+export async function addReviewToMovie(movieId: string, reviewPayload: any) {
   try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) throw new Error("Usuário não autenticado para fazer avaliação.");
-    const userId = currentUser.uid;
-
-    const movieDocRef = doc(db, "movies", movieId);
-    const movieSnap = await getDoc(movieDocRef);
-
-    if (!movieSnap.exists()) throw new Error("Filme não encontrado para avaliação.");
-    const movieData = movieSnap.data();
-
-    const reviewsDocRef = movieData.reviews_ref as DocumentReference;
-    const reviewsCollectionRef = collection(reviewsDocRef, "reviews");
-
-    const userReviewDocRef = doc(reviewsCollectionRef, userId);
-    const userReviewSnap = await getDoc(userReviewDocRef);
-
-    if (userReviewSnap.exists()) {
-      return { valid: false, error: "Você já avaliou este filme. Só é permitida uma avaliação por usuário." };
+    const movieRef = doc(db, "movies", movieId);
+    const movieSnap = await getDoc(movieRef);
+    
+    if (!movieSnap.exists()) {
+      return { valid: false, error: "Filme não encontrado." };
     }
 
-    const movie = new Movie(
-      movieData.title,
-      movieData.director,
-      movieData.year,
-      movieData.duration,
-      movieData.classification,
-      movieData.tags,
-      movieData.image,
-      movieData.rating || 0,
-      movieData.ratingCount || 0,
-      movieData.synopsis,
-      movieData.created_at ? movieData.created_at.toDate() : new Date(),
-      [] 
-    );
-
-    const userRef = doc(db, "users", userId);
-    const newComment = new Comment(
-      userId,
-      reviewPayload.author,
-      reviewPayload.rating,
-      movieId,
-      reviewPayload.cinema || "",
-      reviewPayload.date,
-      reviewPayload.text,
-      reviewPayload.status || 'Aprovado'
-    );
-
-    movie.addComment(newComment);
-    await setDoc(userReviewDocRef, {
-      author: newComment.getAuthor(),
-      rating: newComment.getRating(),
-      cinema: newComment.getCinema(),
-      date: newComment.getDate(),
-      text: newComment.getText(),
-      status: newComment.getStatus(),
+    const data = movieSnap.data() as any;
+    const reviewsPath = data.review_ref?.path || `reviews_movies/${movieId}/reviews`;
+    await addDoc(collection(db, reviewsPath), {
+      author: reviewPayload.author,
+      rating: reviewPayload.rating,
+      text: reviewPayload.text,
       createdAt: Timestamp.now(),
-      user_ref: userRef 
+      status: reviewPayload.status || 'Aprovado',
+      user_ref: reviewPayload.user_ref || null
     });
 
-    await updateDoc(movieDocRef, {
-      rating: movie.getRating(),
-      ratingCount: movie.getRatingCount()
-    });
-
-    const userDocRef = doc(db, "users", userId);
-    await updateDoc(userDocRef, {
-      pipoka: increment(250)
-    });
-
-    return { 
-      valid: true, 
-      error: "",
-      data: {
-        id: movieId,
-        title: movie.getTitle(),
-        rating: movie.getRating(),
-        ratingCount: movie.getRatingCount()
-      }
-    };
-
-  } catch (error: any) {
-    console.error("Erro ao processar avaliação:", error);
-    return { valid: false, error: error.message || "Erro interno ao enviar a avaliação." };
+    return { valid: true, error: "" };
+  } catch (error) {
+    console.error("Erro ao salvar avaliação no Firestore:", error);
+    return { valid: false, error: "Erro ao salvar a avaliação." };
   }
 }
 
@@ -138,7 +77,7 @@ export async function addReviewToCinema(cinemaId: string, reviewPayload: any) {
         qnt_avaliacoes: newCount 
     });
     
-    await updateDoc(doc(db, "users", currentUser.uid), { pipoka: increment(250) });
+    await updateDoc(doc(db, "users", currentUser.uid), { pipoka: increment(350) });
 
     return { valid: true, error: "" };
   } catch (error: any) {

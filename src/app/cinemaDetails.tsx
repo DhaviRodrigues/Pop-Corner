@@ -5,6 +5,7 @@ import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY';
 import { AdminEditButton } from '@/components/AdminEditButton';
 import { AdminDeleteButton } from '@/components/AdminDeleteButton';
+import { ValidationPopup } from '@/components/ValidationPopup';
 import { BackButton } from '@/components/BackButton';
 import { useAuth } from '@/contexts/UserContext';
 import { getCinemaById, deleteCinema } from '@/services/cinemaService';
@@ -108,7 +109,7 @@ export default function CinemaDetailsScreen() {
 
         setMyReview('');
         setUserRating(0);
-        setPopupMessage("Avaliação enviada com sucesso! Você ganhou 250 pipokas!");
+        setPopupMessage("Avaliação enviada com sucesso! Você ganhou 350 pipokas!");
         setPopupVisible(true);
         
         await refreshUser();
@@ -258,7 +259,12 @@ export default function CinemaDetailsScreen() {
         </View>
       </ScrollView>
 
-      <BottomNavbar />
+      <ValidationPopup
+        visible={popupVisible}
+        message={popupMessage}
+        onClose={() => setPopupVisible(false)}
+    />
+    <BottomNavbar />
     </View>
   );
 }

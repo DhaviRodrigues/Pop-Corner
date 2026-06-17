@@ -12,5 +12,5 @@ export interface IMoviePayload {
   ratingCount?: number;
   synopsis: string;
   createdAt?: Date;
-  comments?: Comment[];
+  reviewRef?: string;
 }
