@@ -4,7 +4,7 @@ export class UserAdmin extends User {
   private isAdmin: boolean;
 
   constructor(
-    id: number,
+    uid: string,
     name: string,
     email: string,
     profile_picture: string,
@@ -12,7 +12,7 @@ export class UserAdmin extends User {
     pipoka: number,
     isAdmin: boolean
   ) {
-    super(id, name, email, profile_picture, favorite_genres, pipoka);
+    super(name, email, profile_picture, favorite_genres, pipoka, "", "", uid);
     this.isAdmin = isAdmin;
   }
 
@@ -21,7 +21,7 @@ export class UserAdmin extends User {
   }
 
   public static createUserAdmin(payload: {
-    id: number;
+    uid: string;
     name: string;
     email: string;
     profile_picture: string;
@@ -30,7 +30,7 @@ export class UserAdmin extends User {
     isAdmin: boolean;
   }): UserAdmin {
     return new UserAdmin(
-      payload.id,
+      payload.uid,
       payload.name,
       payload.email,
       payload.profile_picture,
@@ -40,9 +40,6 @@ export class UserAdmin extends User {
     );
   }
 
-  /**
-   * Validação de Regra de Negócio de Domínio para adicionar admin
-   */
   public static validateAdminEmail(email: string): string {
     const cleanEmail = email?.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -58,9 +55,6 @@ export class UserAdmin extends User {
     return cleanEmail;
   }
 
-  /**
-   * Validação de Regra de Negócio de Domínio para remover admin
-   */
   public static validateAdminRemoval(targetUserId: string, targetUserEmail: string, currentUserEmail?: string): void {
     if (targetUserEmail === currentUserEmail) {
       throw new Error("Ação bloqueada: Você não pode remover seus próprios privilégios de administrador.");
