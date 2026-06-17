@@ -10,7 +10,7 @@ import { AdminAddButton } from '@/components/AdminAddButton';
 import { movieStyle } from '@/styles/movie';
 import { COLORS } from '@/constants/colors';
 import { useAuth } from '@/contexts/UserContext';
-import { getAllMovies } from '@/services/movieservice';
+import { MovieService } from '@/services/movieservice';
 
 function DynamicStars({ rating }: { rating: number }) {
   const fill1 = Math.max(0, Math.min(1, rating - 0));
@@ -49,7 +49,7 @@ export default function MoviesScreen() {
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        const data = await getAllMovies();
+        const data = await MovieService.getAllMovies();
         if (data) {
           setMoviesList(data);
         }

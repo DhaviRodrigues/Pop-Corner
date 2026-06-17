@@ -5,8 +5,8 @@ import { sessionsStyle } from '@/styles/sessions';
 import { SessionCard } from '@/components/SessionCard';
 import BottomNavbar from '@/components/Navbar';
 import { BackButton } from '@/components/BackButton';
-import { getCinemaById } from '@/services/cinemaService';
-import { getAllMovies } from '@/services/movieservice';
+import { CinemaService } from '@/services/cinemaService';
+import { MovieService } from '@/services/movieservice';
 import { COLORS } from '@/constants/colors';
 
 // Função que gera Hoje + 6 Dias (Uma Semana)
@@ -47,8 +47,8 @@ export default function SessionsScreen() {
     const fetchData = async () => {
       if (!cinemaId) return;
       try {
-        const cinemaData = await getCinemaById(cinemaId as string);
-        const moviesData = await getAllMovies();
+        const cinemaData = await CinemaService.getCinemaById(cinemaId as string);
+        const moviesData = await MovieService.getAllMovies();
         
         setCinema(cinemaData);
         setMovies(moviesData);

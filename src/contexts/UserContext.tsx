@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { User } from '@/models/user';
-import { fetchUserData, verifyAdmin } from '@/services/userservice';
+import { UserService } from '@/services/userservice';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '@/config/firebase';
 import { Platform } from 'react-native';
@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const adminResult = await verifyAdmin();
+    const adminResult = await UserService.verifyAdmin();
     const adminStatus = !!(adminResult.valid && adminResult.isAdmin);
     
     setIsAdmin(adminStatus);
@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshUser = async () => {
     try {
-      const userInstance = await fetchUserData();
+      const userInstance = await UserService.fetchUserData();
       setUser(userInstance);
       await checkAdminPrivileges(userInstance);
     } catch (error) {
@@ -80,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (firebaseUser) {
         try {
-          const userInstance = await fetchUserData();
+          const userInstance = await UserService.fetchUserData();
           setUser(userInstance);
           await checkAdminPrivileges(userInstance);
         } catch (e) {

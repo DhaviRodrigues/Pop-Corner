@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Dimensions, Image, Text, View } from "react-native";
 
-import { registerUser } from "@/services/authservice";
+import { AuthService } from "@/services/authservice";
 
 const { height } = Dimensions.get('window');
 
@@ -52,7 +52,7 @@ export default function Genre(){
         setIsLoading(true);
         
         try {
-            const result = await registerUser(
+            const result = await AuthService.registerUser(
                 data.name,
                 data.email,
                 data.password,

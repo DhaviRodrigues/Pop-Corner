@@ -10,7 +10,7 @@ import { textStyle } from "@/styles/text";
 import { Link, useRouter } from 'expo-router';
 import { useState } from "react";
 import { ActivityIndicator, useWindowDimensions, Image, Text, TouchableOpacity, View } from "react-native";
-import { loginUser } from "@/services/authservice";
+import { AuthService } from "@/services/authservice";
 
 export default function Index(){
     const { height } = useWindowDimensions();
@@ -50,7 +50,7 @@ export default function Index(){
         setIsLoading(true);
         
         // Utiliza o authService para realizar a autenticação com o Firebase
-        const result = await loginUser(email, password);
+        const result = await AuthService.loginUser(email, password);
 
         if (result.valid) {
             setShowValidationPopup(false);

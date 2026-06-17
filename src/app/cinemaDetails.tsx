@@ -8,9 +8,9 @@ import { AdminDeleteButton } from '@/components/AdminDeleteButton';
 import { ValidationPopup } from '@/components/ValidationPopup';
 import { BackButton } from '@/components/BackButton';
 import { useAuth } from '@/contexts/UserContext';
-import { getCinemaById, deleteCinema } from '@/services/cinemaService';
-import { addReviewToCinema } from '@/services/reviewservice';
-import { getAllMovies } from '@/services/movieservice'; // <-- ADICIONADO PARA BUSCAR OS FILMES
+import { CinemaService } from '@/services/cinemaService';
+import { ReviewService } from '@/services/reviewservice';
+import { MovieService } from '@/services/movieservice';
 import { movieStyle } from '@/styles/movie'; 
 import { textStyle } from '@/styles/text';
 import { cinemaDetailsStyle } from '@/styles/cinemadetails';
@@ -59,18 +59,14 @@ export default function CinemaDetailsScreen() {
 
   const fetchCinema = async () => {
     if (!id) return;
-    const data = await getCinemaById(id as string);
+    const data = await CinemaService.getCinemaById(id as string);
     setCinema(data);
     
-    // --- LÓGICA NOVA: RECUPERA OS POSTERS DOS FILMES EM CARTAZ ---
     if (data && data.filmesEmCartaz && data.filmesEmCartaz.length > 0) {
-      const allMovies = await getAllMovies();
-      // Cruza os IDs salvos no Cinema com os filmes da coleção 'movies'
+      const allMovies = await MovieService.getAllMovies();
       const filmesReais = allMovies.filter(m => data.filmesEmCartaz.includes(m.id));
       setFilmesCartazReal(filmesReais);
     }
-    // -------------------------------------------------------------
-
     setLoading(false);
   };
 
@@ -85,27 +81,50 @@ export default function CinemaDetailsScreen() {
   }, [id]);
 
   const handleSubmitReview = async () => {
-  if (!user || userRating === 0 || !myReview.trim()) return;
+    if (!user || userRating === 0 || !myReview.trim()) return;
 
-  try {
+    try {
         setIsSubmittingReview(true);
-        
         const userName = (user as any)?.name || "Usuário"; 
+        const newReviewId = Date.now().toString();
 
-        const reviewPayload = {
-            author: userName,
-            rating: userRating,
-            text: myReview.trim(),
-            date: new Date().toISOString()
-        };
+    const profilePic = typeof (user as any)?.getProfilePicture === 'function' 
+    ? (user as any).getProfilePicture() 
+    : ((user as any)?.profile_picture || "");
 
-        const result = await addReviewToCinema(id as string, reviewPayload);
+    const reviewPayload = {
+        id: newReviewId,
+        author: userName,
+        rating: userRating,
+        text: myReview.trim(),
+        date: new Date().toISOString(),
+        profilePic: profilePic
+    };
+
+        const result = await ReviewService.addReviewToCinema(id as string, reviewPayload);
 
         if (!result.valid) {
             setPopupMessage(result.error);
             setPopupVisible(true);
             return;
         }
+
+        const novoComentarioFormatado = {
+            id: newReviewId,
+            user: userName,
+            rating: userRating,
+            comment: myReview.trim(),
+            date: new Date().toISOString()
+        };
+
+        setCinema((prevCinema: any) => {
+            if (!prevCinema) return prevCinema;
+            const listaAntiga = prevCinema.comentarios || prevCinema.comments || [];
+            return {
+                ...prevCinema,
+                comentarios: [novoComentarioFormatado, ...listaAntiga]
+            };
+        });
 
         setMyReview('');
         setUserRating(0);
@@ -119,7 +138,36 @@ export default function CinemaDetailsScreen() {
     } finally {
         setIsSubmittingReview(false);
     }
-};
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    try {
+        const result = await ReviewService.deleteCinemaReview(String(id), reviewId);
+        
+        if (result.valid) {
+            setPopupMessage("Comentário removido com sucesso!");
+            setPopupVisible(true);
+
+            setCinema((prevCinema: any) => {
+                if (!prevCinema) return prevCinema;
+                const listaAntiga = prevCinema.comentarios || prevCinema.comments || [];
+                const listaFiltrada = listaAntiga.filter((rev: any) => (rev.id !== reviewId && rev.date !== reviewId));
+                
+                return {
+                    ...prevCinema,
+                    comentarios: listaFiltrada
+                };
+            });
+        } else {
+            setPopupMessage(result.error || "Erro ao tentar remover o comentário.");
+            setPopupVisible(true);
+        }
+    } catch (error) {
+        console.error("Erro ao deletar avaliação do cinema:", error);
+        setPopupMessage("Erro ao tentar remover o comentário.");
+        setPopupVisible(true);
+    }
+  };
 
   const navigateToMap = () => { router.push({ pathname: '/map', params: { focusId: id } }); };
 
@@ -155,11 +203,11 @@ export default function CinemaDetailsScreen() {
                     <AdminEditButton onPress={() => router.push({ pathname: '/addTheater', params: { editId: id } })} />
                     <AdminDeleteButton 
                         onConfirmDelete={async (password: string) => {
-                            const result = await deleteCinema(id as string, password);
+                            const result = await CinemaService.deleteCinema(id as string, password);
                             if (!result.valid) {
                                 alert(result.error || "Erro ao deletar cinema.");
                             } else {
-                                router.replace('/(tabs)/cinemas'); // Ou a rota correta de listagem
+                                router.replace('/(tabs)/cinemas');
                             }
                         }} 
                     />
@@ -170,8 +218,8 @@ export default function CinemaDetailsScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never" contentContainerStyle={{ paddingBottom: 120 }}>
         <View style={{ width: '100%', height: 250 }}>
-            {cinema.url_imagem || cinema.imagem ? (
-              <Image source={{ uri: cinema.url_imagem || cinema.imagem }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+            {cinemaImage ? (
+              <Image source={{ uri: cinemaImage }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
             ) : (
               <Image source={require('@/screenAssets/movie-tape.png')} style={{ width: '100%', height: '100%', resizeMode: 'cover', opacity: 0.5 }} />
             )}
@@ -201,10 +249,8 @@ export default function CinemaDetailsScreen() {
                         {item.image ? (
                           <Image source={{ uri: item.image }} style={cinemaDetailsStyle.moviePoster} />
                         ) : (
-                          <View style={[cinemaDetailsStyle.moviePoster, { backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' }]}>
-                          </View>
+                          <View style={[cinemaDetailsStyle.moviePoster, { backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' }]} />
                         )}
-                        {/* ADICIONADO: item.title (o Model Movie lê como title) */}
                         <Text style={cinemaDetailsStyle.movieName} numberOfLines={2}>{item.title || item.titulo || item.nome}</Text>
                     </View>
                 )}
@@ -245,26 +291,48 @@ export default function CinemaDetailsScreen() {
 
             <View style={movieStyle.detailsSectionGrey}>
                 <Text style={textStyle.detailsSectionTitle}>Avaliações e Comentários</Text>
-                {cinemaComments.length > 0 ? cinemaComments.map((rev: any, index: number) => (
-                    <View key={index} style={movieStyle.detailsReviewItem}>
-                        <View style={movieStyle.detailsReviewAvatar}>
+                {cinemaComments.length > 0 ? cinemaComments.map((rev: any, index: number) => {
+                    const reviewIdentifier = rev.id || rev.date || index.toString();
+                    return (
+                        <View key={reviewIdentifier} style={[movieStyle.detailsReviewItem, { position: 'relative', width: '100%' }]}>
+                            <View style={movieStyle.detailsReviewAvatar} />
+                            <View style={movieStyle.detailsReviewContent}>
+                                <Text style={textStyle.detailsReviewUser}>
+                                    {rev.user || "Usuário"}{' '}
+                                    <Text style={textStyle.detailsReviewStars}>
+                                        {'★'.repeat(rev.rating || 5) + '☆'.repeat(5 - (rev.rating || 5))}
+                                    </Text>
+                                </Text>
+                                <Text style={textStyle.detailsReviewText} numberOfLines={10}>{rev.comment}</Text>
+                            </View>
+
+                            {isAdmin && (
+                                <TouchableOpacity
+                                    style={{
+                                        position: 'absolute',
+                                        top: 15,
+                                        right: 15,
+                                        zIndex: 10,
+                                        padding: 5,
+                                    }}
+                                    onPress={() => handleDeleteReview(reviewIdentifier)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Image
+                                        source={require('@/screenAssets/trashbin.png')}
+                                        style={{ width: 18, height: 18, tintColor: COLORS.red }}
+                                    />
+                                </TouchableOpacity>
+                            )}
                         </View>
-                        <View style={movieStyle.detailsReviewContent}>
-                            <Text style={textStyle.detailsReviewUser}>{rev.user || "Usuário"} <Text style={textStyle.detailsReviewStars}>{'★'.repeat(rev.rating || 5) + '☆'.repeat(5 - (rev.rating || 5))}</Text></Text>
-                            <Text style={textStyle.detailsReviewText} numberOfLines={10}>{rev.comment}</Text>
-                        </View>
-                    </View>
-                )) : <Text style={[textStyle.detailsInfoLabel, {textAlign: 'center', marginVertical: 10}]}>Nenhuma avaliação ainda. Seja o primeiro!</Text>}
+                    );
+                }) : <Text style={[textStyle.detailsInfoLabel, {textAlign: 'center', marginVertical: 10}]}>Nenhuma avaliação ainda. Seja o primeiro!</Text>}
             </View>
         </View>
       </ScrollView>
 
-      <ValidationPopup
-        visible={popupVisible}
-        message={popupMessage}
-        onClose={() => setPopupVisible(false)}
-    />
-    <BottomNavbar />
+      <ValidationPopup visible={popupVisible} message={popupMessage} onClose={() => setPopupVisible(false)} />
+      <BottomNavbar />
     </View>
   );
 }

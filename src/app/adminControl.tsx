@@ -8,7 +8,7 @@ import { ButtonY } from '@/components/ButtonY';
 import { useAuth } from '@/contexts/UserContext';
 import { adminControlStyle } from '@/styles/adminControl'; 
 import { COLORS } from '@/constants/colors';
-import { fetchAllAdmins, addAdmin, removeAdmin } from '@/services/userservice';
+import { UserService } from '@/services/userservice';
 
 interface AdminUser {
   id: string;
@@ -31,7 +31,7 @@ export default function AdminControl() {
   const loadAdmins = async () => {
     setLoading(true);
     try {
-      const adminList = await fetchAllAdmins();
+      const adminList = await UserService.fetchAllAdmins();
       setAdmins(adminList);
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Não foi possível carregar a lista de administradores.");
@@ -42,7 +42,7 @@ export default function AdminControl() {
 
 const handleAddAdmin = async () => {
     try {
-      await addAdmin(emailInput);
+      await UserService.addAdmin(emailInput);
       console.log("Administrador adicionado com sucesso!");
       setEmailInput('');
       loadAdmins();
@@ -53,7 +53,7 @@ const handleAddAdmin = async () => {
 
   const handleRemoveAdmin = async (targetUserId: string, targetUserEmail: string) => {
     try {
-      await removeAdmin(targetUserId, targetUserEmail, currentUserEmail);
+      await UserService.removeAdmin(targetUserId, targetUserEmail, currentUserEmail);
       console.log(`Privilégios de ${targetUserEmail} removidos com sucesso.`);
       loadAdmins();
     } catch (error: any) {

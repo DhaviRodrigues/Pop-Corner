@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ActivityIndicator, useWindowDimensions, Image, Text, TouchableOpacity, View } from "react-native";
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 import { Box } from "@/components/Box";
 import { ButtonY } from "@/components/ButtonY";
@@ -10,7 +10,7 @@ import { ButtonVoltar } from "@/components/ButtonVoltar";
 import { miscStyle } from "@/styles/misc";
 import { logoStyle } from "@/styles/logo";
 import { textStyle } from "@/styles/text";
-import { sendPasswordResetEmail } from "@/services/authservice";
+import { AuthService } from "@/services/authservice";
 
 export default function PasswordRecovery() {
   const { height } = useWindowDimensions();
@@ -38,7 +38,7 @@ export default function PasswordRecovery() {
     try {
       setLoading(true);
       
-      const { success, message } = await sendPasswordResetEmail(email.trim());
+      const { success, message } = await AuthService.sendPasswordResetEmail(email.trim());
       
       setValidationMessage(message);
       setShowValidationPopup(true);

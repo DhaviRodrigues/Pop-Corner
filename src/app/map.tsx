@@ -11,7 +11,7 @@ import BottomNavbar from "@/components/Navbar";
 import { style, popupStyles } from "@/styles/cinema";
 import { useAuth } from "@/contexts/UserContext";
 import { BackButton } from "@/components/BackButton";
-import { getAllCinemas } from "@/services/cinemaService";
+import { CinemaService } from "@/services/cinemaService";
 
 const DynamicStarsPopup = ({ rating }: { rating: number }) => {
   return (
@@ -31,27 +31,21 @@ const DynamicStarsPopup = ({ rating }: { rating: number }) => {
   );
 };
 
-// --- FUNÇÃO AUXILIAR BLINDADA PARA WEB E MOBILE ---
 const getAssetUri = (source: any) => {
-  // 1. Se já for uma string (URL HTTP ou caminho Web nativo), retorna direto
   if (typeof source === 'string') return source;
-  
-  // 2. Se o bundler da Web retornar um objeto
+
   if (source && typeof source === 'object') {
     if (source.uri) return source.uri;
     if (source.default) return source.default;
   }
-  
-  // 3. Método nativo (Apenas para iOS e Android)
+
   if (Platform.OS !== 'web' && typeof Image.resolveAssetSource === 'function') {
     const resolved = Image.resolveAssetSource(source);
     if (resolved) return resolved.uri;
   }
-  
-  // 4. Fallback genérico
+
   return String(source);
 };
-// --------------------------------------------------
 
 export default function MapaWeb() {
   const router = useRouter();
@@ -118,16 +112,17 @@ export default function MapaWeb() {
     
     const fetchCinemasData = async () => {
       try {
-        const cinemasData = await getAllCinemas();
+        const cinemasData = await CinemaService.getAllCinemas();
         setCinemas(cinemasData);
 
         if (focusId) {
-          const targetCinema = cinemasData.find((c: any) => c.id === focusId);
+          const targetCinema = cinemasData.find((c) => c.id === focusId);
           if (targetCinema) {
-            const lat = targetCinema.latitude ?? targetCinema.coordinates?.latitude;
-            const lng = targetCinema.longitude ?? targetCinema.coordinates?.longitude;
+            const lat = targetCinema.latitude;
+            const lng = targetCinema.longitude;
+            
             if (lat !== undefined && lng !== undefined) {
-              setMapCenter([parseFloat(lat), parseFloat(lng)]);
+              setMapCenter([lat, lng]);
             }
           }
         }

@@ -7,7 +7,7 @@ import { TitleBar } from '@/components/TitleBar';
 import { DropdownY } from '@/components/DropdownY';
 import { miscStyle } from '@/styles/misc';
 import { COLORS } from '@/constants/colors';
-import { fetchWatchlistMoviesForView, WatchlistFetchResult } from '@/services/userservice'; 
+import { UserService, WatchlistFetchResult } from '@/services/userservice'; 
 
 const { height, width: width } = Dimensions.get('window');
 
@@ -25,7 +25,7 @@ export default function WatchlistScreen() {
     try {
       setLoadingMovies(true);
 
-      const moviesData = await fetchWatchlistMoviesForView(user.uid); 
+      const moviesData = await UserService.fetchWatchlistMoviesForView(user.uid); 
       setWatchlistMovies(moviesData);
       
     } catch (error) {

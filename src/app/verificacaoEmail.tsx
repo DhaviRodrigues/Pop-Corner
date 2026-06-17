@@ -10,7 +10,7 @@ import { Box } from "@/components/Box";
 import { ButtonVoltar } from "@/components/ButtonVoltar";
 import { ButtonY } from "@/components/ButtonY";
 import CodeInput from "@/components/CodeInput";
-import { verify2FACode, resend2FACode } from "@/services/authservice";
+import { AuthService } from "@/services/authservice";
 
 export default function Verify2FA() {
   const router = useRouter();
@@ -38,7 +38,7 @@ export default function Verify2FA() {
     try {
       setLoading(true);
       
-      const result = await verify2FACode(data.email, typedCode);
+      const result = await AuthService.verify2FACode(data.email, typedCode);
 
       if (result.valid) {
         router.push("/genre");
@@ -60,9 +60,8 @@ export default function Verify2FA() {
     
     try {
       setResending(true);
-      
-      // Service assume a geração do código aleatório, gravação no Firestore e disparo do e-mail
-      const result = await resend2FACode(data.email);
+
+      const result = await AuthService.resend2FACode(data.email);
 
       if (result.valid) {
         setValidationMessage("Um novo código foi enviado para seu e-mail!");

@@ -17,9 +17,9 @@ import { textStyle } from '@/styles/text';
 import { DynamicStars } from '@/components/DynamicStars';
 import { BackButton } from '@/components/BackButton';
 
-import { getMovieById, deleteMovie } from '@/services/movieservice';
-import { addReviewToMovie, deleteMovieReview } from '@/services/reviewservice';
-import { addMovieToWatchlist, removeMovieFromWatchlist, checkIfMovieInWatchlist } from '@/services/userservice';
+import { MovieService } from '@/services/movieservice';
+import { ReviewService } from '@/services/reviewservice';
+import { UserService } from '@/services/userservice';
 
 export default function MovieDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -58,7 +58,7 @@ export default function MovieDetailsScreen() {
     try {
       setIsSavingWatchlist(true);
       const userId = (user as any).uid || (user as any).id;
-      const result = await addMovieToWatchlist(userId, movie.id);
+      const result = await UserService.addMovieToWatchlist(userId, movie.id);
       
       if (!result.valid) {
         setPopupMessage(result.error || 'Erro ao adicionar à watchlist.');
@@ -93,7 +93,7 @@ export default function MovieDetailsScreen() {
     try {
       setIsSavingWatchlist(true);
       const userId = (user as any).uid || (user as any).id;
-      const result = await removeMovieFromWatchlist(userId, movie.id); 
+      const result = await UserService.removeMovieFromWatchlist(userId, movie.id); 
       
       if (!result.valid) {
         setPopupMessage(result.error || 'Erro ao remover da watchlist.');
@@ -118,7 +118,7 @@ export default function MovieDetailsScreen() {
   const checkWatchlist = async () => {
   if (user && id) {
     const userId = (user as any).uid || (user as any).id;
-    const status = await checkIfMovieInWatchlist(userId, id as string);
+    const status = await UserService.checkIfMovieInWatchlist(userId, id as string);
     setIsFavorite(status);
   }
   };
@@ -129,9 +129,9 @@ export default function MovieDetailsScreen() {
   const fetchMovieData = async () => {
       if (!id) return;
       try {
-          setLoading(true); // Garante que comece carregando
-          const fetchedMovie = await getMovieById(id as string);
-          console.log("DADOS DO FILME RECEBIDOS:", fetchedMovie); // <-- OLHE O CONSOLE
+          setLoading(true);
+          const fetchedMovie = await MovieService.getMovieById(id as string);
+          console.log("DADOS DO FILME RECEBIDOS:", fetchedMovie);
           
           if (fetchedMovie) {
               setMovie(fetchedMovie);
@@ -153,7 +153,7 @@ export default function MovieDetailsScreen() {
       return;
     }
     try {
-      const result = await deleteMovie(id as string, adminPassword);
+      const result = await MovieService.deleteMovie(id as string, adminPassword);
       if (result.valid) {
           setShowDeleteModal(false);
           router.replace('/(tabs)/filmes'); 
@@ -199,7 +199,7 @@ export default function MovieDetailsScreen() {
           profilePic: profilePic
       };
 
-    const result = await addReviewToMovie(id as string, reviewPayload);
+    const result = await ReviewService.addReviewToMovie(id as string, reviewPayload);
 
       if (result && result.valid === false) {
           setPopupMessage(result.error);
@@ -208,7 +208,7 @@ export default function MovieDetailsScreen() {
       }
 
       if (result && result.valid) {
-          const updatedMovie = await getMovieById(id as string);
+          const updatedMovie = await MovieService.getMovieById(id as string);
           if (updatedMovie) {
               setMovie(updatedMovie); 
           }
@@ -232,13 +232,13 @@ export default function MovieDetailsScreen() {
 
 const handleDeleteReview = async (reviewUserId: string) => {
 try {
-  const result = await deleteMovieReview(String(id), reviewUserId);
+  const result = await ReviewService.deleteMovieReview(String(id), reviewUserId);
   if (result.valid) {
     setPopupMessage("Comentário removido com sucesso!");
     setPopupVisible(true);
     
     // Sincroniza a visão do usuário e do administrador atualizando o estado do componente de forma imediata
-    const updatedMovie = await getMovieById(id as string);
+    const updatedMovie = await MovieService.getMovieById(id as string);
     if (updatedMovie) {
       setMovie(updatedMovie);
     }

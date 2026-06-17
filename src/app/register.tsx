@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { Dimensions, Image, Text, View } from "react-native";
 import { useUserRegistration } from '@/contexts/UserRegistrationContext';
 import { ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
-import { initiateRegistration } from "@/services/authservice";
+import { AuthService } from "@/services/authservice";
 
 const { height } = Dimensions.get('window');
 
@@ -98,7 +98,7 @@ export default function Register() {
         const code = Math.floor(10000 + Math.random() * 90000).toString(); 
         const cleanEmail = email.trim().toLowerCase();
 
-        const enviado = await initiateRegistration(cleanEmail, code);
+        const enviado = await AuthService.initiateRegistration(cleanEmail, code);
 
         if (!enviado) {
             setValidationMessage("Erro ao enviar e-mail. Tente novamente.");

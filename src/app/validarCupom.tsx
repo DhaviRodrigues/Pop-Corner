@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { BackButton } from '@/components/BackButton';
 import BottomNavbar from '@/components/Navbar';
 import { ButtonY } from '@/components/ButtonY';
-import { validateRedeemedCoupon } from '@/services/couponService';
+import { CouponService } from '@/services/couponService';
 import { validateStyle } from '@/styles/validatecoupon';
 import { COLORS } from '@/constants/colors';
 
@@ -37,7 +37,7 @@ export default function ValidarCupomScreen() {
 
     setLoading(true);
 
-    const result = await validateRedeemedCoupon(codigoLido);
+    const result = await CouponService.validateRedeemedCoupon(codigoLido);
 
     if (!result.valid) {
       setPopup({

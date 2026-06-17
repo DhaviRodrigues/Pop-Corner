@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; // Importação correta
 import { useAuth } from '@/contexts/UserContext';
-import { fetchUserCoupons } from '@/services/userservice';
+import { UserService } from '@/services/userservice';
 import { BackButton } from '@/components/BackButton';
 import { useRouter } from 'expo-router';
 import { UserCoupon } from '@/components/UserCoupon';
@@ -11,7 +11,6 @@ import { textStyle } from '@/styles/text';
 import { COLORS } from '@/constants/colors';
 import BottomNavbar from '@/components/Navbar';
 import { TitleBar } from '@/components/TitleBar';
-import { Dimensions } from 'react-native';
 
 export default function CouponsScreen() {
   const { user } = useAuth();
@@ -24,7 +23,7 @@ export default function CouponsScreen() {
     const loadCoupons = async () => {
       const userId = (user as any)?.uid || (user as any)?.id;
       if (userId) {
-        const data = await fetchUserCoupons(userId);
+        const data = await UserService.fetchUserCoupons(userId);
         setCoupons(data);
       }
       setLoading(false);

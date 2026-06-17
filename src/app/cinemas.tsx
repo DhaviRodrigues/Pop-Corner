@@ -13,7 +13,7 @@ import { style as cinemaStyle } from "@/styles/cinema";
 import { COLORS } from "@/constants/colors";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/UserContext";
-import { getAllCinemas } from "@/services/cinemaService";
+import { CinemaService } from "@/services/cinemaService";
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; 
@@ -48,7 +48,7 @@ export default function Cinemas() {
   useEffect(() => {
     const fetchCinemasData = async () => {
       try {
-        const cinemasData = await getAllCinemas();
+        const cinemasData = await CinemaService.getAllCinemas();
         setCinemasList(cinemasData);
       } catch (error) {
         console.error("Erro ao carregar cinemas através do service:", error);

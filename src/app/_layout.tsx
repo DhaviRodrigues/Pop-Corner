@@ -12,7 +12,6 @@ import Head from 'expo-router/head';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
-// Trava a splash screen nativa para evitar flashes visuais antes das fontes estarem prontas.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {

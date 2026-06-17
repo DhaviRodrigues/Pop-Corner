@@ -11,7 +11,7 @@ import { ButtonY } from "@/components/ButtonY";
 import BottomNavbar from "@/components/Navbar";
 import { BackButton } from "@/components/BackButton"; 
 import { SynopsisInput } from "@/components/SynopsisInput";
-import { registerMovie } from "@/services/movieservice";
+import { MovieService } from "@/services/movieservice";
 
 export default function CreateMovie() {
   const router = useRouter();
@@ -106,7 +106,7 @@ export default function CreateMovie() {
         synopsis,
       };
 
-      const result = await registerMovie(moviePayload);
+      const result = await MovieService.registerMovie(moviePayload);
 
       if (result.valid) {
         Alert.alert("Sucesso", "Filme adicionado com sucesso!");

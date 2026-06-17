@@ -8,8 +8,8 @@ import { movieStyle } from "@/styles/movie";
 import { COLORS } from "@/constants/colors";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "@/contexts/UserContext";
-import { fetchCoupons, deleteCoupon, purchaseCoupon } from "@/services/couponService";
-import { verifyAdmin } from "@/services/userservice";
+import { CouponService } from "@/services/couponService";
+import { UserService } from "@/services/userservice";
 import { UserPipoka } from "@/components/UserPipoka";
 import { ValidationPopup } from "@/components/ValidationPopup";
 import { Coupon } from "@/models/coupon";
@@ -27,13 +27,13 @@ export default function Coupons() {
 
   const loadData = async () => {
     setLoading(true);
-    const couponsResult = await fetchCoupons();
+    const couponsResult = await CouponService.fetchCoupons();
     
     if (couponsResult.valid && couponsResult.data) {
       setCouponsList(couponsResult.data);
     }
 
-    const adminResult = await verifyAdmin();
+    const adminResult = await UserService.verifyAdmin();
     if (adminResult.valid) {
       setIsAdmin(adminResult.isAdmin);
     }
@@ -52,7 +52,7 @@ export default function Coupons() {
     const userId = (user as any).uid || (user as any).id;
     const userPipokas = user.pipoka || 0;
 
-    const result = await purchaseCoupon(userId, coupon, userPipokas);
+    const result = await CouponService.purchaseCoupon(userId, coupon, userPipokas);
     
     await refreshUser();
     await loadData();
@@ -77,7 +77,7 @@ export default function Coupons() {
     }
 
     try {
-      const result = await deleteCoupon(couponId);
+      const result = await CouponService.deleteCoupon(couponId);
       
       if (!result.valid) {
         throw new Error(result.error);

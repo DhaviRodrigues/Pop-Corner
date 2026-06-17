@@ -10,7 +10,7 @@ import { TitleBar } from "@/components/TitleBar";
 import { ConfirmPopup } from "@/components/ConfirmPopup";
 import { ValidationPopup } from "@/components/ValidationPopup";
 import { useAuth } from '@/contexts/UserContext';
-import { fetchUserData, updateUserProfileField } from '@/services/userservice';
+import { UserService } from '@/services/userservice';
 import { uploadUserPhoto, ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
 import { COLORS } from "@/constants/colors";
 import { miscStyle } from "@/styles/misc";
@@ -57,7 +57,7 @@ export default function UpdateProfile() {
     try {
       setIsSavingGenres(true);
 
-      const response = await updateUserProfileField({ favorite_genres: selectedGenres });
+      const response = await UserService.updateUserProfileField({ favorite_genres: selectedGenres });
 
       if (!response.success) {
         setValidationMessage(response.error || 'Erro ao processar a atualização no servidor.');
@@ -66,7 +66,7 @@ export default function UpdateProfile() {
         return;
       }
 
-      const updated = await fetchUserData();
+      const updated = await UserService.fetchUserData();
       if (updated && setUser) setUser(updated);
 
       setIsSavingGenres(false);
@@ -94,7 +94,7 @@ export default function UpdateProfile() {
   const handleRemovePhoto = async () => {
     try {
       setIsChangingPhoto(true);
-      const response = await updateUserProfileField({ profile_picture: '' });
+      const response = await UserService.updateUserProfileField({ profile_picture: '' });
       
       if (!response.success) {
         setValidationMessage(response.error || 'Usuário não autenticado ou erro ao processar.');
@@ -103,7 +103,7 @@ export default function UpdateProfile() {
         return;
       }
 
-      const updated = await fetchUserData();
+      const updated = await UserService.fetchUserData();
       if (updated && setUser) setUser(updated);
       
       setIsChangingPhoto(false);
@@ -161,9 +161,9 @@ export default function UpdateProfile() {
 
       const signed = uploadResponse.signedUrl;
       if (signed) {
-        await updateUserProfileField({ profile_picture: signed });
+        await UserService.updateUserProfileField({ profile_picture: signed });
         
-        const updated = await fetchUserData();
+        const updated = await UserService.fetchUserData();
         if (updated && setUser) setUser(updated);
         
         setIsChangingPhoto(false);

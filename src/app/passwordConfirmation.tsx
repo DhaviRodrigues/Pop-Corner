@@ -7,8 +7,8 @@ import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
 import { useAuth } from '@/contexts/UserContext';
-import { loginUser, validateLogin, getCurrentUserEmail } from "@/services/authservice";
-import { deleteUserProfile } from '@/services/userservice';
+import { AuthService } from "@/services/authservice";
+import { UserService } from '@/services/userservice';
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
@@ -26,9 +26,9 @@ export default function PasswordConfirmation() {
   const { from } = useLocalSearchParams<{ from: string }>();
 
   const handleConfirm = async (from: string) => {
-    const email = getCurrentUserEmail() ?? "";
+    const email = AuthService.getCurrentUserEmail() ?? "";
 
-    const validation = await validateLogin(email, password);
+    const validation = await AuthService.validateLogin(email, password);
 
     if (!validation.valid) {
       setValidationMessage(validation.error || "Senha inválida.");
@@ -37,7 +37,7 @@ export default function PasswordConfirmation() {
     }
 
     setIsLoading(true);
-    const result = await loginUser(email, password);
+    const result = await AuthService.loginUser(email, password);
     setIsLoading(false);
 
     if (!result.valid) {
@@ -51,7 +51,7 @@ export default function PasswordConfirmation() {
       router.push('/updatePassword');
     } else if (from === 'updateProfile') {
       setIsLoading(true);
-      const delResult = await deleteUserProfile();
+      const delResult = await UserService.deleteUserProfile();
       setIsLoading(false);
 
       if (!delResult.valid) {

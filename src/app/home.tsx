@@ -6,7 +6,7 @@ import { MovieCard } from "@/components/MovieCard";
 import BottomNavbar from "@/components/Navbar";
 import { TitleBar } from "@/components/TitleBar";
 import { miscStyle } from "@/styles/misc";
-import { getHomeMovies } from "@/services/recommendationService";
+import { MovieService } from "@/services/movieservice";
 import { useAuth } from "@/contexts/UserContext";
 
 const { height } = Dimensions.get("window");
@@ -26,7 +26,7 @@ export default function Home() {
         setLoadingMovies(true);
         const generosDoUsuario = user?.favorite_genres || user?.getGenres?.() || [];
         
-        const resultado = await getHomeMovies(generosDoUsuario);
+        const resultado = await MovieService.getHomeMovies(generosDoUsuario);
         
         if (resultado.sucesso) {
           setRecommendedMovies(resultado.recomendados);

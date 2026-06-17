@@ -25,8 +25,8 @@ import { ButtonY } from "../components/ButtonY";
 import BottomNavbar from "../components/Navbar";
 import { BackButton } from "@/components/BackButton";
 
-import { getCinemaById, saveOrUpdateCinema } from "@/services/cinemaService";
-import { getAllMovies } from "@/services/movieservice";
+import { CinemaService } from "@/services/cinemaService";
+import { MovieService } from "@/services/movieservice";
 
 function LocalInput({
   text,
@@ -157,45 +157,40 @@ export default function CreateCinema() {
     endereco.trim() &&
     urlImagem.trim()
   );
+useEffect(() => {
+  const fetchMoviesAndCinema = async () => {
+    try {
+      const movies = await MovieService.getAllMovies();
+      setAvailableMovies(movies);
 
-  useEffect(() => {
-    const fetchMoviesAndCinema = async () => {
-      try {
-        const movies = await getAllMovies();
-        setAvailableMovies(movies);
+      if (editId) {
+        const data = await CinemaService.getCinemaById(editId as string);
+        if (data) {
+          setNome(data.nome || "");
+          setCidade(data.cidade || "");
+          setEndereco(data.endereco || "");
 
-        if (editId) {
-          const data = await getCinemaById(editId as string);
-          if (data) {
-            setNome(data.nome || "");
-            setCidade(data.cidade || "");
-            setEndereco(data.endereco || "");
-            setCep(data.cep || "");
-            if (data.coordinates) {
-              setLatitude(String(data.coordinates.latitude || ""));
-              setLongitude(String(data.coordinates.longitude || ""));
-            }
-            setUrlImagem(data.url_imagem || data.imagem || "");
-            setIsParceiro(data.is_parceiro || data.isParceiro || false);
-            setFilmesEmCartaz(data.filmesEmCartaz || []);
-            
-            // Corrige o "Filme Desconhecido" normalizando a leitura do banco
-            if (data.sessoes && Array.isArray(data.sessoes)) {
-              const sessoesNormalizadas = data.sessoes.map((s: any) => ({
-                idFilme: s.id_filme || s.idFilme,
-                data: s.data,
-                horario: s.horario
-              }));
-              setSessoes(sessoesNormalizadas);
-            }
+          setCep((data as any).cep || ""); 
+          
+          if (data.coordinates) {
+            setLatitude(String(data.coordinates.latitude || ""));
+            setLongitude(String(data.coordinates.longitude || ""));
           }
+
+          setUrlImagem(data.url_imagem || "");
+
+          setIsParceiro(data.is_parceiro || false);
+          
+          setFilmesEmCartaz(data.filmesEmCartaz || []);
         }
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
       }
-    };
-    fetchMoviesAndCinema();
-  }, [editId]);
+    } catch (error) {
+      console.error("Erro ao carregar dados do formulário:", error);
+    }
+  };
+
+  fetchMoviesAndCinema();
+}, [editId]);
 
   const getMovieTitle = (movie: any) => {
     if (!movie) return "Filme Desconhecido";
@@ -303,7 +298,7 @@ export default function CreateCinema() {
         isParceiro,
       };
 
-      const success = await saveOrUpdateCinema(dadosCrus, editId as string);
+      const success = await CinemaService.saveOrUpdateCinema(dadosCrus, editId as string);
 
       if (success) {
         Alert.alert("Sucesso!", editId ? "Cinema atualizado." : "Cinema cadastrado.");

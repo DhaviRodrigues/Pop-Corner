@@ -20,7 +20,7 @@ import { couponFormStyle, placeholderColor } from '@/styles/couponForm';
 
 import { CouponTypeDropdown } from '@/components/CouponTypeDropdown';
 import BottomNavbar from '@/components/Navbar';
-import { createCoupon, getCoupon, updateCoupon } from '@/services/couponService';
+import { CouponService } from '@/services/couponService';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BackButton } from '@/components/BackButton';
 import { ButtonY } from '@/components/ButtonY';
@@ -146,7 +146,7 @@ export default function CouponFormScreen() {
 
   const loadCouponData = async () => {
     try {
-      const result = await getCoupon(couponId as string);
+      const result = await CouponService.getCoupon(couponId as string);
       
       if (!result.valid || !result.data) {
         setStatusMessage('Cupom não encontrado.');
@@ -276,7 +276,7 @@ export default function CouponFormScreen() {
 
     try {
       if (isEditing && couponId) {
-        const result = await updateCoupon(couponId as string, couponData);
+        const result = await CouponService.updateCoupon(couponId as string, couponData);
         
         if (!result.valid) {
           setStatusMessage(result.error || 'Erro ao atualizar o cupom.');
@@ -290,7 +290,7 @@ export default function CouponFormScreen() {
           if (router.canGoBack()) router.back();
         }, 1500);
       } else {
-        const result = await createCoupon(couponData);
+        const result = await CouponService.createCoupon(couponData);
         
         if (!result.valid) {
           setStatusMessage(result.error || 'Erro ao salvar o cupom.');

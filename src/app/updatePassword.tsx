@@ -6,7 +6,7 @@ import { ButtonVoltar } from "@/components/ButtonVoltar";
 import { ButtonY } from "@/components/ButtonY";
 import { Input } from "@/components/Input";
 import { ValidationPopup } from "@/components/ValidationPopup";
-import { changeCurrentUserPassword } from "@/services/authservice";
+import { AuthService } from "@/services/authservice";
 import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
@@ -43,7 +43,7 @@ export default function PasswordUpdate() {
 
     setIsLoading(true);
 
-    const result = await changeCurrentUserPassword(password);
+    const result = await AuthService.changeCurrentUserPassword(password);
     
     setIsLoading(false);
 

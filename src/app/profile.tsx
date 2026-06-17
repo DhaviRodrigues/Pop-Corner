@@ -11,7 +11,7 @@ import { UserPipoka } from "@/components/UserPipoka";
 import { MovieCard } from '@/components/MovieCard';
 import { ButtonY } from '@/components/ButtonY';
 import { useAuth } from "@/contexts/UserContext";
-import { fetchUserData, fetchWatchlistMoviesForView, WatchlistFetchResult } from '@/services/userservice';
+import { UserService, WatchlistFetchResult } from '@/services/userservice';
 import { miscStyle } from "@/styles/misc";
 import { profileStyle } from "@/styles/profile";
 import { textStyle } from "@/styles/text";
@@ -40,14 +40,13 @@ export default function Profile() {
 
             const syncProfileAndWatchlist = async () => {
                 try {
-                    const updatedUser = await fetchUserData();
+                    const updatedUser = await UserService.fetchUserData();
                     if (updatedUser) {
                         setUser(updatedUser);
                         
                         const userId = (updatedUser as any).id || (updatedUser as any).uid;
-                        const fetchedMovies = await fetchWatchlistMoviesForView(userId);
-                        
-                        // Filtra nulos e garante que a imagem seja tratada como string
+                        const fetchedMovies = await UserService.fetchWatchlistMoviesForView(userId);
+
                         const validMovies = fetchedMovies
                             .filter((m): m is (WatchlistFetchResult & { image: string }) => m.image !== null)
                             .map(m => ({ 

@@ -9,7 +9,7 @@ import { textStyle } from "@/styles/text";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { updateUserName } from "@/services/userservice";
+import { UserService } from "@/services/userservice";
 
 const nameRegex = /^[\p{L} ]{3,20}$/u;
 
@@ -31,7 +31,7 @@ export default function NameUpdate() {
       return;
     }
     setIsLoading(true);
-    const result = await updateUserName(trimmedName);
+    const result = await UserService.updateUserName(trimmedName);
     setIsLoading(false);
 
     if (!result.valid) {
