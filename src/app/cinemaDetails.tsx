@@ -9,6 +9,7 @@ import { BackButton } from '@/components/BackButton';
 import { useAuth } from '@/contexts/UserContext';
 import { getCinemaById, deleteCinema } from '@/services/cinemaService';
 import { addReviewToCinema } from '@/services/reviewservice';
+import { getAllMovies } from '@/services/movieservice'; // <-- ADICIONADO PARA BUSCAR OS FILMES
 import { movieStyle } from '@/styles/movie'; 
 import { textStyle } from '@/styles/text';
 import { cinemaDetailsStyle } from '@/styles/cinemadetails';
@@ -59,6 +60,16 @@ export default function CinemaDetailsScreen() {
     if (!id) return;
     const data = await getCinemaById(id as string);
     setCinema(data);
+    
+    // --- LÓGICA NOVA: RECUPERA OS POSTERS DOS FILMES EM CARTAZ ---
+    if (data && data.filmesEmCartaz && data.filmesEmCartaz.length > 0) {
+      const allMovies = await getAllMovies();
+      // Cruza os IDs salvos no Cinema com os filmes da coleção 'movies'
+      const filmesReais = allMovies.filter(m => data.filmesEmCartaz.includes(m.id));
+      setFilmesCartazReal(filmesReais);
+    }
+    // -------------------------------------------------------------
+
     setLoading(false);
   };
 
@@ -192,13 +203,22 @@ export default function CinemaDetailsScreen() {
                           <View style={[cinemaDetailsStyle.moviePoster, { backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' }]}>
                           </View>
                         )}
-                        <Text style={cinemaDetailsStyle.movieName} numberOfLines={2}>{item.nome}</Text>
+                        {/* ADICIONADO: item.title (o Model Movie lê como title) */}
+                        <Text style={cinemaDetailsStyle.movieName} numberOfLines={2}>{item.title || item.titulo || item.nome}</Text>
                     </View>
                 )}
                 ListEmptyComponent={<Text style={textStyle.detailsInfoLabel}>Nenhum filme em cartaz no momento.</Text>}
             />
 
-            <View style={cinemaDetailsStyle.btnSessoesWrapper}><ButtonY title="Ver Sessões" onPress={() => console.log('Abre Sessões')} /></View>
+            <View style={cinemaDetailsStyle.btnSessoesWrapper}>
+               <ButtonY 
+                 title="Ver Sessões" 
+                 onPress={() => router.push({
+                   pathname: '/sessions', 
+                   params: { cinemaId: id } 
+                 })} 
+               />
+            </View>
 
             <View style={[movieStyle.detailsSectionGrey, { marginTop: 30, padding: 15, borderRadius: 10 }]}>
                 <Text style={[textStyle.detailsSectionTitle, { textAlign: 'center', marginBottom: 15 }]}>Avaliar Cinema</Text>

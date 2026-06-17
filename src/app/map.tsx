@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   TouchableOpacity,
-  Image,
   Platform,
   Text,
+  Image 
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import BottomNavbar from "@/components/Navbar";
 import { style, popupStyles } from "@/styles/cinema";
 import { useAuth } from "@/contexts/UserContext";
@@ -31,13 +31,37 @@ const DynamicStarsPopup = ({ rating }: { rating: number }) => {
   );
 };
 
+// --- FUNÇÃO AUXILIAR BLINDADA PARA WEB E MOBILE ---
+const getAssetUri = (source: any) => {
+  // 1. Se já for uma string (URL HTTP ou caminho Web nativo), retorna direto
+  if (typeof source === 'string') return source;
+  
+  // 2. Se o bundler da Web retornar um objeto
+  if (source && typeof source === 'object') {
+    if (source.uri) return source.uri;
+    if (source.default) return source.default;
+  }
+  
+  // 3. Método nativo (Apenas para iOS e Android)
+  if (Platform.OS !== 'web' && typeof Image.resolveAssetSource === 'function') {
+    const resolved = Image.resolveAssetSource(source);
+    if (resolved) return resolved.uri;
+  }
+  
+  // 4. Fallback genérico
+  return String(source);
+};
+// --------------------------------------------------
+
 export default function MapaWeb() {
   const router = useRouter();
+  const { focusId } = useLocalSearchParams();
   const [MapComponents, setMapComponents] = useState<any>(null);
   
   const { user } = useAuth();
 
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [locationError, setLocationError] = useState<boolean>(false);
   const [cinemas, setCinemas] = useState<any[]>([]);
@@ -48,16 +72,20 @@ export default function MapaWeb() {
     if (typeof window !== "undefined" && "geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
+          const coords: [number, number] = [position.coords.latitude, position.coords.longitude];
+          setUserLocation(coords);
           setAccuracy(position.coords.accuracy);
           setLocationError(false);
+          if (!focusId) setMapCenter(coords);
         },
         (error) => {
           navigator.geolocation.getCurrentPosition(
             (pos) => {
-              setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+              const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+              setUserLocation(coords);
               setAccuracy(pos.coords.accuracy);
               setLocationError(false);
+              if (!focusId) setMapCenter(coords);
             },
             (err) => setLocationError(true),
             { enableHighAccuracy: false, timeout: 10000, maximumAge: Infinity }
@@ -92,19 +120,66 @@ export default function MapaWeb() {
       try {
         const cinemasData = await getAllCinemas();
         setCinemas(cinemasData);
+
+        if (focusId) {
+          const targetCinema = cinemasData.find((c: any) => c.id === focusId);
+          if (targetCinema) {
+            const lat = targetCinema.latitude ?? targetCinema.coordinates?.latitude;
+            const lng = targetCinema.longitude ?? targetCinema.coordinates?.longitude;
+            if (lat !== undefined && lng !== undefined) {
+              setMapCenter([parseFloat(lat), parseFloat(lng)]);
+            }
+          }
+        }
       } catch (error) {
         console.error("Erro ao carregar cinemas no Mapa via service:", error);
       }
     };
 
     fetchCinemasData();
-  }, []);
+  }, [focusId]);
+
+  const L_Safe = MapComponents?.L;
+
+  // Usa as imagens locais convertidas de forma segura
+  const pinCinemaUrl = useMemo(() => getAssetUri(require("@/screenAssets/pin-localizacao.png")), []);
+  const pinUserFundoUrl = useMemo(() => getAssetUri(require("@/screenAssets/pin-user.png")), []);
+  const iconPerfilPadraoUrl = useMemo(() => getAssetUri(require("@/screenAssets/icon-perfil.png")), []);
+
+  const customIcon = useMemo(() => {
+    if (!L_Safe) return null;
+    return new L_Safe.Icon({
+      iconUrl: pinCinemaUrl,
+      iconSize: [35, 45],
+      iconAnchor: [17, 45],
+      popupAnchor: [1, -34],
+      shadowUrl: undefined, 
+    });
+  }, [L_Safe, pinCinemaUrl]);
+
+  const fotoPerfilRaw = user?.getProfilePicture ? user.getProfilePicture() : null;
+  const finalProfilePic = fotoPerfilRaw && fotoPerfilRaw !== "" ? fotoPerfilRaw : iconPerfilPadraoUrl;
+
+  const userLocationIcon = useMemo(() => {
+    if (!L_Safe) return null;
+    return L_Safe.divIcon({
+      className: "custom-user-marker", 
+      html: `
+        <div style="width: 55px; height: 70px; display: flex; justify-content: center; align-items: center; position: relative;">
+           <img src="${pinUserFundoUrl}" style="position: absolute; width: 55px; height: 70px; top: 0; left: 0;" />
+           <img src="${finalProfilePic}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid #000; position: absolute; top: 7px; object-fit: cover; z-index: 2;" />
+        </div>
+      `,
+      iconSize: [55, 70],      
+      iconAnchor: [27.5, 70],  
+    });
+  }, [L_Safe, finalProfilePic, pinUserFundoUrl]);
 
   if (!MapComponents) {
     return <View style={style.mapContainer as any} />;
   }
 
-  const { MapContainer, TileLayer, Marker, Popup, Circle, useMap, L } = MapComponents;
+  const { MapContainer, TileLayer, Marker, Popup, Circle, useMap } = MapComponents;
 
   const MapUpdater = ({ center }: { center: [number, number] | null }) => {
     const map = useMap();
@@ -112,49 +187,22 @@ export default function MapaWeb() {
     return null;
   };
 
-  const customIcon = new L.Icon({
-    iconUrl: "https://raw.githubusercontent.com/DhaviRodrigues/Pop-Corner/e63d33c613bef08c923a14e758fd10eda1f1b608/src/screenAssets/pin-localizacao.png",
-    iconSize: [35, 45],
-    iconAnchor: [17, 45],
-    popupAnchor: [1, -34],
-  });
-
-  const urlFotoUsuario = user ? user.getProfilePicture() : require("@/screenAssets/icon-perfil.png"); 
-  const urlPinFundo = require("@/screenAssets/pin-user.png"); 
-
-  
-const createUserPin = (profilePicUrl: string) => {
-  return L.divIcon({
-    className: "custom-user-marker", 
-    html: `
-      <div style="width: 55px; height: 70px; display: flex; justify-content: center; align-items: center;">
-         <img src="${urlPinFundo}" style="position: absolute; width: 55px; height: 70px;" />
-         <img src="${profilePicUrl}" style="width: 30px; height: 30px; border-radius: 50%; border: 3px solid #000; position: absolute; top: 7px; object-fit: cover;" />
-      </div>
-    `,
-    iconSize: [55, 70],      
-    iconAnchor: [27.5, 70],  
-  });
-};
-
-  const userLocationIcon = createUserPin(urlFotoUsuario);
-
   return (
     <View style={style.mapContainer as any}>
-      <MapContainer center={userLocation || [-8.1147, -34.9037]} zoom={13} style={{ height: "100%", width: "100%", zIndex: 1 }}>
-        <MapUpdater center={userLocation} />
+      <MapContainer center={mapCenter || userLocation || [-8.1147, -34.9037]} zoom={13} style={{ height: "100%", width: "100%", zIndex: 1 }}>
+        <MapUpdater center={mapCenter} />
         <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
 
-        {userLocation && (
+        {userLocation && userLocationIcon && (
           <>
             <Circle center={userLocation} radius={accuracy || 50} pathOptions={{ color: '#ff0000', fillColor: '#330707', fillOpacity: 0.2 }} />
-            <Marker  key={urlFotoUsuario} position={userLocation} icon={userLocationIcon}>
+            <Marker position={userLocation} icon={userLocationIcon}>
               <Popup>Você está aqui</Popup>
             </Marker>
           </>
         )}
 
-        {cinemas.map((cinema) => {
+        {customIcon && cinemas.map((cinema) => {
           let lat: number | undefined;
           let lng: number | undefined;
 
@@ -197,7 +245,6 @@ const createUserPin = (profilePicUrl: string) => {
                     style={popupStyles.image as React.CSSProperties}
                     onError={(e) => {
                       e.currentTarget.src = "https://via.placeholder.com/130x100?text=Sem+Foto";
-                      console.log("Falha ao carregar URL:", cinema.url_imagem);
                     }}
                   />
                 </div>

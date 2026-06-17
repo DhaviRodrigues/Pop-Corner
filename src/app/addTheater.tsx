@@ -2,7 +2,7 @@ import { logoStyle } from "@/styles/logo";
 import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
 import { componentStyle } from "@/styles/component";
-import { style} from "@/styles/cinema";
+import { style } from "@/styles/cinema";
 import { COLORS } from "@/constants/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -32,16 +32,19 @@ function LocalInput({
   text,
   value,
   onChangeText,
+  keyboardType = "default"
 }: {
   text: string;
   value: string;
   onChangeText: (v: string) => void;
+  keyboardType?: any;
 }) {
   return (
     <View style={[componentStyle.inputContainer, { width: "100%", overflow: "hidden" }]}>
       <TextInput
         placeholder={text}
         placeholderTextColor="#A9A9A9"
+        keyboardType={keyboardType}
         style={[
           componentStyle.inputText,
           {
@@ -68,7 +71,7 @@ export default function CreateCinema() {
   const [nome, setNome] = useState("");
   const [cidade, setCidade] = useState("");
   const [endereco, setEndereco] = useState("");
-  // Mantemos o estado apenas para carregar dados antigos em caso de edição
+  const [cep, setCep] = useState(""); // <-- NOVO CAMPO: CEP
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [urlImagem, setUrlImagem] = useState("");
@@ -79,6 +82,7 @@ export default function CreateCinema() {
     return uri.split('.').pop()?.split('?')[0]?.toLowerCase() || '';
   };
 
+  // --- SEU UPLOAD DE IMAGEM ORIGINAL (FUNCIONANDO PERFEITAMENTE) ---
   const handlePickImage = async () => {
     try {
       setLoadingImage(true);
@@ -166,6 +170,7 @@ export default function CreateCinema() {
             setNome(data.nome || "");
             setCidade(data.cidade || "");
             setEndereco(data.endereco || "");
+            setCep(data.cep || "");
             if (data.coordinates) {
               setLatitude(String(data.coordinates.latitude || ""));
               setLongitude(String(data.coordinates.longitude || ""));
@@ -173,7 +178,16 @@ export default function CreateCinema() {
             setUrlImagem(data.url_imagem || data.imagem || "");
             setIsParceiro(data.is_parceiro || data.isParceiro || false);
             setFilmesEmCartaz(data.filmesEmCartaz || []);
-            setSessoes(data.sessoes || []);
+            
+            // Corrige o "Filme Desconhecido" normalizando a leitura do banco
+            if (data.sessoes && Array.isArray(data.sessoes)) {
+              const sessoesNormalizadas = data.sessoes.map((s: any) => ({
+                idFilme: s.id_filme || s.idFilme,
+                data: s.data,
+                horario: s.horario
+              }));
+              setSessoes(sessoesNormalizadas);
+            }
           }
         }
       } catch (error) {
@@ -207,6 +221,14 @@ export default function CreateCinema() {
       setErroSessao("Selecione um filme válido do cartaz.");
       return;
     }
+    
+    // Validação de formato (Opcional, mas evita quebra do banco)
+    const regexData = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!regexData.test(dataSessao)) {
+      setErroSessao("Formato de data inválido. Use DD/MM/AAAA.");
+      return;
+    }
+
     try {
       Session.createSessao({
         idFilme: filmeSessao,
@@ -224,6 +246,11 @@ export default function CreateCinema() {
     }
   };
 
+  // Função para remover sessão da lista
+  const handleRemoverSessao = (indexParaRemover: number) => {
+    setSessoes(prev => prev.filter((_, index) => index !== indexParaRemover));
+  };
+
   const handleConfirmar = async () => {
     setErroCinema("");
     if (!isCinemaPronto) {
@@ -232,42 +259,47 @@ export default function CreateCinema() {
     }
 
     try {
-      // --- ESTRATÉGIA 1: API DO NOMINATIM (OPENSTREETMAP) ---
-      let latGerada = 0;
-      let lonGerada = 0;
+      let latGerada = parseFloat(latitude) || 0;
+      let lonGerada = parseFloat(longitude) || 0;
 
-      // Junta o endereço e a cidade para a pesquisa
-      const enderecoBusca = `${endereco}, ${cidade}`;
-      // Limita a 1 resultado para ser mais rápido
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoBusca)}&limit=1`;
+      // API DE MAPA COM TOLERÂNCIA DE ERRO
+      const buscarCoordenadas = async (query: string) => {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+        const response = await fetch(url, { headers: { 'User-Agent': 'PopCornerApp/1.0', 'Accept-Language': 'pt-BR,pt;q=0.9' } });
+        return await response.json();
+      };
 
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'PopCornerApp/1.0', // Cabeçalho recomendado pela documentação do Nominatim
-          'Accept-Language': 'pt-BR,pt;q=0.9'
-        }
-      });
+      // Tenta achar pelo Endereço Completo com CEP e Brasil
+      let dataMap = await buscarCoordenadas(`${endereco}, ${cidade}, ${cep} Brasil`);
       
-      const data = await response.json();
-
-      if (data && data.length > 0) {
-        latGerada = parseFloat(data[0].lat);
-        lonGerada = parseFloat(data[0].lon);
-      } else {
-        setErroCinema("Não achámos as coordenadas deste endereço. Tente ser mais direto (ex: Nome da Rua, Cidade).");
-        return; // Bloqueia a gravação se o endereço for inválido
+      // Se não achar, tenta achar só pela Cidade
+      if (!dataMap || dataMap.length === 0) {
+        dataMap = await buscarCoordenadas(cidade);
       }
-      // ------------------------------------------------------
+
+      if (dataMap && dataMap.length > 0) {
+        latGerada = parseFloat(dataMap[0].lat);
+        lonGerada = parseFloat(dataMap[0].lon);
+      } else {
+        // Não bloqueia mais o save! Só avisa que não achou no mapa.
+        Alert.alert("Aviso no Mapa", "Não encontramos as coordenadas exatas deste endereço. O cinema pode não aparecer corretamente no mapa.");
+      }
+
+      // Converte os objetos simples do React em Instâncias reais da classe Session
+      const sessoesInstanciadas = sessoes.map(
+        (s) => new Session(s.idFilme, s.data, s.horario)
+      );
 
       const dadosCrus = {
         nome,
         cidade,
         endereco,
+        cep, // Salvando o CEP
         latitude: latGerada,
         longitude: lonGerada,
         urlImagem,
         filmesEmCartaz,
-        sessoes,
+        sessoes: sessoesInstanciadas, // Passa como classes
         isParceiro,
       };
 
@@ -278,10 +310,10 @@ export default function CreateCinema() {
         if (router.canGoBack()) router.back();
         else router.replace("/cinemas");
       } else {
-        setErroCinema("Falha ao salvar o cinema. Verifique os dados e tente novamente.");
+        setErroCinema("Falha ao salvar o cinema no Banco de Dados.");
       }
     } catch (error: any) {
-      setErroCinema("Erro de rede ao buscar localização: " + error.message);
+      setErroCinema("Erro inesperado: " + error.message);
     }
   };
 
@@ -323,14 +355,20 @@ export default function CreateCinema() {
             </View>
           </View>
 
-          <View style={style.fullInput}>
-            <LocalInput text="Endereço" value={endereco} onChangeText={setEndereco} />
+          {/* NOVO LAYOUT DE ENDEREÇO COM CEP */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 15 }}>
+            <View style={{ width: '68%' }}>
+              <LocalInput text="Endereço" value={endereco} onChangeText={setEndereco} />
+            </View>
+            <View style={{ width: '30%' }}>
+              <LocalInput text="CEP" value={cep} onChangeText={setCep} keyboardType="numeric" />
+            </View>
           </View>
 
           <View style={[style.fullInput, { alignItems: "center" }]}>
             <ButtonY 
               title={loadingImage ? "Fazendo Upload..." : urlImagem ? "Alterar Imagem do Cinema" : "Selecionar Imagem do Cinema"} 
-              onPress={handlePickImage} textSize={14 } h={50}
+              onPress={handlePickImage} textSize={14} h={50}
             />
             {urlImagem ? (
               <Image
@@ -483,9 +521,15 @@ export default function CreateCinema() {
                 sessoes.map((sessao, index) => {
                   const mTitle = getMovieTitle(getMovieData(sessao.idFilme));
                   return (
-                    <Text key={index} style={style.sessionListText}>
-                      {mTitle} - Data: {sessao.data} - Horário: {sessao.horario}
-                    </Text>
+                    <View key={index} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "rgba(0,0,0,0.05)", padding: 8, borderRadius: 6, marginBottom: 5 }}>
+                      <Text style={[style.sessionListText, { flex: 1, marginBottom: 0 }]}>
+                        {mTitle} • {sessao.data} • {sessao.horario}
+                      </Text>
+                      {/* BOTÃO DE REMOVER DA LISTA */}
+                      <TouchableOpacity onPress={() => handleRemoverSessao(index)} style={{ padding: 5 }}>
+                        <Text style={{ color: "#B22300", fontFamily: "Poppins-Bold", fontSize: 12 }}>X</Text>
+                      </TouchableOpacity>
+                    </View>
                   );
                 })
               )}

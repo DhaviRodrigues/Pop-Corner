@@ -6,7 +6,7 @@ import { ButtonY } from '@/components/ButtonY';
 import SearchBar from '@/components/SearchBar';
 import SortFilterBar from '@/components/SortFilterBar';
 import GenreFilter from '@/components/GenreFilter';
-import { AdminAddButton } from '@/components/AdminAddButton'; // <-- IMPORTAÇÃO DO BOTÃO PADRÃO
+import { AdminAddButton } from '@/components/AdminAddButton'; 
 import { movieStyle } from '@/styles/movie';
 import { COLORS } from '@/constants/colors';
 import { useAuth } from '@/contexts/UserContext';
@@ -169,21 +169,16 @@ export default function MoviesScreen() {
   return (
     <View style={[movieStyle.filmesContainer, { flex: 1, backgroundColor: COLORS.primary }]}>
       
-      {/* HEADER ATUALIZADO COM O BOTÃO DE ADMIN */}
-      <View style={{ paddingHorizontal: "2%" }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 10 }}>
-          {/* Espaçador vazio para manter o logo centralizado */}
-          <View style={{ width: 40 }} /> 
-          
+      {/* Botão de Admin solto. Ele é 'absolute' e vai se posicionar sozinho no topo direito da tela */}
+      {isAdmin && <AdminAddButton onPress={() => router.push("/addMovie")} />}
+
+      {/* HEADER LIMPO E CENTRALIZADO */}
+      <View style={{ paddingHorizontal: "5%", paddingTop: 30 }}>
+        <View style={{ alignItems: 'center', width: '100%', marginBottom: 15 }}>
           <Image 
             source={require('@/screenAssets/logo/full-logo.png')}
             style={[movieStyle.filmesLogo, { marginBottom: 0 }]} 
           />
-          
-          {/* O Botão de Admin Padronizado */}
-          <View style={{ width: 40, alignItems: 'center' }}>
-            {isAdmin && <AdminAddButton onPress={() => router.push("/addMovie")} />}
-          </View>
         </View>
       
         <View style={[movieStyle.filmesSearchContainer, { marginVertical: 0 }]}>
@@ -193,7 +188,6 @@ export default function MoviesScreen() {
              placeholder="Buscar um filme" 
              onToggleFilters={() => setShowFilters(!showFilters)}
              filtersVisible={showFilters}
-             // As propriedades antigas de showAddButton foram removidas daqui
            />
         </View>
       </View>
