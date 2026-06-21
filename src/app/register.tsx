@@ -10,7 +10,7 @@ import { miscStyle } from "@/styles/misc";
 import { textStyle } from "@/styles/text";
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Dimensions, Image, Text, View } from "react-native";
+import { Dimensions, Image, Text, View, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useUserRegistration } from '@/contexts/UserRegistrationContext';
 import { ALLOWED_IMAGE_EXTENSIONS } from '@/services/storage';
 import { AuthService } from "@/services/authservice";
@@ -127,60 +127,57 @@ export default function Register() {
     }
 
     return (
-        <View style={miscStyle.background}>
-            <Image source={require('@/screenAssets/logo/full-logo.png')} style={logoStyle.logoS} />
-            
-            <View style={miscStyle.center}>
-                <Box vw={0.80} padTop={0}>
-                    <View style={miscStyle.formContainer}>
-                        <Text style={textStyle.text}>Foto de Perfil</Text>
-                        <ProfileIcon source={profilePhotoUri ? { uri: profilePhotoUri } : undefined}>
-                            <Pencil onPhotoSelecting={handlePhotoSelecting} onPhotoSelected={handlePhotoSelected} isLoading={isLoading} />
-                        </ProfileIcon>
-                        
-                        <Text style={textStyle.text}>Insira suas informações pessoais</Text>
-                        
-                        <Input
-                            icon={require('@/screenAssets/icons/profile-icon-gray.png')}
-                            text="Nome:"
-                            value={name}
-                            onChangeText={setName}
-                        />
-                        <Input
-                            icon={require('@/screenAssets/icons/email-icon.png')}
-                            text="Email:"
-                            value={email}
-                            onChangeText={setEmail}
-                        />
-                        <Input
-                            icon={require('@/screenAssets/icons/password-icon.png')}
-                            text="Senha:"
-                            secureTextEntry={true}
-                            value={password}
-                            onChangeText={setPassword}
-                        />
-                        <Input
-                            icon={require('@/screenAssets/icons/password-icon.png')}
-                            text="Confirmar Senha:"
-                            secureTextEntry={true}
-                            value={confirmPassword}
-                            onChangeText={setConfirmPassword}
-                        />
+        <View style={{ flex: 1, backgroundColor: miscStyle.background.backgroundColor }}>
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+                style={{ flex: 1 }}
+            >
+                <ScrollView 
+                    contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center' }}
+                    keyboardShouldPersistTaps="handled"
+                >
+                </ScrollView>
+                <View style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    pointerEvents: 'box-none'
+                }}>
+                    <Image source={require('@/screenAssets/logo/full-logo.png')} style={logoStyle.logoS} />
+                    <Box vw={0.80} padTop={0}>
+                        <View style={miscStyle.formContainer}>
+                            <Text style={textStyle.text}>Foto de Perfil</Text>
+                            <ProfileIcon source={profilePhotoUri ? { uri: profilePhotoUri } : undefined}>
+                                <Pencil onPhotoSelecting={handlePhotoSelecting} onPhotoSelected={handlePhotoSelected} isLoading={isLoading} />
+                            </ProfileIcon>
+                            
+                            <Text style={textStyle.text}>Insira suas informações pessoais</Text>
+                            
+                            <Input icon={require('@/screenAssets/icons/profile-icon-gray.png')} text="Nome:" value={name} onChangeText={setName} />
+                            <Input icon={require('@/screenAssets/icons/email-icon.png')} text="Email:" value={email} onChangeText={setEmail} />
+                            <Input icon={require('@/screenAssets/icons/password-icon-gray.png')} text="Senha:" value={password} onChangeText={setPassword} />
+                            <Input icon={require('@/screenAssets/icons/password-icon-gray.png')} text="Confirmar Senha:" value={confirmPassword} onChangeText={setConfirmPassword} />
 
-                        <Text style={textStyle.message}>
-                            *A senha deve conter mais de 8 caracteres, letras maiúsculas e números
-                        </Text>
+                            <Text style={textStyle.message}>
+                                *A senha deve conter mais de 8 caracteres, letras maiúsculas e números
+                            </Text>
 
-                        <ButtonY 
-                            title={isLoading ? "Enviando..." : isPhotoLoading ? "Carregando foto..." : "Continuar"} 
-                            onPress={handleContinue} 
-                            disabled={isLoading || isPhotoLoading} 
-                        />
-                        
+                            <ButtonY 
+                                title={isLoading ? "Enviando..." : isPhotoLoading ? "Carregando foto..." : "Continuar"} 
+                                onPress={handleContinue} 
+                                disabled={isLoading || isPhotoLoading} 
+                            />
                         <ButtonVoltar title="Voltar" onPress={() => router.push('/')} />
-                    </View>
-                </Box>
-            </View>
+                        </View>
+                    </Box>
+                </View>
+                <View style={{ padding: 20 }}>
+                </View>
+            </KeyboardAvoidingView>
 
             <ValidationPopup
                 visible={showValidationPopup}

@@ -88,7 +88,7 @@ export default function Index(){
                             onChangeText={setEmail}
                         />
                         <Input
-                            icon={require('@/screenAssets/icons/password-icon.png')}
+                            icon={require('@/screenAssets/icons/password-icon-gray.png')}
                             text="Senha:"
                             secureTextEntry={true}
                             value={password}

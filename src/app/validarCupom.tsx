@@ -60,8 +60,8 @@ export default function ValidarCupomScreen() {
     setLoading(false);
   };
 
-  const popupBorderColor = popup.type === 'error' ? (COLORS.red || '#B22300') : '#2E7D32'; 
-  const popupTitleColor = popup.type === 'error' ? (COLORS.red || '#B22300') : '#2E7D32';
+  const popupBorderColor = popup.type === 'error' ? (COLORS.red || '#B22300') : '#B22300'; 
+  const popupTitleColor = popup.type === 'error' ? (COLORS.gold || '#B22300') : '#2E7D32';
 
   return (
     <View style={validateStyle.mainContainer}>

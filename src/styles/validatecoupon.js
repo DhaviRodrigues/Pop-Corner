@@ -77,7 +77,7 @@ export const validateStyle = StyleSheet.create({
   popupContainer: {
     width: '85%',
     maxWidth: 320,
-    backgroundColor: '#FFF', // Fundo Branco solicitado
+    backgroundColor: COLORS.primary, // Fundo Branco solicitado
     borderRadius: 15,
     padding: 25,
     alignItems: 'center',
@@ -91,7 +91,7 @@ export const validateStyle = StyleSheet.create({
     textAlign: 'center',
   },
   popupMessage: {
-    color: COLORS.textMuted, // Cor do texto solicitada
+    color: COLORS.gold, // Cor do texto solicitada
     fontFamily: 'Poppins-Regular',
     fontSize: 14,
     textAlign: 'center',
@@ -105,7 +105,7 @@ export const validateStyle = StyleSheet.create({
     alignItems: 'center',
   },
   popupBtnText: {
-    color: '#FFF',
+    color: COLORS.gold,
     fontFamily: 'Poppins-Bold',
     fontSize: 16,
   }
